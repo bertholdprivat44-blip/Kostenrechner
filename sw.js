@@ -1,4 +1,4 @@
-const CACHE = "sparrechner-v4";
+const CACHE = "sparrechner-v6";
 const ASSETS = [
   "./index.html",
   "./manifest.json",

@@ -179,6 +179,15 @@
     letter-spacing: 0.06em;
     margin-top: 3px;
   }
+  .row-label .wd-note{
+    display:none;
+    font-size: 10px;
+    color: var(--brass-deep);
+    letter-spacing: 0.02em;
+    margin-top: 4px;
+    font-style: italic;
+  }
+  .row-label .wd-note.active{ display:block; }
   .leader{
     flex:1;
     border-bottom: 1px dotted #b7ae98;
@@ -224,7 +233,7 @@
   }
   .field{ min-width:0; }
   .field.small select, .field.small .income-input-row{ border-bottom: 1.5px solid var(--sage); padding-bottom: 5px; }
-  #month, #wd-month{
+  #month, #wd-month, #wd-category{
     width:100%;
     border:none;
     border-bottom: 1.5px solid var(--sage);
@@ -304,6 +313,7 @@
     color: var(--ink);
   }
   .ov-table .wd-cell{ color: var(--sage); }
+  .ov-table .combined-cell{ color: var(--brass-deep); font-weight:600; }
   .del-btn{
     background:none; border:none; cursor:pointer;
     color: var(--ink-soft); font-size: 13px;
@@ -394,45 +404,50 @@
         <span class="row-label">
           <span class="name">Wohnen &amp; Lebensmittel</span>
           <span class="pct">× 0,55</span>
+          <span class="wd-note" data-key="wohnen"></span>
         </span>
         <span class="leader"></span>
-        <span class="row-amount" data-factor="0.55">€ 0,00</span>
+        <span class="row-amount" data-factor="0.55" data-key="wohnen">€ 0,00</span>
       </div>
       <div class="row">
         <span class="row-num">02</span>
         <span class="row-label">
           <span class="name">Für mich selbst</span>
           <span class="pct">× 0,05</span>
+          <span class="wd-note" data-key="selbst"></span>
         </span>
         <span class="leader"></span>
-        <span class="row-amount" data-factor="0.05">€ 0,00</span>
+        <span class="row-amount" data-factor="0.05" data-key="selbst">€ 0,00</span>
       </div>
       <div class="row">
         <span class="row-num">03</span>
         <span class="row-label">
           <span class="name">Schulden</span>
           <span class="pct">× 0,10</span>
+          <span class="wd-note" data-key="schulden"></span>
         </span>
         <span class="leader"></span>
-        <span class="row-amount" data-factor="0.10">€ 0,00</span>
+        <span class="row-amount" data-factor="0.10" data-key="schulden">€ 0,00</span>
       </div>
       <div class="row">
         <span class="row-num">04</span>
         <span class="row-label">
           <span class="name">Kurzfristige Ziele</span>
           <span class="pct">× 0,15 · z. B. Urlaub</span>
+          <span class="wd-note" data-key="ziele"></span>
         </span>
         <span class="leader"></span>
-        <span class="row-amount" data-factor="0.15">€ 0,00</span>
+        <span class="row-amount" data-factor="0.15" data-key="ziele">€ 0,00</span>
       </div>
       <div class="row">
         <span class="row-num">05</span>
         <span class="row-label">
           <span class="name">Investieren</span>
           <span class="pct">× 0,15</span>
+          <span class="wd-note" data-key="investieren"></span>
         </span>
         <span class="leader"></span>
-        <span class="row-amount" data-factor="0.15">€ 0,00</span>
+        <span class="row-amount" data-factor="0.15" data-key="investieren">€ 0,00</span>
       </div>
     </div>
 
@@ -475,6 +490,7 @@
             <th>Einkommen</th>
             <th>Gespart</th>
             <th>Entnommen</th>
+            <th>Einkommen + Erspartes</th>
             <th></th>
           </tr>
         </thead>
@@ -497,10 +513,21 @@
           <input type="month" id="wd-month">
         </div>
       </div>
+      <div class="field small" style="margin-top:16px">
+        <label for="wd-category">Kategorie</label>
+        <select id="wd-category">
+          <option value="wohnen">01 · Wohnen &amp; Lebensmittel</option>
+          <option value="selbst">02 · Für mich selbst</option>
+          <option value="schulden">03 · Schulden</option>
+          <option value="ziele">04 · Kurzfristige Ziele</option>
+          <option value="investieren">05 · Investieren</option>
+        </select>
+      </div>
       <div class="wd-btn-row">
         <button class="save-btn" id="wd-btn" type="button">Entnehmen &amp; gutschreiben</button>
       </div>
       <p class="pot-hint" id="pot-hint">Verfügbar im Spartopf: € 0,00</p>
+      <p class="pot-hint" id="wd-info" style="display:none"></p>
       <div class="wd-list" id="wd-list"></div>
     </div>
 
@@ -518,6 +545,7 @@
         <span class="stat-value" id="sum-pot">€ 0,00</span>
       </div>
     </div>
+    <p class="foot">Einkommen + Erspartes = frei verfügbare Summe für den Monat, selbst aufteilbar</p>
   </div>
 
 </div>
@@ -542,6 +570,8 @@
   const withdrawBlock = document.getElementById('withdraw-block');
   const wdAmountInput = document.getElementById('wd-amount');
   const wdMonthInput = document.getElementById('wd-month');
+  const wdCategorySelect = document.getElementById('wd-category');
+  const wdInfo = document.getElementById('wd-info');
   const wdBtn = document.getElementById('wd-btn');
   const potHint = document.getElementById('pot-hint');
   const wdList = document.getElementById('wd-list');
@@ -560,6 +590,15 @@
     const names = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
     return names[parseInt(mo,10)-1] + ' ' + y;
   }
+
+  const CATEGORY_LABELS = {
+    wohnen: 'Wohnen & Lebensmittel',
+    selbst: 'Für mich selbst',
+    schulden: 'Schulden',
+    ziele: 'Kurzfristige Ziele',
+    investieren: 'Investieren'
+  };
+  function categoryLabel(key){ return CATEGORY_LABELS[key] || key; }
 
   function loadMonths(){
     try{ const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : []; }
@@ -591,14 +630,39 @@
     }catch(e){}
   }
 
+  function creditsForMonthByCategory(month){
+    const credits = {};
+    if(!month) return credits;
+    loadWithdrawals().forEach(w => {
+      if(w.month === month){
+        credits[w.category] = (credits[w.category] || 0) + w.amount;
+      }
+    });
+    return credits;
+  }
+
   function recalc(){
     const income = parseFloat(String(incomeInput.value).replace(',', '.')) || 0;
+    const credits = creditsForMonthByCategory(monthInput.value);
     let sum = 0;
     rowAmounts.forEach(el => {
       const factor = parseFloat(el.dataset.factor);
-      const value = income * factor;
+      const key = el.dataset.key;
+      const credit = credits[key] || 0;
+      const value = income * factor + credit;
       sum += value;
       el.textContent = formatEUR(value);
+
+      const note = document.querySelector('.wd-note[data-key="' + key + '"]');
+      if(note){
+        if(credit > 0){
+          note.textContent = '+ ' + formatEUR(credit) + ' aus Ersparten';
+          note.classList.add('active');
+        } else {
+          note.textContent = '';
+          note.classList.remove('active');
+        }
+      }
     });
     totalAmount.textContent = formatEUR(sum);
     saveDraft();
@@ -646,6 +710,7 @@
 
     merged.forEach(entry => {
       const credited = creditedByMonth[entry.month] || 0;
+      const combined = entry.income + credited;
       totalIncome += entry.income;
       totalSaved += entry.actualSaved;
 
@@ -656,6 +721,7 @@
         '<td>' + (entry.hasEntry ? formatEUR(entry.income) : '–') + '</td>' +
         '<td>' + (entry.hasEntry ? formatEUR(entry.actualSaved) : '–') + '</td>' +
         '<td class="wd-cell">' + (credited > 0 ? '+' + formatEUR(credited) : '–') + '</td>' +
+        '<td class="combined-cell">' + (combined > 0 ? formatEUR(combined) : '–') + '</td>' +
         '<td><button class="del-btn" title="Löschen">✕</button></td>';
 
       tr.querySelector('.month-cell').addEventListener('click', () => {
@@ -674,6 +740,7 @@
         const remainingWd = loadWithdrawals().filter(w => w.month !== entry.month);
         saveWithdrawals(remainingWd);
         renderOverview();
+        recalc();
       });
 
       ovTbody.appendChild(tr);
@@ -700,6 +767,7 @@
         const remaining = loadWithdrawals().filter(x => x.id !== w.id);
         saveWithdrawals(remaining);
         renderOverview();
+        recalc();
       });
       wdList.appendChild(row);
     });
@@ -733,6 +801,9 @@
   function withdrawFromPot(){
     const amount = parseFloat(String(wdAmountInput.value).replace(',', '.')) || 0;
     const month = wdMonthInput.value;
+    const category = wdCategorySelect.value;
+
+    wdInfo.style.display = 'none';
 
     if(amount <= 0 || !month){
       potHint.textContent = 'Bitte Betrag und Monat wählen.';
@@ -746,17 +817,22 @@
     }
 
     const withdrawals = loadWithdrawals();
-    withdrawals.push({ id: Date.now().toString(36), month, amount });
+    withdrawals.push({ id: Date.now().toString(36), month, amount, category });
     saveWithdrawals(withdrawals);
+
+    wdInfo.textContent = 'Du hast dir ' + formatEUR(amount) + ' entspartes Guthaben genommen und zu „' + categoryLabel(category) + '" (' + monthLabel(month) + ') hinzugefügt — im Monat mit verrechnet.';
+    wdInfo.style.color = 'var(--sage)';
+    wdInfo.style.display = 'block';
 
     wdAmountInput.value = '';
     potHint.style.color = 'var(--ink-soft)';
     renderOverview();
+    recalc();
   }
 
   incomeInput.addEventListener('input', recalc);
   actualSavedInput.addEventListener('input', saveDraft);
-  monthInput.addEventListener('change', saveDraft);
+  monthInput.addEventListener('change', recalc);
   saveBtn.addEventListener('click', saveCurrentMonth);
   wdBtn.addEventListener('click', withdrawFromPot);
 
