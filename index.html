@@ -35,27 +35,35 @@
       radial-gradient(circle at 50% -10%, #24352a 0%, var(--bg) 55%, var(--bg-vignette) 100%);
     font-family: 'IBM Plex Mono', monospace;
     color: var(--ink);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding: 32px 16px;
+    padding: 32px 16px 56px;
   }
 
-  .ledger{
-    width:100%;
-    max-width: 480px;
+  .app-wrap{
+    max-width: 1000px;
+    margin: 0 auto;
+    display:flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    align-items:flex-start;
+    justify-content:center;
+  }
+
+  .card{
     background: var(--card);
     border: 1px solid var(--card-line);
     box-shadow: 0 30px 60px -25px rgba(0,0,0,0.6), 0 0 0 6px rgba(169,129,63,0.08);
     position: relative;
   }
-  .ledger::before{
+  .card::before{
     content:"";
     position:absolute;
     inset: 8px;
     border: 1px solid rgba(169,129,63,0.35);
     pointer-events:none;
   }
+
+  .ledger{ width:100%; max-width: 480px; flex-shrink:0; }
+  .overview{ width:100%; max-width: 480px; flex: 1 1 420px; }
 
   .head{
     padding: 34px 32px 22px;
@@ -73,10 +81,17 @@
     font-family: 'Fraunces', serif;
     font-optical-sizing: auto;
     font-weight: 500;
-    font-size: 28px;
+    font-size: 26px;
     letter-spacing: 0.01em;
     margin: 0 0 6px;
     color: var(--ink);
+  }
+  h2{
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--ink);
+    margin: 0;
   }
   .sub{
     font-size: 11.5px;
@@ -89,7 +104,7 @@
     padding: 26px 32px 22px;
     border-bottom: 1px solid var(--card-line);
   }
-  .income-block label{
+  .income-block label, .field label{
     display:block;
     font-size: 10.5px;
     letter-spacing: 0.14em;
@@ -109,7 +124,7 @@
     color: var(--brass-deep);
     margin-right: 8px;
   }
-  #income{
+  #income, #actual-saved, #wd-amount{
     flex:1;
     border:none;
     background:transparent;
@@ -119,10 +134,13 @@
     font-weight: 500;
     color: var(--ink);
     -moz-appearance: textfield;
+    width: 100%;
   }
-  #income::-webkit-outer-spin-button,
-  #income::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
-  #income::placeholder{ color: #b7ae98; }
+  #wd-amount{ font-size: 20px; }
+  #income::-webkit-outer-spin-button, #income::-webkit-inner-spin-button,
+  #actual-saved::-webkit-outer-spin-button, #actual-saved::-webkit-inner-spin-button,
+  #wd-amount::-webkit-outer-spin-button, #wd-amount::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  #income::placeholder, #actual-saved::placeholder, #wd-amount::placeholder{ color: #b7ae98; }
 
   .rows{
     padding: 10px 32px 4px;
@@ -178,7 +196,7 @@
 
   .total{
     margin: 6px 32px 0;
-    padding: 18px 0 26px;
+    padding: 18px 0 22px;
     border-top: 1.5px solid var(--ink);
     display:flex;
     justify-content: space-between;
@@ -197,6 +215,49 @@
     color: var(--brass-deep);
   }
 
+  .save-block{
+    padding: 22px 32px 28px;
+    border-top: 1px solid var(--card-line);
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px 16px;
+  }
+  .field{ min-width:0; }
+  .field.small select, .field.small .income-input-row{ border-bottom: 1.5px solid var(--sage); padding-bottom: 5px; }
+  #month, #wd-month{
+    width:100%;
+    border:none;
+    border-bottom: 1.5px solid var(--sage);
+    background:transparent;
+    outline:none;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 15px;
+    color: var(--ink);
+    padding-bottom: 8px;
+  }
+  .save-btn{
+    grid-column: 1 / -1;
+    margin-top: 4px;
+    background: var(--brass-deep);
+    color: var(--card);
+    border: none;
+    padding: 13px 18px;
+    font-family: 'Fraunces', serif;
+    font-size: 14.5px;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .save-btn:hover{ background: var(--brass); }
+  .save-btn:active{ transform: translateY(1px); }
+  .save-hint{
+    grid-column: 1 / -1;
+    font-size: 10px;
+    color: var(--ink-soft);
+    letter-spacing: 0.02em;
+    margin-top: -8px;
+  }
+
   .foot{
     text-align:center;
     padding: 0 24px 26px;
@@ -206,96 +267,332 @@
     color: #a79f8c;
   }
 
+  /* Overview card */
+  .ov-body{ padding: 26px 28px 10px; }
+  .ov-empty{
+    font-size: 12px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    padding: 4px 0 18px;
+  }
+  .ov-table{
+    width:100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .ov-table th{
+    text-align:left;
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight:500;
+    padding: 0 6px 10px 0;
+    border-bottom: 1.5px solid var(--ink);
+  }
+  .ov-table th:not(:first-child), .ov-table td:not(:first-child){ text-align:right; }
+  .ov-table td{
+    padding: 11px 6px 11px 0;
+    border-bottom: 1px dashed var(--card-line);
+    vertical-align: middle;
+  }
+  .ov-table tr.m-row{ cursor:pointer; }
+  .ov-table tr.m-row:hover td{ background: rgba(169,129,63,0.08); }
+  .ov-table .month-cell{
+    font-family:'Fraunces', serif;
+    font-size: 13.5px;
+    color: var(--ink);
+  }
+  .ov-table .wd-cell{ color: var(--sage); }
+  .del-btn{
+    background:none; border:none; cursor:pointer;
+    color: var(--ink-soft); font-size: 13px;
+    padding: 0 0 0 8px; line-height:1;
+  }
+  .del-btn:hover{ color: var(--danger); }
+
+  .withdraw-block{
+    padding: 4px 28px 24px;
+    border-top: 1px solid var(--card-line);
+    margin-top: 8px;
+  }
+  .withdraw-block .wd-row{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding-top: 18px;
+  }
+  .wd-btn-row{ padding-top: 14px; }
+  .wd-list{ margin-top: 14px; }
+  .wd-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size: 11.5px;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--card-line);
+    color: var(--ink-soft);
+  }
+  .wd-item .wd-amt{ color: var(--sage); font-weight:600; }
+  .pot-hint{
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    letter-spacing: 0.02em;
+    padding-top: 12px;
+  }
+
+  .ov-summary{
+    padding: 18px 28px 26px;
+    border-top: 1.5px solid var(--ink);
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    row-gap: 14px;
+  }
+  .ov-summary .stat-label{
+    display:block;
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+  }
+  .ov-summary .stat-value{
+    font-family:'Fraunces', serif;
+    font-size: 18px;
+    color: var(--brass-deep);
+  }
+
   @media (max-width: 400px){
     .row-label{ max-width: 128px; }
-    h1{ font-size: 24px; }
+    h1{ font-size: 22px; }
+    .save-block, .withdraw-block .wd-row{ grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
 
-<div class="ledger">
-  <div class="head">
-    <p class="eyebrow">AndrewFXTD · Budget-Ledger</p>
-    <h1>Sparrechner</h1>
-    <p class="sub">Monatliches Einkommen nach der 55 / 5 / 10 / 15 / 15 Verteilung</p>
+<div class="app-wrap">
+
+  <div class="card ledger">
+    <div class="head">
+      <p class="eyebrow">AndrewFXTD · Budget-Ledger</p>
+      <h1>Sparrechner</h1>
+      <p class="sub">Monatliches Einkommen nach der 55 / 5 / 10 / 15 / 15 Verteilung</p>
+    </div>
+
+    <div class="income-block">
+      <label for="income">Monatliches Nettoeinkommen</label>
+      <div class="income-input-row">
+        <span>€</span>
+        <input type="number" id="income" placeholder="0,00" min="0" step="0.01" inputmode="decimal">
+      </div>
+    </div>
+
+    <div class="rows">
+      <div class="row">
+        <span class="row-num">01</span>
+        <span class="row-label">
+          <span class="name">Wohnen &amp; Lebensmittel</span>
+          <span class="pct">× 0,55</span>
+        </span>
+        <span class="leader"></span>
+        <span class="row-amount" data-factor="0.55">€ 0,00</span>
+      </div>
+      <div class="row">
+        <span class="row-num">02</span>
+        <span class="row-label">
+          <span class="name">Für mich selbst</span>
+          <span class="pct">× 0,05</span>
+        </span>
+        <span class="leader"></span>
+        <span class="row-amount" data-factor="0.05">€ 0,00</span>
+      </div>
+      <div class="row">
+        <span class="row-num">03</span>
+        <span class="row-label">
+          <span class="name">Schulden</span>
+          <span class="pct">× 0,10</span>
+        </span>
+        <span class="leader"></span>
+        <span class="row-amount" data-factor="0.10">€ 0,00</span>
+      </div>
+      <div class="row">
+        <span class="row-num">04</span>
+        <span class="row-label">
+          <span class="name">Kurzfristige Ziele</span>
+          <span class="pct">× 0,15 · z. B. Urlaub</span>
+        </span>
+        <span class="leader"></span>
+        <span class="row-amount" data-factor="0.15">€ 0,00</span>
+      </div>
+      <div class="row">
+        <span class="row-num">05</span>
+        <span class="row-label">
+          <span class="name">Investieren</span>
+          <span class="pct">× 0,15</span>
+        </span>
+        <span class="leader"></span>
+        <span class="row-amount" data-factor="0.15">€ 0,00</span>
+      </div>
+    </div>
+
+    <div class="total">
+      <span class="name">Summe verteilt</span>
+      <span class="amount" id="total-amount">€ 0,00</span>
+    </div>
+
+    <div class="save-block">
+      <div class="field">
+        <label for="month">Monat</label>
+        <input type="month" id="month">
+      </div>
+      <div class="field">
+        <label for="actual-saved">Insgesamt gespart</label>
+        <div class="income-input-row">
+          <span>€</span>
+          <input type="number" id="actual-saved" placeholder="0,00" min="0" step="0.01" inputmode="decimal">
+        </div>
+      </div>
+      <button class="save-btn" id="save-month">Diesen Monat speichern</button>
+      <p class="save-hint" id="save-hint">Wird lokal auf diesem Gerät gespeichert.</p>
+    </div>
+
+    <p class="foot">100 % des Einkommens zugeteilt</p>
   </div>
 
-  <div class="income-block">
-    <label for="income">Monatliches Nettoeinkommen</label>
-    <div class="income-input-row">
-      <span>€</span>
-      <input type="number" id="income" placeholder="0,00" min="0" step="0.01" inputmode="decimal">
+  <div class="card overview">
+    <div class="head">
+      <p class="eyebrow">Verlauf</p>
+      <h1>Übersicht</h1>
+      <p class="sub">Alle gespeicherten Monate im Überblick</p>
+    </div>
+    <div class="ov-body">
+      <p class="ov-empty" id="ov-empty">Noch keine Monate gespeichert. Trag oben ein Einkommen ein, wähl den Monat und speichere ihn — er erscheint dann hier.</p>
+      <table class="ov-table" id="ov-table" style="display:none">
+        <thead>
+          <tr>
+            <th>Monat</th>
+            <th>Einkommen</th>
+            <th>Gespart</th>
+            <th>Entnommen</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="ov-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="withdraw-block" id="withdraw-block" style="display:none">
+      <h2>Vom Ersparten entnehmen</h2>
+      <div class="wd-row">
+        <div class="field small">
+          <label for="wd-amount">Betrag</label>
+          <div class="income-input-row">
+            <span>€</span>
+            <input type="number" id="wd-amount" placeholder="0,00" min="0" step="0.01" inputmode="decimal">
+          </div>
+        </div>
+        <div class="field small">
+          <label for="wd-month">Monat gutschreiben</label>
+          <input type="month" id="wd-month">
+        </div>
+      </div>
+      <div class="wd-btn-row">
+        <button class="save-btn" id="wd-btn" type="button">Entnehmen &amp; gutschreiben</button>
+      </div>
+      <p class="pot-hint" id="pot-hint">Verfügbar im Spartopf: € 0,00</p>
+      <div class="wd-list" id="wd-list"></div>
+    </div>
+
+    <div class="ov-summary" id="ov-summary" style="display:none">
+      <div>
+        <span class="stat-label">Einkommen gesamt</span>
+        <span class="stat-value" id="sum-income">€ 0,00</span>
+      </div>
+      <div>
+        <span class="stat-label">Gespart gesamt</span>
+        <span class="stat-value" id="sum-saved">€ 0,00</span>
+      </div>
+      <div>
+        <span class="stat-label">Spartopf verfügbar</span>
+        <span class="stat-value" id="sum-pot">€ 0,00</span>
+      </div>
     </div>
   </div>
 
-  <div class="rows">
-    <div class="row">
-      <span class="row-num">01</span>
-      <span class="row-label">
-        <span class="name">Wohnen &amp; Lebensmittel</span>
-        <span class="pct">× 0,55</span>
-      </span>
-      <span class="leader"></span>
-      <span class="row-amount" data-factor="0.55">€ 0,00</span>
-    </div>
-    <div class="row">
-      <span class="row-num">02</span>
-      <span class="row-label">
-        <span class="name">Für mich selbst</span>
-        <span class="pct">× 0,05</span>
-      </span>
-      <span class="leader"></span>
-      <span class="row-amount" data-factor="0.05">€ 0,00</span>
-    </div>
-    <div class="row">
-      <span class="row-num">03</span>
-      <span class="row-label">
-        <span class="name">Schulden</span>
-        <span class="pct">× 0,10</span>
-      </span>
-      <span class="leader"></span>
-      <span class="row-amount" data-factor="0.10">€ 0,00</span>
-    </div>
-    <div class="row">
-      <span class="row-num">04</span>
-      <span class="row-label">
-        <span class="name">Kurzfristige Ziele</span>
-        <span class="pct">× 0,15 · z. B. Urlaub</span>
-      </span>
-      <span class="leader"></span>
-      <span class="row-amount" data-factor="0.15">€ 0,00</span>
-    </div>
-    <div class="row">
-      <span class="row-num">05</span>
-      <span class="row-label">
-        <span class="name">Investieren</span>
-        <span class="pct">× 0,15</span>
-      </span>
-      <span class="leader"></span>
-      <span class="row-amount" data-factor="0.15">€ 0,00</span>
-    </div>
-  </div>
-
-  <div class="total">
-    <span class="name">Summe verteilt</span>
-    <span class="amount" id="total-amount">€ 0,00</span>
-  </div>
-
-  <p class="foot">100 % des Einkommens zugeteilt</p>
 </div>
 
 <script>
+  const STORAGE_KEY = 'sparrechner_months_v1';
+  const WD_KEY = 'sparrechner_withdrawals_v1';
+  const DRAFT_KEY = 'sparrechner_draft_v1';
+
   const incomeInput = document.getElementById('income');
+  const monthInput = document.getElementById('month');
+  const actualSavedInput = document.getElementById('actual-saved');
   const rowAmounts = document.querySelectorAll('.row-amount');
   const totalAmount = document.getElementById('total-amount');
+  const saveBtn = document.getElementById('save-month');
+  const saveHint = document.getElementById('save-hint');
+
+  const ovEmpty = document.getElementById('ov-empty');
+  const ovTable = document.getElementById('ov-table');
+  const ovTbody = document.getElementById('ov-tbody');
+  const ovSummary = document.getElementById('ov-summary');
+  const withdrawBlock = document.getElementById('withdraw-block');
+  const wdAmountInput = document.getElementById('wd-amount');
+  const wdMonthInput = document.getElementById('wd-month');
+  const wdBtn = document.getElementById('wd-btn');
+  const potHint = document.getElementById('pot-hint');
+  const wdList = document.getElementById('wd-list');
 
   function formatEUR(value){
     return '€ ' + value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
+  function currentMonthStr(){
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  }
+
+  function monthLabel(m){
+    const [y, mo] = m.split('-');
+    const names = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+    return names[parseInt(mo,10)-1] + ' ' + y;
+  }
+
+  function loadMonths(){
+    try{ const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : []; }
+    catch(e){ return []; }
+  }
+  function saveMonths(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+
+  function loadWithdrawals(){
+    try{ const raw = localStorage.getItem(WD_KEY); return raw ? JSON.parse(raw) : []; }
+    catch(e){ return []; }
+  }
+  function saveWithdrawals(list){ localStorage.setItem(WD_KEY, JSON.stringify(list)); }
+
+  function saveDraft(){
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      income: incomeInput.value,
+      actualSaved: actualSavedInput.value,
+      month: monthInput.value
+    }));
+  }
+  function loadDraft(){
+    try{
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if(!raw) return;
+      const d = JSON.parse(raw);
+      if(d.income) incomeInput.value = d.income;
+      if(d.actualSaved) actualSavedInput.value = d.actualSaved;
+      if(d.month) monthInput.value = d.month;
+    }catch(e){}
+  }
+
   function recalc(){
-    const income = parseFloat(incomeInput.value.replace(',', '.')) || 0;
+    const income = parseFloat(String(incomeInput.value).replace(',', '.')) || 0;
     let sum = 0;
     rowAmounts.forEach(el => {
       const factor = parseFloat(el.dataset.factor);
@@ -304,10 +601,169 @@
       el.textContent = formatEUR(value);
     });
     totalAmount.textContent = formatEUR(sum);
+    saveDraft();
+  }
+
+  function totalSavedPot(){
+    const months = loadMonths();
+    const withdrawals = loadWithdrawals();
+    const totalSaved = months.reduce((s, m) => s + m.actualSaved, 0);
+    const totalWithdrawn = withdrawals.reduce((s, w) => s + w.amount, 0);
+    return totalSaved - totalWithdrawn;
+  }
+
+  function renderOverview(){
+    const months = loadMonths();
+    const withdrawals = loadWithdrawals();
+
+    // withdrawals credited per month
+    const creditedByMonth = {};
+    withdrawals.forEach(w => { creditedByMonth[w.month] = (creditedByMonth[w.month] || 0) + w.amount; });
+
+    // merge: every month that has an income entry OR a withdrawal credited to it
+    const monthsByKey = {};
+    months.forEach(m => { monthsByKey[m.month] = { month: m.month, income: m.income, actualSaved: m.actualSaved, hasEntry: true }; });
+    Object.keys(creditedByMonth).forEach(m => {
+      if(!monthsByKey[m]) monthsByKey[m] = { month: m, income: 0, actualSaved: 0, hasEntry: false };
+    });
+    const merged = Object.values(monthsByKey).sort((a,b) => b.month.localeCompare(a.month));
+
+    if(merged.length === 0){
+      ovEmpty.style.display = 'block';
+      ovTable.style.display = 'none';
+      ovSummary.style.display = 'none';
+      withdrawBlock.style.display = 'none';
+      return;
+    }
+
+    ovEmpty.style.display = 'none';
+    ovTable.style.display = 'table';
+    ovSummary.style.display = 'grid';
+    withdrawBlock.style.display = 'block';
+
+    ovTbody.innerHTML = '';
+    let totalIncome = 0, totalSaved = 0;
+
+    merged.forEach(entry => {
+      const credited = creditedByMonth[entry.month] || 0;
+      totalIncome += entry.income;
+      totalSaved += entry.actualSaved;
+
+      const tr = document.createElement('tr');
+      tr.className = 'm-row';
+      tr.innerHTML =
+        '<td class="month-cell">' + monthLabel(entry.month) + '</td>' +
+        '<td>' + (entry.hasEntry ? formatEUR(entry.income) : '–') + '</td>' +
+        '<td>' + (entry.hasEntry ? formatEUR(entry.actualSaved) : '–') + '</td>' +
+        '<td class="wd-cell">' + (credited > 0 ? '+' + formatEUR(credited) : '–') + '</td>' +
+        '<td><button class="del-btn" title="Löschen">✕</button></td>';
+
+      tr.querySelector('.month-cell').addEventListener('click', () => {
+        if(entry.hasEntry){
+          incomeInput.value = entry.income;
+          actualSavedInput.value = entry.actualSaved;
+        }
+        monthInput.value = entry.month;
+        recalc();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      tr.querySelector('.del-btn').addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const remaining = loadMonths().filter(m => m.month !== entry.month);
+        saveMonths(remaining);
+        const remainingWd = loadWithdrawals().filter(w => w.month !== entry.month);
+        saveWithdrawals(remainingWd);
+        renderOverview();
+      });
+
+      ovTbody.appendChild(tr);
+    });
+
+    document.getElementById('sum-income').textContent = formatEUR(totalIncome);
+    document.getElementById('sum-saved').textContent = formatEUR(totalSaved);
+    document.getElementById('sum-pot').textContent = formatEUR(totalSavedPot());
+
+    if(!wdMonthInput.value) wdMonthInput.value = currentMonthStr();
+
+    potHint.textContent = 'Verfügbar im Spartopf: ' + formatEUR(totalSavedPot());
+
+    // withdrawal list
+    wdList.innerHTML = '';
+    withdrawals.slice().reverse().forEach(w => {
+      const row = document.createElement('div');
+      row.className = 'wd-item';
+      row.innerHTML =
+        '<span>' + monthLabel(w.month) + ' gutgeschrieben</span>' +
+        '<span><span class="wd-amt">' + formatEUR(w.amount) + '</span>' +
+        '<button class="del-btn" title="Entnahme rückgängig">✕</button></span>';
+      row.querySelector('.del-btn').addEventListener('click', () => {
+        const remaining = loadWithdrawals().filter(x => x.id !== w.id);
+        saveWithdrawals(remaining);
+        renderOverview();
+      });
+      wdList.appendChild(row);
+    });
+  }
+
+  function saveCurrentMonth(){
+    const income = parseFloat(String(incomeInput.value).replace(',', '.')) || 0;
+    const actualSaved = parseFloat(String(actualSavedInput.value).replace(',', '.')) || 0;
+    const month = monthInput.value || currentMonthStr();
+
+    if(income <= 0){
+      saveHint.textContent = 'Bitte zuerst ein Einkommen eintragen.';
+      saveHint.style.color = 'var(--danger)';
+      return;
+    }
+
+    const months = loadMonths().filter(m => m.month !== month);
+    months.push({ month, income, actualSaved });
+    saveMonths(months);
+
+    saveHint.textContent = monthLabel(month) + ' gespeichert.';
+    saveHint.style.color = 'var(--sage)';
+    setTimeout(() => {
+      saveHint.textContent = 'Wird lokal auf diesem Gerät gespeichert.';
+      saveHint.style.color = 'var(--ink-soft)';
+    }, 2200);
+
+    renderOverview();
+  }
+
+  function withdrawFromPot(){
+    const amount = parseFloat(String(wdAmountInput.value).replace(',', '.')) || 0;
+    const month = wdMonthInput.value;
+
+    if(amount <= 0 || !month){
+      potHint.textContent = 'Bitte Betrag und Monat wählen.';
+      potHint.style.color = 'var(--danger)';
+      return;
+    }
+    if(amount > totalSavedPot() + 1e-9){
+      potHint.textContent = 'Nicht genug im Spartopf verfügbar.';
+      potHint.style.color = 'var(--danger)';
+      return;
+    }
+
+    const withdrawals = loadWithdrawals();
+    withdrawals.push({ id: Date.now().toString(36), month, amount });
+    saveWithdrawals(withdrawals);
+
+    wdAmountInput.value = '';
+    potHint.style.color = 'var(--ink-soft)';
+    renderOverview();
   }
 
   incomeInput.addEventListener('input', recalc);
+  actualSavedInput.addEventListener('input', saveDraft);
+  monthInput.addEventListener('change', saveDraft);
+  saveBtn.addEventListener('click', saveCurrentMonth);
+  wdBtn.addEventListener('click', withdrawFromPot);
+
+  if(!monthInput.value) monthInput.value = currentMonthStr();
+  loadDraft();
   recalc();
+  renderOverview();
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
