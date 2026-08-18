@@ -67,12 +67,29 @@
 
   .risk-donuts{ display:flex; justify-content:space-around; gap:10px; flex-wrap:wrap; }
   .risk-donut{ text-align:center; }
-  .risk-donut .donut-ratio{ font-family:'Fraunces', serif; font-size:15px; margin-top:-64px; }
-  .risk-donut .donut-label{ font-size:8.5px; letter-spacing:0.08em; text-transform:uppercase; color: var(--ink-soft); margin-top:2px; }
+  .donut-label{ font-size:8.5px; letter-spacing:0.08em; text-transform:uppercase; color: var(--ink-soft); margin-top:2px; }
   .risk-legend{ display:flex; justify-content:center; gap:14px; margin-top:6px; font-size:9px; }
   .risk-legend .win{ color: var(--sage); }
   .risk-legend .loss{ color: var(--danger); }
-  .risk-substats{ display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:16px; }
+
+  .risk-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:18px; }
+  .risk-grid-cell{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding: 10px 6px; border: 1px solid var(--card-line); background: rgba(255,255,255,0.02);
+  }
+  .risk-grid-cell .rg-label{ font-size:8.5px; letter-spacing:0.08em; text-transform:uppercase; color: var(--ink-soft); }
+  .risk-grid-cell .rg-value{ font-family:'Fraunces', serif; font-size:22px; margin-top:3px; }
+  .risk-grid-cell.win .rg-value{ color: var(--sage); }
+  .risk-grid-cell.loss .rg-value{ color: var(--danger); }
+
+  .winrate-hero{
+    display:flex; flex-direction:column; align-items:center; text-align:center;
+    padding: 18px 10px; margin-top:8px; border: 1px solid var(--card-line); background: rgba(255,255,255,0.02);
+  }
+  .winrate-hero .wh-label{ font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color: var(--ink-soft); }
+  .winrate-hero .wh-value{ font-family:'Fraunces', serif; font-size:40px; color: var(--brass); margin-top:4px; line-height:1; }
+  .winrate-hero .wh-sub{ font-size:9.5px; color: var(--ink-soft); margin-top:6px; }
+  .risk-substats{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; margin-top:10px; }
   .risk-substat{ text-align:center; }
   .risk-substat .rs-label{ display:block; font-size:8px; letter-spacing:0.05em; text-transform:uppercase; color: var(--ink-soft); }
   .risk-substat .rs-value{ font-family:'Fraunces', serif; font-size:13px; color: var(--ink); }
@@ -274,8 +291,9 @@
                     stroke-dasharray="289" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
             <circle id="wlDonutLoss" cx="60" cy="60" r="46" fill="none" style="stroke:var(--danger)" stroke-width="14"
                     stroke-dasharray="289" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+            <text id="wl-ratio" x="60" y="60" text-anchor="middle" dominant-baseline="central"
+                  style="font-family:'Fraunces', serif; font-size:15px; fill:var(--ink);">0 : 0</text>
           </svg>
-          <div class="donut-ratio" id="wl-ratio">0 : 0</div>
           <div class="donut-label">Win / Loss</div>
           <div class="risk-legend"><span class="win" id="wl-win-count">0 Win</span><span class="loss" id="wl-loss-count">0 Loss</span></div>
         </div>
@@ -286,14 +304,24 @@
                     stroke-dasharray="289" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
             <circle id="plDonutLoss" cx="60" cy="60" r="46" fill="none" style="stroke:var(--danger)" stroke-width="14"
                     stroke-dasharray="289" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+            <text id="pl-ratio" x="60" y="60" text-anchor="middle" dominant-baseline="central"
+                  style="font-family:'Fraunces', serif; font-size:15px; fill:var(--ink);">0 : 0</text>
           </svg>
-          <div class="donut-ratio" id="pl-ratio">0 : 0</div>
           <div class="donut-label">Profit / Loss</div>
           <div class="risk-legend"><span class="win" id="pl-profit-amt">€ 0</span><span class="loss" id="pl-loss-amt">€ 0</span></div>
         </div>
       </div>
+
+      <div class="risk-grid">
+        <div class="risk-grid-cell win"><span class="rg-label">Wins</span><span class="rg-value" id="rg-wins">0</span></div>
+        <div class="risk-grid-cell loss"><span class="rg-label">Losses</span><span class="rg-value" id="rg-losses">0</span></div>
+      </div>
+      <div class="winrate-hero">
+        <span class="wh-label">Winrate</span>
+        <span class="wh-value" id="wh-winrate">0 %</span>
+        <span class="wh-sub" id="wh-sub">0 Wins von 0 Trades</span>
+      </div>
       <div class="risk-substats">
-        <div class="risk-substat"><span class="rs-label">Winrate</span><span class="rs-value" id="rs-winrate">0 %</span></div>
         <div class="risk-substat"><span class="rs-label">Profit-Faktor</span><span class="rs-value" id="rs-pf">0,00</span></div>
         <div class="risk-substat"><span class="rs-label">Ø Gewinn</span><span class="rs-value" id="rs-avgwin">€ 0,00</span></div>
         <div class="risk-substat"><span class="rs-label">Ø Verlust</span><span class="rs-value" id="rs-avgloss">€ 0,00</span></div>
@@ -815,7 +843,10 @@
     document.getElementById('pl-profit-amt').textContent = formatEUR(grossProfit);
     document.getElementById('pl-loss-amt').textContent = '−' + formatEUR(grossLoss);
 
-    document.getElementById('rs-winrate').textContent = winRate.toFixed(1).replace('.', ',') + ' %';
+    document.getElementById('rg-wins').textContent = winCount;
+    document.getElementById('rg-losses').textContent = lossCount;
+    document.getElementById('wh-winrate').textContent = winRate.toFixed(1).replace('.', ',') + ' %';
+    document.getElementById('wh-sub').textContent = winCount + ' Wins von ' + (winCount + lossCount) + ' Trades';
     document.getElementById('rs-pf').textContent = isFinite(profitFactor) ? profitFactor.toFixed(2).replace('.', ',') : '∞';
     document.getElementById('rs-avgwin').textContent = formatEUR(avgWin);
     document.getElementById('rs-avgloss').textContent = formatEUR(-avgLoss);
