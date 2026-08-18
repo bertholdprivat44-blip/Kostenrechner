@@ -39,6 +39,22 @@
     z-index: 30;
   }
   .help-btn:hover{ background: var(--brass); }
+  .bot-btn{
+    position: fixed;
+    bottom: 82px;
+    right: 26px;
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: var(--card);
+    border: 1.5px solid var(--brass-deep);
+    font-size: 21px;
+    cursor: pointer;
+    box-shadow: 0 12px 26px -8px rgba(0,0,0,0.6);
+    z-index: 30;
+    display:flex; align-items:center; justify-content:center;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+  .bot-btn:hover{ transform: scale(1.08); border-color: var(--brass); }
 
   .help-overlay{
     display:none;
@@ -89,7 +105,8 @@
   .help-a li{ margin-bottom: 5px; }
   .help-a strong{ color: var(--ink); }
   .help-a a{ color: var(--brass-deep); }
-  .help-a table{ width:100%; border-collapse: collapse; margin-top: 8px; }
+  .help-a table{ width:100%; border-collapse: collapse; margin-top: 8px; table-layout: fixed; }
+  .help-a table th, .help-a table td{ overflow-wrap: break-word; word-break: break-word; }
   .help-a table th{ text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color: var(--ink-soft); padding: 4px 8px 4px 0; border-bottom: 1px solid var(--card-line); }
   .help-a table td{ padding: 6px 8px 6px 0; border-bottom: 1px dashed var(--card-line); }
   .wizard-card{ width:100%; max-width: 660px; }
@@ -154,10 +171,11 @@
   .wizard-nav{ display:flex; justify-content:space-between; gap:12px; padding: 22px 32px 30px; }
   .wizard-nav .save-btn{ width:auto; flex:1; }
   .review-block{ margin: 0 32px 20px; border:1px solid var(--card-line); padding: 16px 18px; font-size: 12px; line-height:1.8; }
-  .review-block .rline{ display:flex; justify-content:space-between; gap: 10px; }
+  .review-block .rline{ display:flex; flex-wrap:wrap; justify-content:space-between; gap: 4px 10px; overflow-wrap:break-word; word-break:break-word; }
+  .review-block .rline > span:first-child{ min-width:0; }
   .review-block .rgroup{ font-family:'Fraunces', serif; font-size: 13px; color: var(--brass-deep); margin: 10px 0 4px; }
   .review-block .redit{ background:none; border:none; color: var(--brass-deep); font-size:10.5px; text-decoration:underline; cursor:pointer; padding:0; white-space:nowrap; }
-  .checklist{ margin: 0 32px 20px; font-size: 12px; line-height:2; color: var(--ink-soft); }
+  .checklist{ margin: 0 32px 20px; font-size: 12px; line-height:2; color: var(--ink-soft); overflow-wrap:break-word; word-break:break-word; }
   .checklist li{ margin-left: 18px; }
   .done-badge{ text-align:center; padding: 30px 32px 10px; }
   .done-badge .big{ font-size: 42px; }
@@ -170,6 +188,19 @@
   .est-summary-row{ display:flex; justify-content:space-between; padding: 10px 32px; font-size:12.5px; border-bottom:1px dashed var(--card-line); }
   .est-summary-row:last-child{ border-bottom:none; }
   .est-summary-row .label{ color: var(--ink-soft); }
+  .bescheid-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+
+  @media (max-width: 520px){
+    .form-grid{ grid-template-columns: 1fr; }
+    .bescheid-grid{ grid-template-columns: 1fr; }
+    .help-modal-head{ padding: 22px 18px 14px; }
+    .help-body{ padding: 6px 18px 24px; }
+    .help-q{ font-size: 13.5px; gap: 8px; }
+    .review-block{ margin: 0 12px 20px; padding: 14px 14px; }
+    .checklist{ margin: 0 12px 20px; padding-left: 4px; }
+    .checklist li{ margin-left: 12px; }
+    .step{ padding: 20px 18px 6px; }
+  }
 </style>
 </head>
 <body>
@@ -221,6 +252,39 @@
       <div class="field">
         <label for="est-kinder">Kinder (Kinderfreibetrag)</label>
         <input type="number" id="est-kinder" min="0" step="1" placeholder="0">
+      </div>
+
+      <div class="field">
+        <label for="est-steuerklasse">Steuerklasse</label>
+        <select id="est-steuerklasse" class="select-input">
+          <option value="1">I — Ledig</option>
+          <option value="2">II — Alleinerziehend</option>
+          <option value="3">III — Verheiratet, höheres Einkommen</option>
+          <option value="4">IV — Verheiratet, ähnliches Einkommen</option>
+          <option value="5">V — Verheiratet, niedrigeres Einkommen</option>
+          <option value="6">VI — Zweiter Job</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="check-row" style="margin-top:22px">
+          <input type="checkbox" id="est-svpflichtig" checked>
+          <span>Sozialversicherungspflichtig</span>
+        </label>
+      </div>
+
+      <div class="field full" style="grid-column:1/-1">
+        <label>Brutto-Rechner <span style="text-transform:none; letter-spacing:0; color:var(--ink-soft); font-size:9.5px;">— optional, füllt das Jahresbrutto unten automatisch</span></label>
+        <div class="bescheid-grid">
+          <div>
+            <div class="income-input-row"><span>€</span><input type="number" id="est-monatsbrutto" step="0.01" min="0" placeholder="Monatsbrutto"></div>
+            <button class="save-btn secondary" id="est-brutto-x12-btn" type="button" style="margin-top:8px; width:100%">× 12 als Jahresbrutto übernehmen</button>
+          </div>
+          <div>
+            <div class="income-input-row"><span>€</span><input type="number" id="est-monatsnetto" step="0.01" min="0" placeholder="Monatsnetto"></div>
+            <button class="save-btn secondary" id="est-netto-btn" type="button" style="margin-top:8px; width:100%">Brutto schätzen &amp; übernehmen</button>
+          </div>
+        </div>
+        <p class="save-hint" id="est-brutto-calc-hint" style="margin-top:8px"></p>
       </div>
 
       <div class="field full" style="grid-column:1/-1">
@@ -355,8 +419,39 @@
 
     <div class="step" data-step="3">
       <h2 class="step-title">Arbeitslohn &amp; einbehaltene Steuern</h2>
-      <p class="step-help">Diese Werte stehen alle auf deiner Lohnsteuerbescheinigung (von deinem Arbeitgeber, meist elektronisch übermittelt).</p>
+      <p class="step-help">Diese Werte stehen alle auf deiner Lohnsteuerbescheinigung (von deinem Arbeitgeber, meist elektronisch übermittelt). Kennst du nur dein Monatsgehalt? Der Rechner unten hilft.</p>
       <div class="form-grid">
+        <div class="field">
+          <label for="ewz-steuerklasse">Steuerklasse</label>
+          <select id="ewz-steuerklasse" class="select-input">
+            <option value="1">I — Ledig</option>
+            <option value="2">II — Alleinerziehend</option>
+            <option value="3">III — Verheiratet, höheres Einkommen</option>
+            <option value="4">IV — Verheiratet, ähnliches Einkommen</option>
+            <option value="5">V — Verheiratet, niedrigeres Einkommen</option>
+            <option value="6">VI — Zweiter Job</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="check-row" style="margin-top:22px">
+            <input type="checkbox" id="ewz-svpflichtig" checked>
+            <span>Sozialversicherungspflichtig</span>
+          </label>
+        </div>
+        <div class="field full">
+          <label>Brutto-Rechner <span style="text-transform:none; letter-spacing:0; color:var(--ink-soft); font-size:9.5px;">— optional, füllt das Jahresbrutto unten automatisch</span></label>
+          <div class="bescheid-grid">
+            <div>
+              <div class="income-input-row"><span>€</span><input type="number" id="ewz-monatsbrutto" step="0.01" min="0" placeholder="Monatsbrutto"></div>
+              <button class="save-btn secondary" id="ewz-brutto-x12-btn" type="button" style="margin-top:8px; width:100%">× 12 übernehmen</button>
+            </div>
+            <div>
+              <div class="income-input-row"><span>€</span><input type="number" id="ewz-monatsnetto" step="0.01" min="0" placeholder="Monatsnetto"></div>
+              <button class="save-btn secondary" id="ewz-netto-btn" type="button" style="margin-top:8px; width:100%">Brutto schätzen</button>
+            </div>
+          </div>
+          <p class="save-hint" id="ewz-brutto-calc-hint" style="margin-top:8px"></p>
+        </div>
         <div class="field full">
           <label for="ewz-brutto">Bruttoarbeitslohn (Jahr)</label>
           <div class="income-input-row"><span>€</span><input type="number" id="ewz-brutto" step="0.01" min="0" placeholder="0,00"></div>
@@ -479,6 +574,7 @@
 
 </div>
 
+<button class="bot-btn" id="bot-btn" type="button" title="Einkommensteuer-Assistent aktivieren">🤖</button>
 <button class="help-btn" id="help-btn" type="button" title="Anleitung zur privaten Steuererklärung">?</button>
 
 <div class="help-overlay" id="help-overlay">
@@ -522,6 +618,7 @@
             <li><strong>ELSTER (kostenlos):</strong> mein.elster.de — direkt bei der Finanzverwaltung, offizieller Weg</li>
             <li><strong>Steuer-Apps (ca. 30–40 €):</strong> Taxfix, WISO Steuer, smartsteuer — geführter Dialog, sendet über ELSTER-Schnittstelle</li>
             <li><strong>Steuerberater (ca. 150–800 €):</strong> übernimmt Prüfung, Einreichung und Haftung</li>
+            <li><strong>Papierformular:</strong> Anders als bei Gewerbe-/Selbstständigen-Einkünften besteht für reine Arbeitnehmer-Einkünfte (§25 Abs. 4 EStG i. V. m. §46 Abs. 2 EStG) meist <em>keine</em> Pflicht zur elektronischen Abgabe — die Vordrucke ESt 1A und Anlage N können beim Finanzamt angefordert und per Post eingereicht werden. Sobald zusätzlich Gewinneinkünfte (z. B. aus einem Gewerbe) über 410 € vorliegen, wird ELSTER in der Regel wieder Pflicht.</li>
           </ul>
         </div>
       </div>
@@ -550,6 +647,7 @@
           <ul>
             <li>Keine rechtsverbindliche Steuerberatung</li>
             <li>Keine tatsächliche Übermittlung ans Finanzamt (kein ELSTER-Zugang)</li>
+            <li>Steuerklassen- und Brutto/Netto-Rechner sind vereinfachte Näherungen, keine exakte Lohnsteuerberechnung nach dem amtlichen Programmablaufplan</li>
             <li>Vorsorgeaufwendungen ohne Höchstbetragsgrenzen nach §10 EStG (vereinfachte Schätzung)</li>
             <li>Keine Berücksichtigung von außergewöhnlichen Belastungen (§33 EStG) oder haushaltsnahen Dienstleistungen (§35a EStG)</li>
             <li>Kein amtlicher Steuerbescheid — nur eine Schätzung zur Vorbereitung</li>
@@ -599,6 +697,16 @@
   const helpOverlay = document.getElementById('help-overlay');
   const helpClose = document.getElementById('help-close');
   helpBtn.addEventListener('click', () => { helpOverlay.classList.add('open'); });
+
+  document.getElementById('bot-btn').addEventListener('click', () => {
+    const wizardCard = document.querySelector('.wizard-card');
+    if(!wizardCard) return;
+    const targetTop = Math.max(0, wizardCard.getBoundingClientRect().top + window.scrollY - 16);
+    window.scrollTo({ top: targetTop, behavior: 'smooth' });
+    wizardCard.style.transition = 'box-shadow 0.3s ease';
+    wizardCard.style.boxShadow = '0 0 0 3px var(--brass-deep)';
+    setTimeout(() => { wizardCard.style.boxShadow = ''; }, 1400);
+  });
   helpClose.addEventListener('click', () => { helpOverlay.classList.remove('open'); });
   helpOverlay.addEventListener('click', (ev) => { if(ev.target === helpOverlay) helpOverlay.classList.remove('open'); });
   document.querySelectorAll('.help-q').forEach(q => {
@@ -631,6 +739,62 @@
     const voll = est * 0.055;
     const milderung = (est - freigrenze) * 0.119;
     return Math.round(Math.min(voll, milderung) * 100) / 100;
+  }
+
+  // ===================== Steuerklassen-Näherung (Monats-Lohnsteuer) =====================
+  // WICHTIG: Dies ist eine vereinfachte Annäherung an die Steuerklassen-Systematik, KEINE exakte
+  // Nachbildung des amtlichen Programmablaufplans zur Lohnsteuerberechnung. Für die finale
+  // Jahressteuerschuld (weiter unten) ist die Steuerklasse ohnehin irrelevant — sie beeinflusst nur,
+  // wie viel während des Jahres monatlich einbehalten wird, nicht die tatsächliche Jahressteuer.
+  const ENTLASTUNG_ALLEINERZIEHEND = 4260;
+  function monatlicheLohnsteuerNaeherung(monatsbrutto, steuerklasse, kinderAnzahl){
+    const jahresbruttoApprox = monatsbrutto * 12;
+    // grobe Vorsorgepauschale + Werbungskosten-/Sonderausgaben-Pauschale nachgebildet
+    const pauschaleAbzuege = WERBUNGSKOSTEN_PAUSCHBETRAG + 36 + jahresbruttoApprox * 0.14;
+    const basis = Math.max(0, jahresbruttoApprox - pauschaleAbzuege);
+    let jahresLst;
+    switch(String(steuerklasse)){
+      case '2': {
+        const entlastung = ENTLASTUNG_ALLEINERZIEHEND + Math.max(0, kinderAnzahl - 1) * 240;
+        jahresLst = einkommensteuer2026(Math.max(0, basis - entlastung));
+        break;
+      }
+      case '3':
+        jahresLst = 2 * einkommensteuer2026(basis / 2);
+        break;
+      case '5':
+        jahresLst = einkommensteuer2026(basis + GRUNDFREIBETRAG_2026) - einkommensteuer2026(GRUNDFREIBETRAG_2026);
+        break;
+      case '6':
+        jahresLst = einkommensteuer2026(basis + 2 * GRUNDFREIBETRAG_2026) - einkommensteuer2026(2 * GRUNDFREIBETRAG_2026);
+        break;
+      default: // 1, 4
+        jahresLst = einkommensteuer2026(basis);
+    }
+    return Math.max(0, jahresLst / 12);
+  }
+
+  function monatlichesNettoNaeherung(monatsbrutto, opts){
+    const lst = monatlicheLohnsteuerNaeherung(monatsbrutto, opts.steuerklasse, opts.kinderAnzahl);
+    const jahresLstFreigrenze = opts.steuerklasse === '3' ? 39900/12 : 19950/12;
+    const soli = solidaritaetszuschlag(lst, jahresLstFreigrenze);
+    const kSatz = opts.kirchensteuer ? (parseFloat(opts.kirchensteuerSatz) || 9) : 0;
+    const kist = Math.round(lst * (kSatz / 100) * 100) / 100;
+    // Sozialversicherung: grobe Näherung des Arbeitnehmeranteils 2026 (RV 9,3 % + ALV 1,3 % +
+    // KV inkl. Ø Zusatzbeitrag ~8,55 % + PV ~2,3 %) — variiert je nach Krankenkasse & Kinderzahl.
+    const svRate = opts.svPflichtig ? 0.2065 : 0;
+    const sv = monatsbrutto * svRate;
+    return monatsbrutto - lst - soli - kist - sv;
+  }
+
+  function schaetzeBruttoAusNetto(nettoZiel, opts){
+    let lo = 0, hi = nettoZiel * 2.2;
+    for(let i = 0; i < 40; i++){
+      const mid = (lo + hi) / 2;
+      const netto = monatlichesNettoNaeherung(mid, opts);
+      if(netto < nettoZiel) lo = mid; else hi = mid;
+    }
+    return Math.round(((lo + hi) / 2) * 100) / 100;
   }
 
   // Gemeinsame Berechnung für Schnellrechner UND Assistent
@@ -697,6 +861,8 @@
   const estEls = {
     familienstand: document.getElementById('est-familienstand'),
     kinder: document.getElementById('est-kinder'),
+    steuerklasse: document.getElementById('est-steuerklasse'),
+    svpflichtig: document.getElementById('est-svpflichtig'),
     brutto: document.getElementById('est-brutto'),
     lst: document.getElementById('est-lst'),
     lstSoli: document.getElementById('est-lst-soli'),
@@ -714,10 +880,51 @@
     recalcQuick();
   });
 
+  const estMonatsbruttoInput = document.getElementById('est-monatsbrutto');
+  const estMonatsnettoInput = document.getElementById('est-monatsnetto');
+  const estBruttoCalcHint = document.getElementById('est-brutto-calc-hint');
+
+  document.getElementById('est-brutto-x12-btn').addEventListener('click', () => {
+    const monat = parseFloat(String(estMonatsbruttoInput.value).replace(',', '.')) || 0;
+    if(monat <= 0){
+      estBruttoCalcHint.textContent = 'Bitte zuerst ein Monatsbrutto eintragen.';
+      estBruttoCalcHint.style.color = 'var(--danger)';
+      return;
+    }
+    estEls.brutto.value = (monat * 12).toFixed(2);
+    estBruttoCalcHint.textContent = formatEUR(monat) + ' × 12 = ' + formatEUR(monat * 12) + ' als Jahresbrutto übernommen.';
+    estBruttoCalcHint.style.color = 'var(--sage)';
+    recalcQuick();
+  });
+
+  document.getElementById('est-netto-btn').addEventListener('click', () => {
+    const netto = parseFloat(String(estMonatsnettoInput.value).replace(',', '.')) || 0;
+    if(netto <= 0){
+      estBruttoCalcHint.textContent = 'Bitte zuerst ein Monatsnetto eintragen.';
+      estBruttoCalcHint.style.color = 'var(--danger)';
+      return;
+    }
+    const opts = {
+      steuerklasse: estEls.steuerklasse.value,
+      kinderAnzahl: parseInt(estEls.kinder.value, 10) || 0,
+      kirchensteuer: estEls.kirchensteuer.checked,
+      kirchensteuerSatz: estEls.kirchensteuerSatz.value,
+      svPflichtig: estEls.svpflichtig.checked
+    };
+    const bruttoMonat = schaetzeBruttoAusNetto(netto, opts);
+    estMonatsbruttoInput.value = bruttoMonat.toFixed(2);
+    estEls.brutto.value = (bruttoMonat * 12).toFixed(2);
+    estBruttoCalcHint.textContent = 'Geschätztes Monatsbrutto: ' + formatEUR(bruttoMonat) + ' → Jahresbrutto ' + formatEUR(bruttoMonat * 12) + ' übernommen. Näherung, keine exakte Lohnabrechnung.';
+    estBruttoCalcHint.style.color = 'var(--sage)';
+    recalcQuick();
+  });
+
   function collectEstFormData(){
     return {
       familienstand: estEls.familienstand.value,
       kinder: estEls.kinder.value,
+      steuerklasse: estEls.steuerklasse.value,
+      svpflichtig: estEls.svpflichtig.checked,
       brutto: estEls.brutto.value,
       lst: estEls.lst.value,
       lstSoli: estEls.lstSoli.value,
@@ -734,6 +941,8 @@
   function applyEstFormData(d){
     estEls.familienstand.value = d.familienstand || 'ledig';
     estEls.kinder.value = d.kinder || '';
+    estEls.steuerklasse.value = d.steuerklasse || '1';
+    estEls.svpflichtig.checked = d.svpflichtig !== false;
     estEls.brutto.value = d.brutto || '';
     estEls.lst.value = d.lst || '';
     estEls.lstSoli.value = d.lstSoli || '';
@@ -818,6 +1027,8 @@
     famLedig: document.getElementById('ewz-fam-ledig'),
     famVerheiratet: document.getElementById('ewz-fam-verheiratet'),
     kinder: document.getElementById('ewz-kinder'),
+    steuerklasse: document.getElementById('ewz-steuerklasse'),
+    svpflichtig: document.getElementById('ewz-svpflichtig'),
     brutto: document.getElementById('ewz-brutto'),
     lst: document.getElementById('ewz-lst'),
     lstSoli: document.getElementById('ewz-lst-soli'),
@@ -847,11 +1058,47 @@
     hint.textContent = 'Angesetzt werden: ' + formatEUR(used) + (val <= WERBUNGSKOSTEN_PAUSCHBETRAG ? ' (Pauschbetrag, da höher als deine Eingabe)' : ' (deine tatsächlichen Werbungskosten)');
   }
 
+  const ewzMonatsbruttoInput = document.getElementById('ewz-monatsbrutto');
+  const ewzMonatsnettoInput = document.getElementById('ewz-monatsnetto');
+  const ewzBruttoCalcHint = document.getElementById('ewz-brutto-calc-hint');
+  document.getElementById('ewz-brutto-x12-btn').addEventListener('click', () => {
+    const monat = parseFloat(String(ewzMonatsbruttoInput.value).replace(',', '.')) || 0;
+    if(monat <= 0){
+      ewzBruttoCalcHint.textContent = 'Bitte zuerst ein Monatsbrutto eintragen.';
+      ewzBruttoCalcHint.style.color = 'var(--danger)';
+      return;
+    }
+    ewzEls.brutto.value = (monat * 12).toFixed(2);
+    ewzBruttoCalcHint.textContent = formatEUR(monat) + ' × 12 = ' + formatEUR(monat * 12) + ' übernommen.';
+    ewzBruttoCalcHint.style.color = 'var(--sage)';
+  });
+  document.getElementById('ewz-netto-btn').addEventListener('click', () => {
+    const netto = parseFloat(String(ewzMonatsnettoInput.value).replace(',', '.')) || 0;
+    if(netto <= 0){
+      ewzBruttoCalcHint.textContent = 'Bitte zuerst ein Monatsnetto eintragen.';
+      ewzBruttoCalcHint.style.color = 'var(--danger)';
+      return;
+    }
+    const opts = {
+      steuerklasse: ewzEls.steuerklasse.value,
+      kinderAnzahl: parseInt(ewzEls.kinder.value, 10) || 0,
+      kirchensteuer: ewzEls.kirchensteuer.checked,
+      kirchensteuerSatz: ewzEls.kirchensteuerSatz.value,
+      svPflichtig: ewzEls.svpflichtig.checked
+    };
+    const bruttoMonat = schaetzeBruttoAusNetto(netto, opts);
+    ewzMonatsbruttoInput.value = bruttoMonat.toFixed(2);
+    ewzEls.brutto.value = (bruttoMonat * 12).toFixed(2);
+    ewzBruttoCalcHint.textContent = 'Geschätztes Monatsbrutto: ' + formatEUR(bruttoMonat) + ' → Jahresbrutto ' + formatEUR(bruttoMonat * 12) + ' übernommen. Näherung.';
+    ewzBruttoCalcHint.style.color = 'var(--sage)';
+  });
+
   function collectEwzFormData(){
     return {
       name: ewzEls.name.value, steuerid: ewzEls.steuerid.value, finanzamt: ewzEls.finanzamt.value, anschrift: ewzEls.anschrift.value,
       familienstand: ewzEls.famVerheiratet.checked ? 'verheiratet' : 'ledig',
       kinder: ewzEls.kinder.value,
+      steuerklasse: ewzEls.steuerklasse.value, svpflichtig: ewzEls.svpflichtig.checked,
       brutto: ewzEls.brutto.value, lst: ewzEls.lst.value, lstSoli: ewzEls.lstSoli.value, lstKist: ewzEls.lstKist.value,
       weitere: ewzEls.weitere.value,
       werbungskosten: ewzEls.werbungskosten.value,
@@ -866,6 +1113,8 @@
     ewzEls.finanzamt.value = d.finanzamt || ''; ewzEls.anschrift.value = d.anschrift || '';
     if(d.familienstand === 'verheiratet'){ ewzEls.famVerheiratet.checked = true; } else { ewzEls.famLedig.checked = true; }
     ewzEls.kinder.value = d.kinder || '';
+    ewzEls.steuerklasse.value = d.steuerklasse || '1';
+    ewzEls.svpflichtig.checked = d.svpflichtig !== false;
     ewzEls.brutto.value = d.brutto || ''; ewzEls.lst.value = d.lst || '';
     ewzEls.lstSoli.value = d.lstSoli || ''; ewzEls.lstKist.value = d.lstKist || '';
     ewzEls.weitere.value = d.weitere || '';
@@ -919,6 +1168,7 @@
     });
   }
 
+  let wizardEverNavigated = false;
   function goToStep(n){
     persistWizardStep();
     currentStep = Math.max(0, Math.min(TOTAL_STEPS - 1, n));
@@ -934,7 +1184,10 @@
       document.getElementById('ewz-final-amount').style.color = r.differenz >= 0 ? 'var(--sage)' : 'var(--danger)';
       document.getElementById('ewz-final-label').textContent = r.differenz >= 0 ? 'Erstattung' : 'Nachzahlung';
     }
-    window.scrollTo({ top: document.querySelector('.wizard-card').offsetTop - 20, behavior: 'smooth' });
+    if(wizardEverNavigated){
+      window.scrollTo({ top: document.querySelector('.wizard-card').offsetTop - 20, behavior: 'smooth' });
+    }
+    wizardEverNavigated = true;
   }
   nextBtn.addEventListener('click', () => goToStep(currentStep + 1));
   backBtn.addEventListener('click', () => goToStep(currentStep - 1));
@@ -944,74 +1197,121 @@
     const r = computeEst(collectEwzFormData());
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-    const marginX = 20;
-    let y = 24;
+    const marginX = 18;
+    const pageW = 210;
+    const boxW = pageW - marginX * 2;
+    let y = 20;
 
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
-    doc.text('Budget-Ledger — Einkommensteuererklärung ' + estViewYear, marginX, y); y += 6;
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(120);
-    doc.text('Unverbindliche Schätzung, keine Einreichung beim Finanzamt. Erstellt am ' + new Date().toLocaleDateString('de-DE') + '.', marginX, y);
-    doc.setTextColor(0); y += 14;
+    function ensureSpace(need){
+      if(y + need > 280){ doc.addPage(); y = 20; }
+    }
+    function sectionHeader(title){
+      ensureSpace(16);
+      doc.setFillColor(230, 230, 235);
+      doc.rect(marginX, y, boxW, 8, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(20);
+      doc.text(title, marginX + 3, y + 5.6);
+      y += 8;
+    }
+    // Formularfeld: Label links, Wert rechtsbündig in eigener Box-Zeile, mit dünner Trennlinie
+    function formRow(label, value, opts){
+      opts = opts || {};
+      ensureSpace(8);
+      doc.setDrawColor(190); doc.setLineWidth(0.15);
+      doc.rect(marginX, y, boxW, 7);
+      doc.line(marginX + 118, y, marginX + 118, y + 7);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(40);
+      doc.text(label, marginX + 3, y + 4.8);
+      doc.setFont('helvetica', opts.bold ? 'bold' : 'normal'); doc.setFontSize(9.5);
+      doc.setTextColor(opts.color || 20);
+      doc.text(String(value), marginX + boxW - 3, y + 4.8, { align: 'right' });
+      doc.setTextColor(20);
+      y += 7;
+    }
 
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
-    doc.text('1. Persönliche Angaben', marginX, y); y += 8;
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
-    [['Name', ewzEls.name.value || '—'], ['Finanzamt', ewzEls.finanzamt.value || '—'],
-     ['Anschrift', ewzEls.anschrift.value || '—'], ['Steuer-ID', ewzEls.steuerid.value || '—'],
-     ['Familienstand', ewzEls.famVerheiratet.checked ? 'Verheiratet (Splitting)' : 'Ledig'],
-     ['Kinder', ewzEls.kinder.value || '0']
-    ].forEach(([k,v]) => { doc.text(k, marginX, y); doc.text(String(v), marginX + 70, y); y += 6; });
+    // ---------- Kopf ----------
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+    doc.text('Einkommensteuererklärung ' + estViewYear, marginX, y); y += 6;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(120);
+    doc.text('Vorbereitungsunterlage aus Budget-Ledger — kein amtliches Formular. Erstellt am ' + new Date().toLocaleDateString('de-DE') + '.', marginX, y);
+    doc.setTextColor(20); y += 10;
+
+    // ---------- Hauptvordruck ESt 1A: Angaben zur Person ----------
+    sectionHeader('Hauptvordruck ESt 1 A — Angaben zur Person');
+    formRow('Name', ewzEls.name.value || '—');
+    formRow('Anschrift', ewzEls.anschrift.value || '—');
+    formRow('Steuer-Identifikationsnummer', ewzEls.steuerid.value || '—');
+    formRow('Zuständiges Finanzamt', ewzEls.finanzamt.value || '—');
+    formRow('Familienstand', ewzEls.famVerheiratet.checked ? 'Verheiratet — Splittingtarif' : 'Ledig — Einzelveranlagung');
+    formRow('Steuerklasse', 'Klasse ' + ['','I','II','III','IV','V','VI'][parseInt(ewzEls.steuerklasse.value,10)]);
+    formRow('Anzahl Kinder (Kinderfreibetrag)', ewzEls.kinder.value || '0');
+    formRow('Kirchensteuerpflichtig', ewzEls.kirchensteuer.checked ? ('Ja, ' + ewzEls.kirchensteuerSatz.value + ' %') : 'Nein');
+    y += 4;
+
+    // ---------- Anlage N ----------
+    sectionHeader('Anlage N — Einkünfte aus nichtselbständiger Arbeit');
+    formRow('Bruttoarbeitslohn lt. Lohnsteuerbescheinigung', formatEUR(r.brutto));
+    formRow('Einbehaltene Lohnsteuer', formatEUR(parseFloat(ewzEls.lst.value) || 0));
+    formRow('Einbehaltener Solidaritätszuschlag', formatEUR(parseFloat(ewzEls.lstSoli.value) || 0));
+    formRow('Einbehaltene Kirchensteuer', formatEUR(parseFloat(ewzEls.lstKist.value) || 0));
+    formRow('Werbungskosten (Arbeitnehmer-Pauschbetrag bzw. höhere Nachweise)', formatEUR(r.werbungskosten));
+    formRow('Einkünfte aus nichtselbständiger Arbeit', formatEUR(r.einkuenfteNichtselbst), { bold: true });
+    y += 4;
+
+    if(r.weitere > 0){
+      sectionHeader('Weitere Einkünfte (Anlage KAP / Anlage V / Sonstiges)');
+      formRow('Weitere Einkünfte gesamt', formatEUR(r.weitere));
+      y += 4;
+    }
+
+    // ---------- Anlage Vorsorgeaufwand & Sonderausgaben ----------
+    sectionHeader('Anlage Vorsorgeaufwand — Sonderausgaben');
+    formRow('Vorsorgeaufwendungen (Kranken-/Pflege-/Rentenversicherung)', formatEUR(parseFloat(ewzEls.vorsorge.value) || 0));
+    formRow('Spenden & Mitgliedsbeiträge', formatEUR(parseFloat(ewzEls.spenden.value) || 0));
+    formRow('Sonderausgaben gesamt', formatEUR(r.sonderausgaben), { bold: true });
+    y += 4;
+
+    // ---------- Ermittlung zvE ----------
+    sectionHeader('Ermittlung des zu versteuernden Einkommens');
+    formRow('Summe der Einkünfte', formatEUR(r.summeEinkuenfte));
+    formRow('abzgl. Sonderausgaben', '− ' + formatEUR(r.sonderausgaben));
+    formRow('abzgl. Kinderfreibetrag', '− ' + formatEUR(r.kinderfreibetrag));
+    formRow('Zu versteuerndes Einkommen (zvE)', formatEUR(r.zve), { bold: true, color: '#1c3fa0' });
+    y += 4;
+
+    // ---------- Steuerberechnung ----------
+    sectionHeader('Steuerberechnung');
+    formRow('Einkommensteuer' + (r.verheiratet ? ' (§32a EStG, Splittingtarif)' : ' (§32a EStG, Grundtarif)'), formatEUR(r.est));
+    formRow('Solidaritätszuschlag', formatEUR(r.soli));
+    if(r.kist > 0) formRow('Kirchensteuer', formatEUR(r.kist));
+    formRow('Festzusetzende Steuer gesamt', formatEUR(r.gesamt), { bold: true });
+    formRow('Bereits einbehalten (Lohnsteuer + Soli + KiSt)', formatEUR(r.einbehalten));
+    formRow(r.differenz >= 0 ? 'Voraussichtliche Erstattung' : 'Voraussichtliche Nachzahlung', formatEUR(Math.abs(r.differenz)),
+      { bold: true, color: r.differenz >= 0 ? '#1c9868' : '#c22638' });
     y += 8;
 
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
-    doc.text('2. Einkünfte & Abzüge', marginX, y); y += 8;
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
-    [['Bruttoarbeitslohn', formatEUR(r.brutto)], ['Werbungskosten (angesetzt)', formatEUR(r.werbungskosten)],
-     ['Einkünfte aus nichtselbst. Arbeit', formatEUR(r.einkuenfteNichtselbst)],
-     ['Weitere Einkünfte', formatEUR(r.weitere)], ['Summe der Einkünfte', formatEUR(r.summeEinkuenfte)],
-     ['Sonderausgaben (Vorsorge+Spenden)', formatEUR(r.sonderausgaben)],
-     ['Kinderfreibetrag', formatEUR(r.kinderfreibetrag)]
-    ].forEach(([k,v]) => { doc.text(k, marginX, y); doc.text(String(v), marginX + 150, y, { align: 'right' }); y += 6; });
-    y += 2; doc.line(marginX, y, marginX + 170, y); y += 7;
-    doc.setFont('helvetica', 'bold');
-    doc.text('Zu versteuerndes Einkommen', marginX, y); doc.text(formatEUR(r.zve), marginX + 150, y, { align: 'right' });
-    y += 14;
-
-    doc.setFontSize(12); doc.text('3. Steuerschätzung', marginX, y); y += 8;
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
-    doc.text('Einkommensteuer' + (r.verheiratet ? ' (§32a EStG, Splitting)' : ' (§32a EStG)'), marginX, y);
-    doc.text(formatEUR(r.est), marginX + 150, y, { align: 'right' }); y += 6;
-    doc.text('Solidaritätszuschlag', marginX, y); doc.text(formatEUR(r.soli), marginX + 150, y, { align: 'right' }); y += 6;
-    if(r.kist > 0){ doc.text('Kirchensteuer (' + r.kSatz + ' %)', marginX, y); doc.text(formatEUR(r.kist), marginX + 150, y, { align: 'right' }); y += 6; }
-    y += 2; doc.line(marginX, y, marginX + 170, y); y += 7;
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-    doc.text('Steuerschuld gesamt', marginX, y); doc.text(formatEUR(r.gesamt), marginX + 150, y, { align: 'right' }); y += 8;
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
-    doc.text('Bereits einbehalten (LSt+Soli+KiSt)', marginX, y); doc.text(formatEUR(r.einbehalten), marginX + 150, y, { align: 'right' }); y += 8;
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-    doc.text(r.differenz >= 0 ? 'Voraussichtliche Erstattung' : 'Voraussichtliche Nachzahlung', marginX, y);
-    doc.text(formatEUR(Math.abs(r.differenz)), marginX + 150, y, { align: 'right' });
-    y += 16;
-
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
-    doc.text('4. Checkliste für die Abgabe', marginX, y); y += 8;
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    ensureSpace(50);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(20);
+    doc.text('Checkliste für die Abgabe', marginX, y); y += 7;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
     [
-      'Bei ELSTER anmelden (elster.de) oder Termin beim Steuerberater vereinbaren',
+      'Bei mein.elster.de anmelden — oder als reine/r Arbeitnehmer/in (ohne Gewinneinkünfte) papierhaft beim Finanzamt einreichen',
       'Hauptvordruck ESt 1A ausfüllen',
-      'Anlage N (nichtselbständige Arbeit) mit Bruttolohn & Werbungskosten ausfüllen',
+      'Anlage N mit Bruttolohn & Werbungskosten ausfüllen',
       'Ggf. Anlage KAP oder Anlage V ergänzen',
       'Anlage Vorsorgeaufwand ausfüllen',
       'Frist beachten — regulär 31. Juli des Folgejahres',
-      'Belege & Lohnsteuerbescheinigung bereithalten'
+      'Lohnsteuerbescheinigung & Belege beilegen bzw. bereithalten'
     ].forEach(item => {
-      const lines = doc.splitTextToSize('• ' + item, 170);
-      doc.text(lines, marginX, y); y += lines.length * 5.2;
+      ensureSpace(6);
+      const lines = doc.splitTextToSize('• ' + item, boxW - 4);
+      doc.text(lines, marginX + 2, y); y += lines.length * 4.6;
     });
-    y += 8;
+    y += 6;
 
-    doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(120);
-    const disclaimer = 'Diese Unterlage ist eine unverbindliche Orientierung zur Vorbereitung deiner privaten Einkommensteuererklärung. Vorsorgeaufwendungen sind ohne Höchstbetragsgrenzen nach §10 EStG vereinfacht angesetzt, außergewöhnliche Belastungen und haushaltsnahe Dienstleistungen sind nicht berücksichtigt. Sie ersetzt keine Steuererklärung, keinen Steuerberater und keinen amtlichen Steuerbescheid des Finanzamts. Die tatsächliche Einreichung erfolgt ausschließlich über ELSTER oder einen Steuerberater.';
+    ensureSpace(20);
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(120);
+    const disclaimer = 'Diese Unterlage ist eine unverbindliche Orientierung zur Vorbereitung — kein amtliches Formular und kein Ersatz für die echten Vordrucke oder ELSTER. Steuerklasse und Brutto/Netto-Umrechnung sind vereinfachte Näherungen, keine exakte Lohnsteuerberechnung. Vorsorgeaufwendungen sind ohne Höchstbetragsgrenzen nach §10 EStG vereinfacht angesetzt, außergewöhnliche Belastungen und haushaltsnahe Dienstleistungen sind nicht berücksichtigt. Ersetzt keine Steuerberatung und keinen amtlichen Steuerbescheid.';
     const dLines = doc.splitTextToSize(disclaimer, 170);
     doc.text(dLines, marginX, y);
 

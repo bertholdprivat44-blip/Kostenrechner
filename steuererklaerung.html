@@ -78,6 +78,22 @@
     z-index: 30;
   }
   .help-btn:hover{ background: var(--brass); }
+  .bot-btn{
+    position: fixed;
+    bottom: 82px;
+    right: 26px;
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: var(--card);
+    border: 1.5px solid var(--brass-deep);
+    font-size: 21px;
+    cursor: pointer;
+    box-shadow: 0 12px 26px -8px rgba(0,0,0,0.6);
+    z-index: 30;
+    display:flex; align-items:center; justify-content:center;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+  .bot-btn:hover{ transform: scale(1.08); border-color: var(--brass); }
 
   .help-overlay{
     display:none;
@@ -128,7 +144,8 @@
   .help-a li{ margin-bottom: 5px; }
   .help-a strong{ color: var(--ink); }
   .help-a a{ color: var(--brass-deep); }
-  .help-a table{ width:100%; border-collapse: collapse; margin-top: 8px; }
+  .help-a table{ width:100%; border-collapse: collapse; margin-top: 8px; table-layout: fixed; }
+  .help-a table th, .help-a table td{ overflow-wrap: break-word; word-break: break-word; }
   .help-a table th{ text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color: var(--ink-soft); padding: 4px 8px 4px 0; border-bottom: 1px solid var(--card-line); }
   .help-a table td{ padding: 6px 8px 6px 0; border-bottom: 1px dashed var(--card-line); }
   .wizard-card{ width:100%; max-width: 660px; }
@@ -193,10 +210,11 @@
   .wizard-nav{ display:flex; justify-content:space-between; gap:12px; padding: 22px 32px 30px; }
   .wizard-nav .save-btn{ width:auto; flex:1; }
   .review-block{ margin: 0 32px 20px; border:1px solid var(--card-line); padding: 16px 18px; font-size: 12px; line-height:1.8; }
-  .review-block .rline{ display:flex; justify-content:space-between; gap: 10px; }
+  .review-block .rline{ display:flex; flex-wrap:wrap; justify-content:space-between; gap: 4px 10px; overflow-wrap:break-word; word-break:break-word; }
+  .review-block .rline > span:first-child{ min-width:0; }
   .review-block .rgroup{ font-family:'Fraunces', serif; font-size: 13px; color: var(--brass-deep); margin: 10px 0 4px; }
   .review-block .redit{ background:none; border:none; color: var(--brass-deep); font-size:10.5px; text-decoration:underline; cursor:pointer; padding:0; white-space:nowrap; }
-  .checklist{ margin: 0 32px 20px; font-size: 12px; line-height:2; color: var(--ink-soft); }
+  .checklist{ margin: 0 32px 20px; font-size: 12px; line-height:2; color: var(--ink-soft); overflow-wrap:break-word; word-break:break-word; }
   .checklist li{ margin-left: 18px; }
   .done-badge{ text-align:center; padding: 30px 32px 10px; }
   .wz-asset-row{
@@ -242,6 +260,23 @@
   .bescheid-grid .field.small label{ font-size: 9.5px; }
   #gw-bescheid-tbody td.diff-ok{ color: var(--sage); }
   #gw-bescheid-tbody td.diff-warn{ color: var(--danger); }
+
+  @media (max-width: 520px){
+    .form-grid{ grid-template-columns: 1fr; }
+    .bescheid-grid{ grid-template-columns: 1fr; }
+    .month-row, .month-grid-header{
+      grid-template-columns: 44px 1fr 1fr 70px; gap: 6px; font-size: 90%;
+    }
+    .month-row .m-label{ font-size: 11.5px; }
+    .month-row .m-net{ font-size: 11.5px; }
+    .help-modal-head{ padding: 22px 18px 14px; }
+    .help-body{ padding: 6px 18px 24px; }
+    .help-q{ font-size: 13.5px; gap: 8px; }
+    .review-block{ margin: 0 12px 20px; padding: 14px 14px; }
+    .checklist{ margin: 0 12px 20px; padding-left: 4px; }
+    .checklist li{ margin-left: 12px; }
+    .step{ padding: 20px 18px 6px; }
+  }
 </style>
 </head>
 <body>
@@ -809,6 +844,7 @@
 
 </div>
 
+<button class="bot-btn" id="bot-btn" type="button" title="Steuer-Assistent aktivieren">🤖</button>
 <button class="help-btn" id="help-btn" type="button" title="Anleitung zur Gewerbe-Steuerabgabe">?</button>
 
 <div class="help-overlay" id="help-overlay">
@@ -958,6 +994,16 @@
   const helpOverlay = document.getElementById('help-overlay');
   const helpClose = document.getElementById('help-close');
   helpBtn.addEventListener('click', () => { helpOverlay.classList.add('open'); });
+
+  document.getElementById('bot-btn').addEventListener('click', () => {
+    const wizardCard = document.querySelector('.wizard-card');
+    if(!wizardCard) return;
+    const targetTop = Math.max(0, wizardCard.getBoundingClientRect().top + window.scrollY - 16);
+    window.scrollTo({ top: targetTop, behavior: 'smooth' });
+    wizardCard.style.transition = 'box-shadow 0.3s ease';
+    wizardCard.style.boxShadow = '0 0 0 3px var(--brass-deep)';
+    setTimeout(() => { wizardCard.style.boxShadow = ''; }, 1400);
+  });
   helpClose.addEventListener('click', () => { helpOverlay.classList.remove('open'); });
   helpOverlay.addEventListener('click', (ev) => {
     if(ev.target === helpOverlay) helpOverlay.classList.remove('open');
@@ -2032,6 +2078,7 @@
     if(s.customRate) customRateInput.value = s.customRate;
   }
 
+  let wizardEverNavigated = false;
   function goToStep(n){
     document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
     document.querySelector('.step[data-step="' + n + '"]').classList.add('active');
@@ -2054,7 +2101,12 @@
     if(n === 6) buildMonthGrid(yearSelect.value);
     if(n === 7){ syncCategoriesFromMonths(); updateAfaSum(); }
     if(n === 13) renderReview();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if(wizardEverNavigated){
+      const wizardCard = document.querySelector('.wizard-card');
+      const targetTop = wizardCard ? Math.max(0, wizardCard.getBoundingClientRect().top + window.scrollY - 16) : 0;
+      window.scrollTo({ top: targetTop, behavior: 'smooth' });
+    }
+    wizardEverNavigated = true;
   }
 
   function persistStepData(){
