@@ -1,0 +1,2519 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<script>
+  (function(){
+    try{
+      var t = localStorage.getItem('sparrechner_theme_v1');
+      if(t && t !== 'midnight') document.documentElement.setAttribute('data-theme', t);
+    }catch(e){}
+  })();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budget-Ledger — Steuererklärung</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#04060c">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sparrechner">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .gw-table{ width:100%; border-collapse: collapse; font-size: 12px; }
+
+  .gw-ausgabe-row{
+    display:grid; grid-template-columns: 1fr 110px 30px; gap: 10px; align-items:end;
+    padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px dashed var(--card-line);
+  }
+  @media (max-width: 480px){
+    .gw-ausgabe-row{
+      grid-template-columns: 1fr 30px;
+      grid-template-areas: "select remove" "amount amount";
+      row-gap: 8px;
+    }
+    .gw-ausgabe-row select{ grid-area: select; }
+    .gw-ausgabe-row input{ grid-area: amount; }
+    .gw-ausgabe-row .gw-ausgabe-remove{ grid-area: remove; }
+  }
+  .gw-ausgabe-row select{
+    width:100%; border:none; border-bottom: 1.5px solid var(--card-line); background:transparent;
+    outline:none; font-family:'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--ink); padding-bottom:6px;
+  }
+  .gw-ausgabe-row select:focus{ border-bottom-color: var(--brass); }
+  .gw-ausgabe-row input{
+    width:100%; border:none; border-bottom: 1.5px solid var(--card-line); background:transparent;
+    outline:none; font-family:'IBM Plex Mono', monospace; font-size: 13px; color: var(--ink);
+    padding-bottom:6px; text-align:right;
+  }
+  .gw-ausgabe-row input:focus{ border-bottom-color: var(--brass); }
+  .gw-ausgabe-remove{
+    background:none; border:none; color: var(--ink-soft); font-size:14px; cursor:pointer; padding-bottom:6px;
+  }
+  .gw-ausgabe-remove:hover{ color: var(--danger); }
+  .gw-table th{
+    text-align:left; font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight:500; padding: 0 6px 10px 0; border-bottom: 1.5px solid var(--ink);
+  }
+  .gw-table th:not(:first-child), .gw-table td:not(:first-child){ text-align:right; }
+  .gw-table td{ padding: 11px 6px 11px 0; border-bottom: 1px dashed var(--card-line); max-width: 160px; }
+  .gw-table .month-cell{ font-family:'Fraunces', serif; font-size: 13.5px; }
+  .gw-empty{ font-size: 12px; color: var(--ink-soft); line-height:1.6; padding: 4px 0 18px; }
+  .help-btn{
+    position: fixed;
+    bottom: 26px;
+    right: 26px;
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: var(--brass-deep);
+    color: var(--card);
+    border: none;
+    font-family:'Fraunces', serif;
+    font-size: 19px;
+    cursor: pointer;
+    box-shadow: 0 12px 26px -8px rgba(0,0,0,0.6);
+    z-index: 30;
+  }
+  .help-btn:hover{ background: var(--brass); }
+
+  .help-overlay{
+    display:none;
+    position: fixed; inset: 0;
+    background: rgba(2,4,10,0.8);
+    z-index: 40;
+    padding: 24px 16px;
+    overflow-y: auto;
+  }
+  .help-overlay.open{ display:block; }
+  .help-modal{
+    max-width: 640px;
+    margin: 0 auto;
+    background: var(--card);
+    border: 1px solid var(--card-line);
+    position: relative;
+  }
+  .help-modal-head{
+    padding: 28px 32px 18px;
+    border-bottom: 1px solid var(--card-line);
+    position: sticky; top:0;
+    background: var(--card);
+  }
+  .help-close{
+    position:absolute; top: 20px; right: 20px;
+    background:none; border:none; font-size: 20px; color: var(--ink-soft); cursor:pointer;
+  }
+  .help-close:hover{ color: var(--danger); }
+  .help-body{ padding: 8px 32px 32px; }
+  .help-section{ border-bottom: 1px solid var(--card-line); }
+  .help-section:last-child{ border-bottom:none; }
+  .help-q{
+    width:100%; text-align:left; background:none; border:none; cursor:pointer;
+    padding: 16px 0; display:flex; justify-content:space-between; align-items:center;
+    font-family:'Fraunces', serif; font-size: 15px; color: var(--ink);
+  }
+  .help-q .chev{ color: var(--brass-deep); font-size: 13px; transition: transform 0.15s ease; }
+  .help-q.open .chev{ transform: rotate(180deg); }
+  .help-a{
+    display:none;
+    padding: 0 0 18px;
+    font-size: 12.5px;
+    line-height: 1.75;
+    color: var(--ink-soft);
+  }
+  .help-a.open{ display:block; }
+  .help-a ul{ margin: 6px 0; padding-left: 18px; }
+  .help-a li{ margin-bottom: 5px; }
+  .help-a strong{ color: var(--ink); }
+  .help-a a{ color: var(--brass-deep); }
+  .help-a table{ width:100%; border-collapse: collapse; margin-top: 8px; }
+  .help-a table th{ text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color: var(--ink-soft); padding: 4px 8px 4px 0; border-bottom: 1px solid var(--card-line); }
+  .help-a table td{ padding: 6px 8px 6px 0; border-bottom: 1px dashed var(--card-line); }
+  .wizard-card{ width:100%; max-width: 660px; }
+  .progress-track{ display:flex; gap:2px; padding: 24px 32px 0; flex-wrap:wrap; }
+  .progress-seg{ flex:1; min-width:6px; height:3px; background: var(--card-line); }
+  .progress-seg.done{ background: var(--brass-deep); }
+  .progress-label{ padding: 10px 32px 0; font-size: 10px; letter-spacing:0.1em; text-transform:uppercase; color: var(--ink-soft); }
+  .step{ display:none; padding: 20px 32px 6px; }
+  .step.active{ display:block; }
+  .step h2.step-title{ font-size: 19px; margin-bottom: 8px; }
+  .step p.step-help{ font-size: 12px; color: var(--ink-soft); line-height:1.6; margin: 0 0 20px; }
+  .form-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 16px 16px; }
+  .form-grid .field.full{ grid-column: 1 / -1; }
+  .field textarea{
+    width:100%; border:none; border-bottom: 1.5px solid var(--card-line);
+    background:transparent; outline:none; font-family:'IBM Plex Mono', monospace;
+    font-size: 13px; color: var(--ink); padding-bottom:6px; resize: vertical; min-height: 50px;
+  }
+  .field input[type="text"], .field input[type="date"]{
+    width:100%; border:none; border-bottom: 1.5px solid var(--card-line);
+    background:transparent; outline:none; font-family:'IBM Plex Mono', monospace;
+    font-size: 15px; color: var(--ink); padding-bottom:6px;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus{ border-bottom-color: var(--brass); }
+  .month-grid{ display:flex; flex-direction:column; gap: 10px; }
+  .month-row{
+    display:grid; grid-template-columns: 60px 1fr 1fr 90px; gap: 10px; align-items:end;
+    padding-bottom: 8px; border-bottom: 1px dashed var(--card-line);
+  }
+  .month-row .m-label{ font-family:'Fraunces', serif; font-size: 13.5px; padding-bottom: 6px; }
+  .month-row input{
+    width:100%; border:none; border-bottom: 1.5px solid var(--card-line);
+    background:transparent; outline:none; font-family:'IBM Plex Mono', monospace;
+    font-size: 13.5px; color: var(--ink); padding-bottom:4px;
+  }
+  .month-row .m-net{ font-size: 13px; text-align:right; color: var(--brass-deep); font-weight:600; padding-bottom:6px; }
+  .month-grid-header{
+    display:grid; grid-template-columns: 60px 1fr 1fr 90px; gap:10px;
+    font-size: 8.5px; letter-spacing:0.08em; text-transform:uppercase; color: var(--ink-soft);
+    padding-bottom: 6px; border-bottom: 1.5px solid var(--ink);
+  }
+  .cat-row{
+    display:grid; grid-template-columns: 1fr 130px; gap: 12px; align-items:center;
+    padding: 9px 0; border-bottom: 1px dashed var(--card-line);
+  }
+  .cat-row label{ font-size: 12.5px; color: var(--ink); margin:0; text-transform:none; letter-spacing:0; }
+  .cat-row input{
+    width:100%; border:none; border-bottom: 1.5px solid var(--card-line);
+    background:transparent; outline:none; font-family:'IBM Plex Mono', monospace;
+    font-size: 14px; color: var(--ink); padding-bottom:4px; text-align:right;
+  }
+  .cat-total{
+    display:flex; justify-content:space-between; padding-top:12px; margin-top:6px;
+    border-top: 1.5px solid var(--ink); font-family:'Fraunces', serif; font-size:14px;
+  }
+  .cat-reconcile{ font-size: 10.5px; color: var(--ink-soft); margin-top: 8px; }
+  .cat-reconcile.warn{ color: var(--danger); }
+  .expense-hint{
+    font-size: 10.5px; color: var(--ink-soft); line-height:1.6; margin-top:14px;
+    padding: 12px 14px; border: 1px dashed var(--card-line); background: rgba(74,113,224,0.05);
+  }
+  .wizard-nav{ display:flex; justify-content:space-between; gap:12px; padding: 22px 32px 30px; }
+  .wizard-nav .save-btn{ width:auto; flex:1; }
+  .review-block{ margin: 0 32px 20px; border:1px solid var(--card-line); padding: 16px 18px; font-size: 12px; line-height:1.8; }
+  .review-block .rline{ display:flex; justify-content:space-between; gap: 10px; }
+  .review-block .rgroup{ font-family:'Fraunces', serif; font-size: 13px; color: var(--brass-deep); margin: 10px 0 4px; }
+  .review-block .redit{ background:none; border:none; color: var(--brass-deep); font-size:10.5px; text-decoration:underline; cursor:pointer; padding:0; white-space:nowrap; }
+  .checklist{ margin: 0 32px 20px; font-size: 12px; line-height:2; color: var(--ink-soft); }
+  .checklist li{ margin-left: 18px; }
+  .done-badge{ text-align:center; padding: 30px 32px 10px; }
+  .wz-asset-row{
+    display:grid; grid-template-columns: 1.4fr 1fr 0.9fr 0.7fr 26px; gap: 8px; align-items:end;
+    padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px dashed var(--card-line);
+  }
+  .wz-asset-row input{
+    width:100%; border:none; border-bottom: 1.5px solid var(--card-line); background:transparent;
+    outline:none; font-family:'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink); padding-bottom:5px;
+  }
+  .wz-asset-row input:focus{ border-bottom-color: var(--brass); }
+  .wz-asset-row label.mini{ font-size: 7.5px; letter-spacing:0.05em; text-transform:uppercase; color: var(--ink-soft); display:block; margin-bottom:3px; }
+  .wz-asset-remove{ background:none; border:none; color: var(--ink-soft); font-size:13px; cursor:pointer; padding-bottom:5px; }
+  .wz-asset-remove:hover{ color: var(--danger); }
+  @media (max-width: 480px){
+    .wz-asset-row{ grid-template-columns: 1fr 1fr; grid-template-areas: "name name" "date cost" "years remove"; }
+  }
+  .done-badge .big{ font-size: 42px; }  .year-nav{
+    display:flex; align-items:center; justify-content:center; gap:16px;
+    padding: 18px 32px 4px;
+  }
+  .year-nav-label{ font-family:'Fraunces', serif; font-size: 16px; color: var(--ink); min-width:48px; text-align:center; }
+  .nav-arrow{
+    background:none; border: 1px solid var(--card-line); width:32px; height:32px;
+    font-size: 13px; color: var(--brass-deep); cursor:pointer; transition: border-color 0.15s ease;
+  }
+  .nav-arrow:hover{ border-color: var(--brass); background: rgba(74,113,224,0.08); }
+
+  .fb-gauges-row{
+    display:flex; justify-content:space-between; gap:6px;
+    padding: 10px 20px 4px; border-top: 1px solid var(--card-line);
+  }
+  .fb-gauge-small{ flex:1; text-align:center; min-width:0; }
+  .fb-gauge-title{ font-size: 8.5px; letter-spacing:0.08em; text-transform:uppercase; color: var(--ink-soft); margin-top:-30px; }
+  .fb-gauge-net{ font-family:'Fraunces', serif; font-size: 12.5px; color: var(--ink); margin-top:2px; }
+  .fb-gauge-sub{ font-size: 7.5px; letter-spacing:0.05em; text-transform:uppercase; color: var(--ink-soft); margin-top:1px; }
+  .fb-gauge-labels{ display:flex; flex-direction:column; gap:1px; margin-top:5px; }
+  .fb-gauge-labels span{ font-size: 8px; font-weight:600; }
+  .fb-gauge-labels .fb-free{ color: var(--sage); }
+  .fb-gauge-labels .fb-tax{ color: var(--danger); }
+
+  .bescheid-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+  .bescheid-grid .field.small label{ font-size: 9.5px; }
+  #gw-bescheid-tbody td.diff-ok{ color: var(--sage); }
+  #gw-bescheid-tbody td.diff-warn{ color: var(--danger); }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <span class="brand">Budget-Ledger</span>
+  <button class="menu-toggle" id="menu-toggle" type="button">☰ Menü</button>
+  <div class="menu-panel" id="menu-panel">
+    <a href="start.html">Start<span class="sub-label">Übersicht aller Bereiche</span></a>
+    <a href="index.html">Sparrechner<span class="sub-label">Übersicht &amp; Spartopf</span></a>
+    <a href="steuererklaerung.html" class="active">Steuererklärung<span class="sub-label">Gewerbe &amp; Unterlagen</span></a>
+    <a href="einkommensteuer.html">Einkommensteuer<span class="sub-label">Private Steuererklärung</span></a>
+    <a href="trading-journal.html">Trading Journal<span class="sub-label">Trades &amp; Kalender</span></a>
+    <div class="theme-switcher">
+      <span class="ts-label">Farbschema</span>
+      <div class="ts-row">
+        <button class="theme-swatch" data-swatch="midnight" title="Mitternacht (Standard)" type="button"></button>
+        <button class="theme-swatch" data-swatch="redblack" title="Rot-Schwarz" type="button"></button>
+        <button class="theme-swatch" data-swatch="emerald" title="Smaragd" type="button"></button>
+        <button class="theme-swatch" data-swatch="amber" title="Bernstein" type="button"></button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="app-wrap">
+
+  <div class="card ledger">
+    <div class="head">
+      <p class="eyebrow">Gewerbe &amp; Steuern</p>
+      <h1>Monatlicher Gewinn</h1>
+      <p class="sub">Einnahmen &amp; Ausgaben pro Monat erfassen, Basis für die Steuerunterlagen</p>
+      <p class="sub" style="margin-top:10px; color: var(--brass);">
+        <strong>Netto-Beträge</strong> eintragen (ohne Umsatzsteuer) — als Kleinunternehmer sind Brutto = Netto, das betrifft dich dann nicht.
+      </p>
+    </div>
+
+    <div class="save-block" style="border-top:none; padding-top:26px">
+      <div class="field">
+        <label for="gw-month">Monat</label>
+        <input type="month" id="gw-month" class="month-input">
+      </div>
+      <div class="field">
+        <label for="gw-einnahmen">Einnahmen</label>
+        <div class="income-input-row">
+          <span>€</span>
+          <input type="number" id="gw-einnahmen" class="money-input" placeholder="0,00" min="0" step="0.01" inputmode="decimal">
+        </div>
+      </div>
+
+      <div class="field full" style="grid-column: 1 / -1; margin-top:4px">
+        <label style="margin-bottom:8px">Ausgaben nach Kategorie <span style="text-transform:none; letter-spacing:0; color:var(--ink-soft); font-size:9.5px;">(netto, ohne USt)</span></label>
+        <div id="gw-ausgaben-list"></div>
+        <button class="save-btn secondary" id="gw-add-ausgabe-btn" type="button" style="margin-top:10px">+ Kategorie hinzufügen</button>
+      </div>
+
+      <div class="field" style="grid-column: 1 / -1; display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:6px">
+        <span class="save-hint" style="font-size:11px; flex:1 1 160px">Ausgaben gesamt: <span id="gw-ausgaben-sum">€ 0,00</span></span>
+        <span class="save-hint" style="font-size:11px; flex:1 1 160px; text-align:right">Gewinn diesen Monat: <span id="gw-live-net" style="font-family:'Fraunces', serif; font-size:14px; color: var(--brass)">€ 0,00</span></span>
+      </div>
+      <div class="field" style="grid-column: 1 / -1; display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:2px">
+        <span class="save-hint" style="font-size:11px; flex:1 1 160px">Steuer (geschätzt): <span id="gw-live-tax" style="color: var(--danger)">− € 0,00</span></span>
+        <span class="save-hint" style="font-size:11px; flex:1 1 160px; text-align:right">Netto nach Steuer: <span id="gw-live-after-tax" style="font-family:'Fraunces', serif; font-size:14px; color: var(--sage)">€ 0,00</span></span>
+      </div>
+      <p class="save-hint" style="grid-column: 1 / -1; font-size:9.5px; margin-top:2px">Grobe Schätzung nach deinen Einstellungen im Steuer-Assistenten weiter unten (bzw. Standardwerten, falls noch nichts eingestellt).</p>
+
+      <button class="save-btn" id="gw-save-btn" type="button">Monat speichern</button>
+      <p class="save-hint" id="gw-hint">Wird lokal auf diesem Gerät gespeichert.</p>
+    </div>
+
+    <div class="year-nav">
+      <button class="nav-arrow" id="gw-year-prev" type="button">◀</button>
+      <span class="year-nav-label" id="gw-year-label">2026</span>
+      <button class="nav-arrow" id="gw-year-next" type="button">▶</button>
+    </div>
+
+    <div class="ov-body">
+      <p class="gw-empty" id="gw-empty">Noch kein Gewinn für dieses Jahr erfasst. Trag oben einen Monat, Einnahmen und Ausgaben ein.</p>
+      <table class="gw-table" id="gw-table" style="display:none">
+        <thead><tr><th>Monat</th><th>Einnahmen</th><th>Ausgaben</th><th>Gewinn</th><th></th></tr></thead>
+        <tbody id="gw-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="total" id="gw-total-row" style="display:none">
+      <span class="name" id="gw-total-label">Jahresgewinn 2026</span>
+      <span class="amount" id="gw-total">€ 0,00</span>
+    </div>
+
+    <div class="fb-gauges-row" id="fb-gauges-row" style="display:none">
+      <div class="fb-gauge-small">
+        <svg viewBox="0 0 130 72" width="118" height="65">
+          <path d="M 11 60 A 50 50 0 0 1 119 60" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="8" stroke-linecap="round"/>
+          <path id="fbGaugeFree" d="M 11 60 A 50 50 0 0 1 119 60" fill="none" style="stroke:var(--sage)" stroke-width="8" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="0"/>
+          <path id="fbGaugeTax" d="M 11 60 A 50 50 0 0 1 119 60" fill="none" style="stroke:var(--danger)" stroke-width="8" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="0"/>
+        </svg>
+        <div class="fb-gauge-title">Freibetrag</div>
+        <div class="fb-gauge-net" id="fb-gauge-center">€ 0,00</div>
+        <div class="fb-gauge-sub" id="fb-gauge-sub">noch offen</div>
+        <div class="fb-gauge-labels">
+          <span class="fb-free" id="fb-freibetrag-label">frei: € 0</span>
+          <span class="fb-tax" id="fb-steuerpflichtig-label">pflichtig: € 0</span>
+        </div>
+      </div>
+      <div class="fb-gauge-small">
+        <svg viewBox="0 0 130 72" width="118" height="65">
+          <path d="M 11 60 A 50 50 0 0 1 119 60" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="8" stroke-linecap="round"/>
+          <path id="ekGaugeNetto" d="M 11 60 A 50 50 0 0 1 119 60" fill="none" style="stroke:var(--sage)" stroke-width="8" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="0"/>
+          <path id="ekGaugeSteuer" d="M 11 60 A 50 50 0 0 1 119 60" fill="none" style="stroke:var(--danger)" stroke-width="8" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="0"/>
+        </svg>
+        <div class="fb-gauge-title">Einkommen</div>
+        <div class="fb-gauge-net" id="ek-gauge-center">€ 0,00</div>
+        <div class="fb-gauge-sub" id="ek-gauge-sub">netto</div>
+        <div class="fb-gauge-labels">
+          <span class="fb-free" id="ek-netto-label">netto: € 0</span>
+          <span class="fb-tax" id="ek-steuer-label">Steuer: € 0</span>
+        </div>
+      </div>
+      <div class="fb-gauge-small">
+        <svg viewBox="0 0 130 72" width="118" height="65">
+          <path d="M 11 60 A 50 50 0 0 1 119 60" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="8" stroke-linecap="round"/>
+          <path id="stGaugeEst" d="M 11 60 A 50 50 0 0 1 119 60" fill="none" style="stroke:var(--sage)" stroke-width="8" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="0"/>
+          <path id="stGaugeGewst" d="M 11 60 A 50 50 0 0 1 119 60" fill="none" style="stroke:var(--danger)" stroke-width="8" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="0"/>
+        </svg>
+        <div class="fb-gauge-title">Steuer</div>
+        <div class="fb-gauge-net" id="st-gauge-center">€ 0,00</div>
+        <div class="fb-gauge-sub" id="st-gauge-sub">gesamt</div>
+        <div class="fb-gauge-labels">
+          <span class="fb-free" id="st-est-label">ESt u.a.: € 0</span>
+          <span class="fb-tax" id="st-gewst-label">GewSt: € 0</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="wd-btn-row" style="padding:14px 32px 4px">
+      <button class="save-btn secondary" id="gw-year-pdf-btn" type="button">Steuerjahr <span id="gw-year-pdf-label">2026</span> als PDF herunterladen</button>
+    </div>
+    <p class="save-hint" id="gw-year-pdf-hint" style="padding:6px 32px 4px"></p>
+
+    <div class="income-divider" style="margin:20px 32px 18px"></div>
+    <div style="padding: 0 32px 6px">
+      <label style="display:block; font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; color: var(--ink-soft); margin-bottom:10px;">Steuerbescheid <span id="gw-bescheid-year-label">2026</span> abgleichen</label>
+      <p class="save-hint" style="margin-bottom:14px">
+        Hast du den echten Bescheid vom Finanzamt bekommen? Trag die tatsächlich festgesetzten
+        Beträge ein — die App vergleicht sie mit ihrer eigenen Schätzung.
+      </p>
+      <div class="bescheid-grid">
+        <div class="field small">
+          <label for="gw-bescheid-est">Einkommensteuer (lt. Bescheid)</label>
+          <div class="income-input-row"><span>€</span><input type="number" id="gw-bescheid-est" step="0.01" min="0" placeholder="0,00"></div>
+        </div>
+        <div class="field small">
+          <label for="gw-bescheid-soli">Solidaritätszuschlag</label>
+          <div class="income-input-row"><span>€</span><input type="number" id="gw-bescheid-soli" step="0.01" min="0" placeholder="0,00"></div>
+        </div>
+        <div class="field small">
+          <label for="gw-bescheid-kist">Kirchensteuer</label>
+          <div class="income-input-row"><span>€</span><input type="number" id="gw-bescheid-kist" step="0.01" min="0" placeholder="0,00"></div>
+        </div>
+        <div class="field small">
+          <label for="gw-bescheid-gewst">Gewerbesteuer (eig. Bescheid Gemeinde)</label>
+          <div class="income-input-row"><span>€</span><input type="number" id="gw-bescheid-gewst" step="0.01" min="0" placeholder="0,00"></div>
+        </div>
+      </div>
+      <button class="save-btn" id="gw-bescheid-save-btn" type="button" style="margin-top:14px">Bescheid speichern &amp; vergleichen</button>
+      <p class="save-hint" id="gw-bescheid-hint" style="margin-top:8px"></p>
+
+      <div id="gw-bescheid-compare" style="display:none; margin-top:18px">
+        <table class="gw-table">
+          <thead><tr><th>Position</th><th>App-Schätzung</th><th>Lt. Bescheid</th><th>Differenz</th></tr></thead>
+          <tbody id="gw-bescheid-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <p class="foot">Nur für die Gewerbeeinkünfte gedacht — getrennt vom Hauptjob-Einkommen</p>
+  </div>
+
+  <div class="card wizard-card">
+    <div class="head">
+      <p class="eyebrow">Orientierung · keine Rechtsberatung · keine Einreichung</p>
+      <h1>Steuer-Assistent</h1>
+      <p class="sub">Alle wichtigen Angaben für eine geprüfte, abgabefertige Unterlage</p>
+    </div>
+
+    <div class="progress-track" id="progress-track"></div>
+    <p class="progress-label" id="progress-label"></p>
+
+    <!-- 0: Intro -->
+    <div class="step active" data-step="0">
+      <h2 class="step-title" id="wz-welcome-title">Willkommen</h2>
+      <p class="step-help" id="wz-welcome-text">
+        Dieser Assistent sammelt alle Angaben für eine vollständige Unterlage zu deinen
+        Gewerbeeinkünften — Stammdaten, Familienstand, Umsatzsteuer-Status, kategorisierte
+        Betriebsausgaben, Sonderausgaben und die Steuerschätzung. Am Ende bekommst du eine PDF,
+        die du direkt gegen deine eigene ELSTER-Eingabe oder mit deinem Steuerberater
+        durchgehen kannst. Der Assistent reicht selbst nichts beim Finanzamt ein und ist kein
+        amtlicher Steuerbescheid. Alle Daten bleiben ausschließlich lokal auf diesem Gerät.
+      </p>
+      <div id="wz-returning-actions" style="display:none; margin-top:8px; display:grid; gap:12px">
+        <button class="save-btn" id="wz-quick-btn" type="button">Nur diesen Monat eintragen</button>
+        <button class="save-btn secondary" id="wz-full-btn" type="button">Alle Angaben durchgehen &amp; bearbeiten</button>
+      </div>
+    </div>
+
+    <!-- 1: Persönliche Angaben -->
+    <div class="step" data-step="1">
+      <h2 class="step-title">Persönliche Angaben</h2>
+      <p class="step-help">Diese Angaben stehen auf jeder Steuererklärung.</p>
+      <div class="form-grid">
+        <div class="field full">
+          <label for="wz-name">Vollständiger Name</label>
+          <input type="text" id="wz-name" placeholder="Vor- und Nachname">
+        </div>
+        <div class="field">
+          <label for="wz-steuerid">Steuer-ID oder Steuernummer</label>
+          <input type="text" id="wz-steuerid" placeholder="z. B. 12 345 678 901">
+        </div>
+        <div class="field">
+          <label for="wz-finanzamt">Zuständiges Finanzamt</label>
+          <input type="text" id="wz-finanzamt" placeholder="z. B. Finanzamt Leipzig II">
+        </div>
+        <div class="field">
+          <label for="wz-strasse">Straße &amp; Hausnummer</label>
+          <input type="text" id="wz-strasse" placeholder="">
+        </div>
+        <div class="field">
+          <label for="wz-plz-ort">PLZ &amp; Ort</label>
+          <input type="text" id="wz-plz-ort" placeholder="">
+        </div>
+      </div>
+    </div>
+
+    <!-- 2: Familienstand & Kinder -->
+    <div class="step" data-step="2">
+      <h2 class="step-title">Familienstand &amp; Kinder</h2>
+      <p class="step-help">Bestimmt, ob der Grundtarif oder der Splittingtarif angewendet wird, und ob ein Kinderfreibetrag greift.</p>
+      <label class="check-row" style="margin-top:0">
+        <input type="radio" name="wz-familienstand" id="wz-fam-ledig" value="ledig" checked>
+        <span>Ledig / Einzelveranlagung</span>
+      </label>
+      <label class="check-row">
+        <input type="radio" name="wz-familienstand" id="wz-fam-verheiratet" value="verheiratet">
+        <span>Verheiratet / Zusammenveranlagung (Splitting)</span>
+      </label>
+      <div class="field" style="margin-top:18px; max-width:220px">
+        <label for="wz-kinder">Anzahl Kinder (mit Kinderfreibetrag)</label>
+        <input type="number" id="wz-kinder" class="money-input" placeholder="0" min="0" max="12" step="1" inputmode="numeric">
+      </div>
+      <p class="save-hint" style="margin-top:8px">Kinderfreibetrag 2026: 9.756 € pro Kind (voller Betrag für beide Eltern zusammen).</p>
+    </div>
+
+    <!-- 3: Betriebliche & Bankdaten -->
+    <div class="step" data-step="3">
+      <h2 class="step-title">Betriebliche &amp; Bankdaten</h2>
+      <p class="step-help">Angaben zu deinem Gewerbe, wie sie in der Gewerbeanmeldung und auf dem Steuerformular stehen.</p>
+      <div class="form-grid">
+        <div class="field full">
+          <label for="wz-betriebsname">Bezeichnung des Betriebs</label>
+          <input type="text" id="wz-betriebsname" placeholder="z. B. Musterfirma">
+        </div>
+        <div class="field">
+          <label for="wz-beginn">Beginn der Tätigkeit</label>
+          <input type="date" id="wz-beginn">
+        </div>
+        <div class="field">
+          <label for="wz-rechtsform">Rechtsform</label>
+          <select id="wz-rechtsform" class="select-input">
+            <option value="Einzelunternehmen (Nebengewerbe)">Einzelunternehmen (Nebengewerbe)</option>
+            <option value="Einzelunternehmen (Hauptgewerbe)">Einzelunternehmen (Hauptgewerbe)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="wz-betriebssteuernummer">Betriebs-Steuernummer (falls abweichend)</label>
+          <input type="text" id="wz-betriebssteuernummer" placeholder="optional">
+        </div>
+        <div class="field">
+          <label for="wz-ustid">USt-IdNr. (falls vorhanden)</label>
+          <input type="text" id="wz-ustid" placeholder="optional">
+        </div>
+        <div class="field full">
+          <label for="wz-iban">IBAN (für Erstattung/Nachzahlung)</label>
+          <input type="text" id="wz-iban" placeholder="DE00 0000 0000 0000 0000 00">
+        </div>
+        <div class="field full">
+          <label for="wz-taetigkeit">Tätigkeitsbeschreibung</label>
+          <textarea id="wz-taetigkeit" placeholder="Kurze Beschreibung der gewerblichen Tätigkeit"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4: Umsatzsteuer-Status -->
+    <div class="step" data-step="4">
+      <h2 class="step-title">Umsatzsteuer-Status</h2>
+      <p class="step-help">
+        Als Kleinunternehmer (§19 UStG) weist du keine Umsatzsteuer aus und musst keine
+        Umsatzsteuer-Voranmeldungen abgeben. Das gilt, solange dein Vorjahresumsatz unter
+        25.000 € lag und der laufende Jahresumsatz 100.000 € nicht übersteigt.
+      </p>
+      <label class="check-row" style="margin-top:0">
+        <input type="radio" name="wz-ust-status" id="wz-ust-klein" checked>
+        <span>Kleinunternehmer (§19 UStG) — keine Umsatzsteuer</span>
+      </label>
+      <label class="check-row">
+        <input type="radio" name="wz-ust-status" id="wz-ust-regel">
+        <span>Regelbesteuert — Umsatzsteuer wird ausgewiesen</span>
+      </label>
+      <div id="wz-ust-field" style="display:none; margin-top:16px" class="form-grid">
+        <div class="field">
+          <label for="wz-ust-eingenommen">Umsatzsteuer eingenommen (Jahr)</label>
+          <div class="income-input-row"><span>€</span>
+            <input type="number" id="wz-ust-eingenommen" class="money-input" placeholder="0,00" min="0" step="0.01">
+          </div>
+        </div>
+        <div class="field">
+          <label for="wz-vorsteuer">Vorsteuer gezahlt (Jahr)</label>
+          <div class="income-input-row"><span>€</span>
+            <input type="number" id="wz-vorsteuer" class="money-input" placeholder="0,00" min="0" step="0.01">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5: Jahr -->
+    <div class="step" data-step="5">
+      <h2 class="step-title">Für welches Steuerjahr?</h2>
+      <p class="step-help">Wähle das Jahr, für das die Unterlage erstellt werden soll.</p>
+      <div class="field">
+        <label for="wz-year">Steuerjahr</label>
+        <select id="wz-year" class="select-input"></select>
+      </div>
+    </div>
+
+    <!-- 6: Einnahmen & Ausgaben -->
+    <div class="step" data-step="6">
+      <h2 class="step-title">Monatliche Einnahmen &amp; Ausgaben</h2>
+      <p class="step-help">
+        Für eine korrekte Anlage EÜR werden Betriebseinnahmen und Betriebsausgaben getrennt erfasst.
+        Bereits gespeicherte Werte sind vorausgefüllt. Leere Felder zählen als 0 €.
+        <strong style="color: var(--brass)">Netto-Beträge</strong> eintragen (ohne Umsatzsteuer) —
+        als Kleinunternehmer sind Brutto = Netto, das betrifft dich dann nicht.
+      </p>
+      <div class="month-grid-header">
+        <span>Monat</span><span>Einnahmen</span><span>Ausgaben</span><span style="text-align:right">Gewinn</span>
+      </div>
+      <div class="month-grid" id="wz-month-grid"></div>
+    </div>
+
+    <!-- 7: Betriebsausgaben-Kategorien -->
+    <div class="step" data-step="7">
+      <h2 class="step-title">Betriebsausgaben nach Kategorien</h2>
+      <p class="step-help">
+        Diese Werte werden automatisch aus den Kategorien übernommen, die du oben beim
+        monatlichen Gewinn eingetragen hast. Du kannst sie hier bei Bedarf noch anpassen —
+        Änderungen werden aber beim nächsten Jahreswechsel wieder mit den Monatsdaten überschrieben.
+      </p>
+      <div id="wz-cat-rows"></div>
+      <div class="cat-total">
+        <span>Summe Kategorien</span>
+        <span id="wz-cat-sum">€ 0,00</span>
+      </div>
+      <p class="cat-reconcile" id="wz-cat-reconcile"></p>
+      <div class="expense-hint">
+        Typische Betriebsausgaben beim Prop-Trading fallen meist unter „Fortbildung/Lizenzen"
+        (Challenge-/Programmgebühren), „Hard- &amp; Software" oder „Sonstige Betriebsausgaben".
+      </div>
+
+      <div class="income-divider" style="margin:24px 0 18px"></div>
+      <label style="display:block; font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; color: var(--ink-soft); margin-bottom:8px;">Anlagenverzeichnis (AfA) — optional</label>
+      <p class="save-hint" style="margin-bottom:14px">
+        Wirtschaftsgüter über 800 € netto werden über die Nutzungsdauer linear abgeschrieben
+        (monatsgenau im Anschaffungsjahr). Bis 800 € netto (GWG) sofort im Kaufjahr voll absetzbar.
+        Die berechnete Jahres-AfA ersetzt automatisch deinen Eintrag bei „Abschreibungen (AfA)" oben.
+      </p>
+      <div id="wz-asset-rows"></div>
+      <button class="save-btn secondary" id="wz-add-asset-btn" type="button" style="margin-top:6px">+ Wirtschaftsgut hinzufügen</button>
+      <div class="cat-total" style="margin-top:14px">
+        <span>AfA <span id="wz-afa-year-label"></span> gesamt</span>
+        <span id="wz-afa-sum">€ 0,00</span>
+      </div>
+    </div>
+
+    <!-- 8: Zusätzliches Einkommen -->
+    <div class="step" data-step="8">
+      <h2 class="step-title">Zusätzliches Einkommen</h2>
+      <p class="step-help">Hast du neben dem Gewerbe weiteres Einkommen fürs Jahr (z. B. Hauptjob)? Falls nicht, einfach leer lassen.</p>
+      <div class="field">
+        <label for="wz-other-income">Zusätzliches Einkommen fürs Jahr</label>
+        <div class="income-input-row">
+          <span>€</span>
+          <input type="number" id="wz-other-income" class="money-input" placeholder="0,00" min="0" step="0.01" inputmode="decimal">
+        </div>
+      </div>
+    </div>
+
+    <!-- 9: Sonderausgaben & Vorauszahlungen -->
+    <div class="step" data-step="9">
+      <h2 class="step-title">Sonderausgaben &amp; Vorauszahlungen</h2>
+      <p class="step-help">Diese Angaben mindern die Steuerlast bzw. die am Ende noch offene Zahllast.</p>
+      <div class="form-grid">
+        <div class="field">
+          <label for="wz-krankenversicherung">Kranken-/Pflegeversicherung (Jahr)</label>
+          <div class="income-input-row"><span>€</span>
+            <input type="number" id="wz-krankenversicherung" class="money-input" placeholder="0,00" min="0" step="0.01">
+          </div>
+        </div>
+        <div class="field">
+          <label for="wz-vorsorge">Sonstige Vorsorgeaufwendungen (Jahr)</label>
+          <div class="income-input-row"><span>€</span>
+            <input type="number" id="wz-vorsorge" class="money-input" placeholder="0,00" min="0" step="0.01">
+          </div>
+        </div>
+        <div class="field">
+          <label for="wz-vorauszahlungen">Bereits geleistete ESt-Vorauszahlungen</label>
+          <div class="income-input-row"><span>€</span>
+            <input type="number" id="wz-vorauszahlungen" class="money-input" placeholder="0,00" min="0" step="0.01">
+          </div>
+        </div>
+        <div class="field">
+          <label for="wz-verlustvortrag">Verlustvortrag aus Vorjahr</label>
+          <div class="income-input-row"><span>€</span>
+            <input type="number" id="wz-verlustvortrag" class="money-input" placeholder="0,00" min="0" step="0.01">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10: Kirchensteuer -->
+    <div class="step" data-step="10">
+      <h2 class="step-title">Kirchensteuer</h2>
+      <p class="step-help">Bist du Mitglied einer kirchensteuererhebenden Religionsgemeinschaft?</p>
+      <label class="check-row" style="margin-top:0">
+        <input type="checkbox" id="wz-kirchensteuer">
+        <span>Ja, kirchensteuerpflichtig</span>
+      </label>
+      <div id="wz-kirchensteuer-field" style="display:none; margin-top:16px">
+        <label for="wz-kirchensteuer-satz">Bundesland-Satz</label>
+        <select id="wz-kirchensteuer-satz" class="select-input">
+          <option value="8">8 % (Bayern, Baden-Württemberg)</option>
+          <option value="9">9 % (alle anderen Bundesländer)</option>
+        </select>
+
+        <div class="income-divider"></div>
+
+        <label class="check-row" style="margin-top:0">
+          <input type="checkbox" id="wz-kappung">
+          <span>Kappungsgrenze beantragen (deckelt Kirchensteuer auf % vom zvE)</span>
+        </label>
+        <p class="save-hint" style="margin-top:8px">
+          Viele Bundesländer deckeln die Kirchensteuer auf einen Prozentsatz deines zu versteuernden
+          Einkommens — meist auf Antrag, in einigen Ländern automatisch. Satz variiert je nach
+          Bundesland und Kirche (üblich: 2,75–4 %). Ohne Antrag wird sie oft nicht automatisch gewährt.
+        </p>
+        <div id="wz-kappung-field" style="display:none; margin-top:12px">
+          <label for="wz-kappung-satz">Kappungssatz (% vom zvE)</label>
+          <div class="income-input-row">
+            <input type="number" id="wz-kappung-satz" class="money-input" placeholder="3,5" min="1" max="6" step="0.05" inputmode="decimal">
+            <span style="margin-left:8px; font-size:16px;">%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 11: Gewerbesteuer -->
+    <div class="step" data-step="11">
+      <h2 class="step-title">Tätigkeitsart &amp; Gewerbesteuer</h2>
+      <p class="step-help">
+        Nur <strong>gewerbliche</strong> Einzelunternehmen zahlen Gewerbesteuer. Freiberufliche
+        Tätigkeit (§18 EStG — z. B. bestimmte selbstständige Tätigkeiten) ist davon befreit und
+        nutzt statt Anlage G die Anlage S. Bei einer Gewerbeanmeldung (z. B. für Prop-Trading)
+        ist in der Regel „Gewerbe" korrekt.
+      </p>
+      <label class="check-row" style="margin-top:0">
+        <input type="radio" name="wz-taetigkeitsart" id="wz-taetigkeit-gewerbe" checked>
+        <span>Gewerbe (gewerbesteuerpflichtig, Anlage G)</span>
+      </label>
+      <label class="check-row">
+        <input type="radio" name="wz-taetigkeitsart" id="wz-taetigkeit-freiberuflich">
+        <span>Freiberufliche Tätigkeit (§18 EStG, keine Gewerbesteuer, Anlage S)</span>
+      </label>
+
+      <div id="wz-gewst-fields" style="margin-top:18px">
+        <p class="save-hint" style="margin-bottom:12px">Der Gewerbesteuer-Freibetrag (24.500 €) wird automatisch abgezogen.</p>
+        <div class="field">
+          <label for="wz-hebesatz">Hebesatz deiner Gemeinde (%)</label>
+          <div class="income-input-row">
+            <input type="number" id="wz-hebesatz" class="money-input" placeholder="400" min="200" max="900" step="1" inputmode="decimal">
+            <span style="margin-left:8px; font-size:16px;">%</span>
+          </div>
+        </div>
+        <p class="save-hint" style="margin-top:8px">Steht auf der Website deiner Gemeinde oder beim Finanzamt. Unbekannt? 400 % ist ein üblicher Richtwert.</p>
+      </div>
+      <p class="save-hint" id="wz-freiberuflich-hint" style="display:none; margin-top:12px; color: var(--sage)">
+        Als freiberuflich Tätige/r fällt keine Gewerbesteuer an — dieser Anteil wird in der Steuerschätzung auf 0 € gesetzt.
+      </p>
+
+      <input type="checkbox" id="wz-include-gewst" checked style="display:none">
+    </div>
+
+    <!-- 12: Steuersatz -->
+    <div class="step" data-step="12">
+      <h2 class="step-title">Steuersatz-Ermittlung</h2>
+      <p class="step-help">
+        Standardmäßig rechnet der Assistent nach der offiziellen Formel (§32a EStG 2026), inklusive
+        Splittingtarif bei Zusammenveranlagung. Kennst du deinen tatsächlichen effektiven Satz
+        bereits (z. B. vom Steuerberater), kannst du ihn hier eintragen.
+      </p>
+      <label class="check-row" style="margin-top:0">
+        <input type="radio" name="wz-tax-mode" id="wz-tax-mode-auto" checked>
+        <span>Automatisch nach §32a EStG 2026</span>
+      </label>
+      <label class="check-row">
+        <input type="radio" name="wz-tax-mode" id="wz-tax-mode-custom">
+        <span>Eigenen Steuersatz verwenden</span>
+      </label>
+      <div id="wz-custom-rate-field" style="display:none; margin-top:16px">
+        <label for="wz-custom-rate">Eigener effektiver Steuersatz (%)</label>
+        <div class="income-input-row">
+          <input type="number" id="wz-custom-rate" class="money-input" placeholder="z. B. 30" min="0" max="60" step="0.1" inputmode="decimal">
+          <span style="margin-left:8px; font-size:16px;">%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 13: Review -->
+    <div class="step" data-step="13">
+      <h2 class="step-title">Alles richtig?</h2>
+      <p class="step-help">Letzter Check, bevor die Unterlage erstellt wird. Über „Ändern" springst du direkt zurück.</p>
+      <div class="review-block" id="wz-review"></div>
+    </div>
+
+    <!-- 14: Fertig -->
+    <div class="step" data-step="14">
+      <div class="done-badge">
+        <div class="big">✓</div>
+        <h2 class="step-title">Bereit für die Abgabe-Vorbereitung</h2>
+      </div>
+      <p class="step-help" style="padding:0 0 4px">
+        Alle Angaben sind gespeichert. Die PDF enthält Stammdaten, Familienstand, Umsatzsteuer-Status,
+        Einnahmen/Ausgaben mit Kategorien, Sonderausgaben, die vollständige Steuerschätzung inkl.
+        Vorauszahlungen sowie eine Checkliste für die eigentliche Abgabe.
+      </p>
+      <div class="wd-btn-row" style="padding:8px 0 4px">
+        <button class="save-btn" id="wz-generate-btn" type="button">Abgabe-Mappe als PDF erstellen</button>
+      </div>
+      <p class="save-hint" id="wz-generate-hint" style="padding:8px 0 0"></p>
+
+      <div class="income-divider" style="margin:24px 0 16px"></div>
+      <p class="progress-label" style="padding:0 0 8px">Checkliste für die tatsächliche Abgabe</p>
+      <ul class="checklist">
+        <li>Bei ELSTER anmelden (elster.de) oder Termin beim Steuerberater vereinbaren</li>
+        <li>Anlage EÜR mit Einnahmen, Ausgaben-Kategorien aus der PDF ausfüllen</li>
+        <li id="wz-checklist-anlage">Anlage G bzw. Anlage S je nach Einordnung der Tätigkeit prüfen</li>
+        <li>Bei Regelbesteuerung: Umsatzsteuer-Voranmeldungen nicht vergessen</li>
+        <li>Frist beachten — regulär 31. Juli des Folgejahres, mit Steuerberater später</li>
+        <li>Belege &amp; Kontoauszüge zu allen Positionen bereithalten</li>
+      </ul>
+    </div>
+
+    <div class="wizard-nav">
+      <button class="save-btn secondary" id="wz-back-btn" type="button">Zurück</button>
+      <button class="save-btn" id="wz-next-btn" type="button">Weiter</button>
+    </div>
+  </div>
+
+</div>
+
+<button class="help-btn" id="help-btn" type="button" title="Anleitung zur Gewerbe-Steuerabgabe">?</button>
+
+<div class="help-overlay" id="help-overlay">
+  <div class="help-modal">
+    <div class="help-modal-head">
+      <button class="help-close" id="help-close" type="button">✕</button>
+      <p class="eyebrow">Anleitung</p>
+      <h1 style="font-size:22px">Steuerabgabe fürs Gewerbe</h1>
+      <p class="sub">Alles, was du für die Abgabe brauchst und weißt musst — zum Aufklappen</p>
+    </div>
+    <div class="help-body">
+
+      <div class="help-section">
+        <button class="help-q" data-target="h1"><span>1. Was brauche ich überhaupt für die Abgabe?</span><span class="chev">▾</span></button>
+        <div class="help-a" id="h1">
+          <ul>
+            <li><strong>Persönliche Daten:</strong> Name, Steuer-ID, zuständiges Finanzamt, Anschrift, Familienstand, Kinder</li>
+            <li><strong>Betriebsdaten:</strong> Betriebsbezeichnung, Beginn der Tätigkeit, Rechtsform, Betriebs-Steuernummer, IBAN</li>
+            <li><strong>Umsatzsteuer-Status:</strong> Kleinunternehmer (§19 UStG) oder regelbesteuert</li>
+            <li><strong>Betriebseinnahmen &amp; -ausgaben</strong> pro Monat, möglichst kategorisiert (für die Anlage EÜR)</li>
+            <li><strong>Sonderausgaben:</strong> Kranken-/Pflegeversicherung, Vorsorgeaufwendungen</li>
+            <li><strong>Bereits geleistete Vorauszahlungen &amp; ein eventueller Verlustvortrag</strong> aus dem Vorjahr</li>
+            <li><strong>Belege &amp; Kontoauszüge</strong> zu allen Einnahmen und Ausgaben — nicht einreichen, aber aufbewahren für Rückfragen</li>
+          </ul>
+          <p>Der Steuer-Assistent weiter unten auf dieser Seite fragt alle diese Punkte Schritt für Schritt ab und übernimmt sie automatisch in die PDF.</p>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <button class="help-q" data-target="h2"><span>2. Welche Formulare fülle ich am Ende aus?</span><span class="chev">▾</span></button>
+        <div class="help-a" id="h2">
+          <table>
+            <tr><th>Formular</th><th>Wofür</th></tr>
+            <tr><td>Mantelbogen (ESt 1 A)</td><td>Persönliche Daten, Familienstand, Sonderausgaben</td></tr>
+            <tr><td>Anlage EÜR</td><td>Betriebseinnahmen &amp; -ausgaben, Gewinnermittlung</td></tr>
+            <tr><td>Anlage G</td><td>Einkünfte aus Gewerbebetrieb (bei Gewerbeanmeldung)</td></tr>
+            <tr><td>Anlage S</td><td>Statt Anlage G, falls als selbstständig/freiberuflich eingeordnet</td></tr>
+            <tr><td>USt 1 A / UStVA</td><td>Nur bei Regelbesteuerung — Umsatzsteuer-Jahreserklärung bzw. Voranmeldungen</td></tr>
+            <tr><td>Gewerbesteuererklärung</td><td>Separat vom Finanzamt angefordert, meist bei höherem Gewerbeertrag</td></tr>
+          </table>
+          <p style="margin-top:10px">Alle Werte dafür stehen strukturiert in der PDF, die der Steuer-Assistent am Ende erstellt.</p>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <button class="help-q" data-target="h3"><span>3. Wo reiche ich das ein?</span><span class="chev">▾</span></button>
+        <div class="help-a" id="h3">
+          <ul>
+            <li><strong>ELSTER (kostenlos):</strong> Offizielles Portal der Finanzverwaltung — <a href="https://www.elster.de" target="_blank" rel="noopener">elster.de</a>. Registrierung mit Steuer-ID nötig, Aktivierungscode dauert postalisch 5–10 Tage. Du trägst die Werte aus der PDF selbst in die Formulare ein.</li>
+            <li><strong>Kommerzielle Steuer-Apps (ca. 30–40 €):</strong> z. B. Taxfix, smartsteuer, WISO Steuer — führen dich per Dialog durch die Eingabe und übermitteln am Ende über ELSTER.</li>
+            <li><strong>Steuerberater (ca. 150–1.500 €, StBVV):</strong> übernimmt Prüfung, Einreichung und Haftung — besonders sinnvoll bei Unsicherheiten zu Kleinunternehmerregelung, AfA oder §35-EStG-Anrechnung.</li>
+          </ul>
+          <p>Eine fertige PDF kann bei keinem dieser Wege direkt hochgeladen werden — sie ist die Vorlage für die manuelle Eingabe.</p>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <button class="help-q" data-target="h4"><span>4. Bis wann muss ich abgeben?</span><span class="chev">▾</span></button>
+        <div class="help-a" id="h4">
+          <ul>
+            <li><strong>Ohne Steuerberater:</strong> 31. Juli des Folgejahres</li>
+            <li><strong>Mit Steuerberater:</strong> in der Regel bis Ende Februar des übernächsten Jahres</li>
+            <li>Verspätungszuschlag: 0,25 % der festgesetzten Steuer pro angefangenem Monat, mindestens 25 €</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <button class="help-q" data-target="h5"><span>5. Muss ich unterjährig etwas einreichen?</span><span class="chev">▾</span></button>
+        <div class="help-a" id="h5">
+          <p><strong>Nur wenn du regelbesteuert bist</strong> (nicht Kleinunternehmer), dann Umsatzsteuer-Voranmeldung (UStVA):</p>
+          <table>
+            <tr><th>USt-Zahllast Vorjahr</th><th>Rhythmus</th></tr>
+            <tr><td>über 9.000 €</td><td>monatlich</td></tr>
+            <tr><td>2.000–9.000 €</td><td>vierteljährlich</td></tr>
+            <tr><td>unter 2.000 €</td><td>keine Voranmeldung, nur Jahres-USt-Erklärung</td></tr>
+          </table>
+          <p style="margin-top:10px">Frist jeweils der 10. des Folgemonats/-quartals, ausschließlich über ELSTER.</p>
+          <p>Einkommensteuer- und Gewerbesteuer-Vorauszahlungen sind vierteljährlich (10.3./10.6./10.9./10.12.) fällig, aber das ist reine Zahlung ohne eigene Einreichung — die Höhe setzt das Finanzamt automatisch fest.</p>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <button class="help-q" data-target="h6"><span>6. Bin ich Kleinunternehmer?</span><span class="chev">▾</span></button>
+        <div class="help-a" id="h6">
+          <p>Du kannst die Kleinunternehmerregelung (§19 UStG) nutzen, wenn:</p>
+          <ul>
+            <li>dein Umsatz im Vorjahr nicht über 25.000 € lag, <strong>und</strong></li>
+            <li>dein Umsatz im laufenden Jahr voraussichtlich unter 100.000 € bleibt</li>
+          </ul>
+          <p>Als Kleinunternehmer weist du keine Umsatzsteuer aus und musst keine Voranmeldungen abgeben — dafür auch keinen Vorsteuerabzug. Die Grenze bezieht sich auf den Umsatz, nicht auf den Gewinn.</p>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <button class="help-q" data-target="h7"><span>7. Was übernimmt diese App nicht?</span><span class="chev">▾</span></button>
+        <div class="help-a" id="h7">
+          <ul>
+            <li>Keine rechtsverbindliche Steuerberatung</li>
+            <li>Keine tatsächliche Übermittlung ans Finanzamt (kein ELSTER-Zugang)</li>
+            <li>AfA und §35-EStG-Anrechnung sind vereinfacht modelliert (keine Mitunternehmerschaften, keine ausländische Steueranrechnung)</li>
+            <li>Vorsorgeaufwendungen ohne Höchstbetragsgrenzen nach §10 EStG</li>
+            <li>Verlustvortrag ohne Mindestbesteuerungsregeln</li>
+            <li>Kein amtlicher Steuerbescheid — nur eine Schätzung zur Vorbereitung</li>
+          </ul>
+          <p>Für alles darüber hinaus: Steuerberater oder direkt beim Finanzamt nachfragen.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+  document.getElementById('menu-toggle').addEventListener('click', () => {
+    document.getElementById('menu-panel').classList.toggle('open');
+  });
+  document.addEventListener('click', (ev) => {
+    const panel = document.getElementById('menu-panel');
+    const toggle = document.getElementById('menu-toggle');
+    if(panel.classList.contains('open') && !panel.contains(ev.target) && !toggle.contains(ev.target)){
+      panel.classList.remove('open');
+    }
+  });
+
+  const THEME_KEY = 'sparrechner_theme_v1';
+  function applyTheme(theme){
+    if(!theme || theme === 'midnight') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', theme);
+    document.querySelectorAll('.theme-swatch').forEach(btn => {
+      btn.classList.toggle('active', (btn.dataset.swatch || 'midnight') === (theme || 'midnight'));
+    });
+  }
+  document.querySelectorAll('.theme-swatch').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const theme = btn.dataset.swatch;
+      try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
+      applyTheme(theme);
+    });
+  });
+  applyTheme((function(){ try{ return localStorage.getItem(THEME_KEY) || 'midnight'; }catch(e){ return 'midnight'; } })());
+
+  // Hilfe-Modal
+  const helpBtn = document.getElementById('help-btn');
+  const helpOverlay = document.getElementById('help-overlay');
+  const helpClose = document.getElementById('help-close');
+  helpBtn.addEventListener('click', () => { helpOverlay.classList.add('open'); });
+  helpClose.addEventListener('click', () => { helpOverlay.classList.remove('open'); });
+  helpOverlay.addEventListener('click', (ev) => {
+    if(ev.target === helpOverlay) helpOverlay.classList.remove('open');
+  });
+  document.querySelectorAll('.help-q').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = document.getElementById(btn.dataset.target);
+      const isOpen = target.classList.contains('open');
+      target.classList.toggle('open', !isOpen);
+      btn.classList.toggle('open', !isOpen);
+    });
+  });
+
+  const gwMonthInput = document.getElementById('gw-month');
+  const gwEinnahmenInput = document.getElementById('gw-einnahmen');
+  const gwAusgabenList = document.getElementById('gw-ausgaben-list');
+  const gwAddAusgabeBtn = document.getElementById('gw-add-ausgabe-btn');
+  const gwAusgabenSumEl = document.getElementById('gw-ausgaben-sum');
+  const gwLiveNet = document.getElementById('gw-live-net');
+  const gwLiveTax = document.getElementById('gw-live-tax');
+  const gwLiveAfterTax = document.getElementById('gw-live-after-tax');
+  const gwSaveBtn = document.getElementById('gw-save-btn');
+  const gwHint = document.getElementById('gw-hint');
+  const gwEmpty = document.getElementById('gw-empty');
+  const gwTable = document.getElementById('gw-table');
+  const gwTbody = document.getElementById('gw-tbody');
+  const gwTotalRow = document.getElementById('gw-total-row');
+  const gwTotalEl = document.getElementById('gw-total');
+
+  function addLedgerAusgabeRow(catKey, amount){
+    const row = document.createElement('div');
+    row.className = 'gw-ausgabe-row';
+
+    const select = document.createElement('select');
+    EXPENSE_CATEGORIES.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat.key;
+      opt.textContent = cat.label;
+      if(cat.key === catKey) opt.selected = true;
+      select.appendChild(opt);
+    });
+
+    const input = document.createElement('input');
+    input.type = 'number'; input.step = '0.01'; input.min = '0'; input.placeholder = '0,00';
+    if(amount) input.value = amount;
+
+    const remove = document.createElement('button');
+    remove.className = 'gw-ausgabe-remove';
+    remove.type = 'button';
+    remove.textContent = '✕';
+    remove.addEventListener('click', () => {
+      row.remove();
+      updateGwLiveNet();
+    });
+
+    select.addEventListener('change', updateGwLiveNet);
+    input.addEventListener('input', updateGwLiveNet);
+
+    row.appendChild(select);
+    row.appendChild(input);
+    row.appendChild(remove);
+    gwAusgabenList.appendChild(row);
+  }
+
+  gwAddAusgabeBtn.addEventListener('click', () => addLedgerAusgabeRow());
+
+  function collectLedgerAusgaben(){
+    const result = {};
+    gwAusgabenList.querySelectorAll('.gw-ausgabe-row').forEach(row => {
+      const key = row.querySelector('select').value;
+      const val = parseFloat(String(row.querySelector('input').value).replace(',', '.')) || 0;
+      if(val > 0) result[key] = (result[key] || 0) + val;
+    });
+    return result;
+  }
+
+  function buildYearGewinnMap(year, overrideMonth, overrideGewinn){
+    const map = {};
+    loadGewinn().filter(e => e.month.startsWith(year)).forEach(e => { map[e.month] = e.amount; });
+    if(overrideMonth && overrideMonth.startsWith(year)) map[overrideMonth] = overrideGewinn;
+    return map;
+  }
+
+  function cumulativeGewinnThroughMonth(map, year, monthNum){
+    let sum = 0;
+    for(let m = 1; m <= monthNum; m++){
+      const key = year + '-' + String(m).padStart(2, '0');
+      if(map[key]) sum += map[key];
+    }
+    return sum;
+  }
+
+  function estimatedTaxBreakdownThroughMonth(gewinnMap, year, monthNum){
+    if(monthNum <= 0) return { est: 0, estVorErmaessigung: 0, ermaessigung35: 0, soli: 0, kirchensteuer: 0, gewst: 0, messbetrag: 0, total: 0 };
+    const settings = loadTaxSettings();
+    const otherIncomeAnnual = parseFloat(settings.otherIncome) || 0;
+    const hebesatz = parseFloat(settings.hebesatz) || 400;
+    const useCustom = settings.taxMode === 'custom';
+    const customRatePct = parseFloat(settings.customRate) || 0;
+    const includeGewst = typeof settings.includeGewst === 'boolean' ? settings.includeGewst : true;
+    const kirchensteuerActive = !!settings.kirchensteuer;
+    const kSatz = kirchensteuerActive ? (parseFloat(settings.kirchensteuerSatz) || 9) : 0;
+    const kappungAktiv = !!settings.kirchensteuerKappung;
+    const kappungSatz = parseFloat(settings.kirchensteuerKappungSatz) || 3.5;
+    const verheiratet = settings.familienstand === 'verheiratet';
+    const kinderAnzahl = parseInt(settings.kinder, 10) || 0;
+    const krankenversicherung = parseFloat(settings.krankenversicherung) || 0;
+    const vorsorge = parseFloat(settings.vorsorge) || 0;
+    const verlustvortrag = parseFloat(settings.verlustvortrag) || 0;
+
+    const gewerbeYTD = cumulativeGewinnThroughMonth(gewinnMap, year, monthNum);
+    const otherYTD = otherIncomeAnnual * (monthNum / 12);
+    const sonderausgabenYTD = (krankenversicherung + vorsorge) * (monthNum / 12);
+    // Kinderfreibetrag ist wie der Grundfreibetrag ein Jahres-Freibetrag (kein anteiliger
+    // "Anspruch" pro Monat) — daher hier immer voll berücksichtigt, nicht anteilig.
+    const kinderfreibetragGesamt = kinderAnzahl * KINDERFREIBETRAG_2026;
+
+    const zve = Math.max(0, gewerbeYTD + otherYTD - sonderausgabenYTD - verlustvortrag - kinderfreibetragGesamt);
+
+    let estVorErmaessigung, soliFreigrenze;
+    if(verheiratet){
+      estVorErmaessigung = 2 * berechneEinkommensteuerBasis(zve / 2, useCustom, customRatePct);
+      soliFreigrenze = 39900;
+    } else {
+      estVorErmaessigung = berechneEinkommensteuerBasis(zve, useCustom, customRatePct);
+      soliFreigrenze = 19950;
+    }
+
+    // Der Gewerbesteuer-Freibetrag gilt einmal für das ganze Jahr, nicht anteilig pro Monat —
+    // deshalb hier immer der volle Freibetrag, auch bei einer Zwischenstands-Berechnung.
+    const messbetrag = includeGewst ? gewerbesteuermessbetrag(gewerbeYTD, GEWST_FREIBETRAG) : 0;
+    const gewst = includeGewst ? gewerbesteuer(gewerbeYTD, hebesatz, GEWST_FREIBETRAG) : 0;
+
+    // §35 EStG: Anrechnung der Gewerbesteuer auf die Einkommensteuer
+    const gesamtPositiveEinkuenfte = gewerbeYTD + otherYTD;
+    const ermaessigung35 = includeGewst
+      ? paragraph35Ermaessigung(messbetrag, gewst, estVorErmaessigung, gewerbeYTD, gesamtPositiveEinkuenfte)
+      : 0;
+    const est = Math.max(0, estVorErmaessigung - ermaessigung35);
+
+    const soli = solidaritaetszuschlag(est, soliFreigrenze);
+
+    let kirchensteuerBetrag = Math.round(est * (kSatz / 100) * 100) / 100;
+    if(kappungAktiv && kSatz > 0){
+      const kappungGrenze = Math.round(zve * (kappungSatz / 100) * 100) / 100;
+      kirchensteuerBetrag = Math.min(kirchensteuerBetrag, kappungGrenze);
+    }
+
+    return {
+      est, estVorErmaessigung, ermaessigung35, soli,
+      kirchensteuer: kirchensteuerBetrag, gewst, messbetrag,
+      total: est + soli + kirchensteuerBetrag + gewst
+    };
+  }
+
+  function estimatedTaxTotalThroughMonth(gewinnMap, year, monthNum){
+    return estimatedTaxBreakdownThroughMonth(gewinnMap, year, monthNum).total;
+  }
+
+  function estimatedTaxForMonth(gewinnMap, monthStr){
+    const year = monthStr.slice(0, 4);
+    const monthNum = parseInt(monthStr.slice(5, 7), 10);
+    const totalThrough = estimatedTaxTotalThroughMonth(gewinnMap, year, monthNum);
+    const totalBefore = estimatedTaxTotalThroughMonth(gewinnMap, year, monthNum - 1);
+    return Math.max(0, totalThrough - totalBefore);
+  }
+
+  function updateGwLiveNet(){
+    const ein = parseFloat(String(gwEinnahmenInput.value).replace(',', '.')) || 0;
+    const ausgaben = collectLedgerAusgaben();
+    const aus = Object.values(ausgaben).reduce((s, v) => s + v, 0);
+    const net = ein - aus;
+    gwAusgabenSumEl.textContent = formatEUR(aus);
+    gwLiveNet.textContent = formatEUR(net);
+    gwLiveNet.style.color = net < 0 ? 'var(--danger)' : (net > 0 ? 'var(--sage)' : 'var(--brass)');
+
+    const monthStr = gwMonthInput.value || currentMonthStr();
+    const year = monthStr.slice(0, 4);
+    const gewinnMap = buildYearGewinnMap(year, monthStr, net);
+    const tax = estimatedTaxForMonth(gewinnMap, monthStr);
+    gwLiveTax.textContent = '− ' + formatEUR(tax);
+    gwLiveAfterTax.textContent = formatEUR(net - tax);
+  }
+  gwEinnahmenInput.addEventListener('input', updateGwLiveNet);
+  gwMonthInput.addEventListener('change', updateGwLiveNet);
+
+  function currentMonthStr(){
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  }
+
+  function currentYear(){ return new Date().getFullYear().toString(); }
+
+  let gwViewYear = new Date().getFullYear();
+
+  function renderGewinn(){
+    const yearStr = String(gwViewYear);
+    document.getElementById('gw-year-label').textContent = yearStr;
+    document.getElementById('gw-total-label').textContent = 'Jahresgewinn ' + yearStr;
+    document.getElementById('gw-year-pdf-label').textContent = yearStr;
+
+    const all = loadGewinn().sort((a,b) => b.month.localeCompare(a.month));
+    const yearEntries = all.filter(e => e.month.startsWith(yearStr));
+
+    if(yearEntries.length === 0){
+      gwEmpty.style.display = 'block';
+      gwTable.style.display = 'none';
+      gwTotalRow.style.display = 'none';
+      document.getElementById('fb-gauges-row').style.display = 'none';
+      if(typeof renderBescheidCompare === 'function') renderBescheidCompare();
+      return;
+    }
+    gwEmpty.style.display = 'none';
+    gwTable.style.display = 'table';
+    gwTotalRow.style.display = 'flex';
+
+    gwTbody.innerHTML = '';
+    yearEntries.forEach(entry => {
+      const ein = entry.einnahmen !== undefined ? entry.einnahmen : entry.amount;
+      const aus = entry.ausgaben || 0;
+      let ausgabenBreakdown = '';
+      if(entry.ausgabenKategorien && Object.keys(entry.ausgabenKategorien).length > 0){
+        ausgabenBreakdown = Object.entries(entry.ausgabenKategorien).map(([key, val]) => {
+          const cat = EXPENSE_CATEGORIES.find(c => c.key === key);
+          return (cat ? cat.label : key) + ' ' + formatEUR(val);
+        }).join(' · ');
+      }
+      const tr = document.createElement('tr');
+      const yearGewinnMap = buildYearGewinnMap(entry.month.slice(0, 4));
+      const estTax = estimatedTaxForMonth(yearGewinnMap, entry.month);
+      const afterTax = entry.amount - estTax;
+      tr.innerHTML =
+        '<td class="month-cell">' + monthLabel(entry.month) + '</td>' +
+        '<td>' + formatEUR(ein) + '</td>' +
+        '<td>' + formatEUR(aus) +
+          (ausgabenBreakdown ? '<br><span style="font-size:9px; color:var(--ink-soft); font-weight:400; white-space:normal;">' + ausgabenBreakdown + '</span>' : '') +
+        '</td>' +
+        '<td>' + formatEUR(entry.amount) +
+          '<br><span style="font-size:9px; color:var(--danger); font-weight:400;">− ' + formatEUR(estTax) + ' Steuer (gesch.)</span>' +
+          '<br><span style="font-size:9px; color:var(--sage); font-weight:600;">' + formatEUR(afterTax) + ' netto</span>' +
+        '</td>' +
+        '<td><button class="del-btn" title="Löschen">✕</button></td>';
+      tr.querySelector('.del-btn').addEventListener('click', () => {
+        saveGewinn(loadGewinn().filter(e => e.month !== entry.month));
+        renderGewinn();
+      });
+      gwTbody.appendChild(tr);
+    });
+
+    const yearTotal = yearEntries.reduce((s, e) => s + e.amount, 0);
+    gwTotalEl.textContent = formatEUR(yearTotal);
+    renderYearGauges(yearTotal, yearStr);
+    if(typeof renderBescheidCompare === 'function') renderBescheidCompare();
+  }
+
+  function setSmallGauge(idFree, idTax, valFree, valTax, arcLen){
+    const total = valFree + valTax;
+    const ratio = total > 0 ? valFree / total : 1;
+    const lenFree = arcLen * ratio;
+    const lenTax = arcLen - lenFree;
+    document.getElementById(idFree).setAttribute('stroke-dasharray', lenFree + ' ' + arcLen);
+    document.getElementById(idTax).setAttribute('stroke-dasharray', lenTax + ' ' + arcLen);
+    document.getElementById(idTax).setAttribute('stroke-dashoffset', -lenFree);
+  }
+
+  function renderYearGauges(yearTotal, yearStr){
+    const wrap = document.getElementById('fb-gauges-row');
+    if(yearTotal <= 0){ wrap.style.display = 'none'; return; }
+    wrap.style.display = 'flex';
+
+    const settings = loadTaxSettings();
+    const otherIncomeAnnual = parseFloat(settings.otherIncome) || 0;
+    const sonderausgaben = (parseFloat(settings.krankenversicherung) || 0) + (parseFloat(settings.vorsorge) || 0);
+    const verlustvortrag = parseFloat(settings.verlustvortrag) || 0;
+    const kinderAnzahl = parseInt(settings.kinder, 10) || 0;
+    const kinderfreibetrag = kinderAnzahl * KINDERFREIBETRAG_2026;
+    const verheiratet = settings.familienstand === 'verheiratet';
+
+    const zve = Math.max(0, yearTotal + otherIncomeAnnual - sonderausgaben - verlustvortrag - kinderfreibetrag);
+    const grundfreibetrag = verheiratet ? GRUNDFREIBETRAG_2026 * 2 : GRUNDFREIBETRAG_2026;
+    const istGewerbe = typeof settings.includeGewst === 'boolean' ? settings.includeGewst : true;
+
+    // Bei Gewerbe: Gewerbesteuer-Freibetrag (24.500 €) bezogen auf den Gewerbegewinn selbst —
+    // das ist der Freibetrag, der zum direkt angezeigten Jahresgewinn passt.
+    // Bei Freiberuflicher Tätigkeit gibt es keine Gewerbesteuer, daher zeigt der Halbkreis
+    // stattdessen den Grundfreibetrag (Einkommensteuer) bezogen auf das zu versteuernde Einkommen.
+    const fbBasis = istGewerbe ? yearTotal : zve;
+    const fbGrenze = istGewerbe ? GEWST_FREIBETRAG : grundfreibetrag;
+    const fbTitle = istGewerbe ? 'Gewerbesteuer-Freibetrag' : 'Grundfreibetrag';
+
+    const withinFreibetrag = Math.min(fbBasis, fbGrenze);
+    const overFreibetrag = Math.max(0, fbBasis - fbGrenze);
+    const remaining = Math.max(0, fbGrenze - fbBasis);
+
+    document.querySelector('.fb-gauge-small:nth-child(1) .fb-gauge-title').textContent = fbTitle;
+
+    const gewinnMap = buildYearGewinnMap(yearStr);
+    const breakdown = estimatedTaxBreakdownThroughMonth(gewinnMap, yearStr, 12);
+    const totalTaxEstimate = breakdown.total;
+    const netto = Math.max(0, yearTotal - totalTaxEstimate);
+
+    // Gauge 1: Freibetrag
+    setSmallGauge('fbGaugeFree', 'fbGaugeTax', withinFreibetrag, overFreibetrag, 157);
+    document.getElementById('fb-gauge-center').textContent = overFreibetrag > 0 ? ('0 / ' + formatEUR(fbGrenze)) : formatEUR(remaining);
+    document.getElementById('fb-gauge-sub').textContent = overFreibetrag > 0 ? 'Freibetrag verfügbar' : 'noch offen';
+    document.getElementById('fb-freibetrag-label').textContent = 'frei: ' + formatEUR(withinFreibetrag);
+    document.getElementById('fb-steuerpflichtig-label').textContent = 'pflichtig: ' + formatEUR(overFreibetrag);
+
+    // Gauge 2: Einkommen (netto vs. Steuer)
+    setSmallGauge('ekGaugeNetto', 'ekGaugeSteuer', netto, totalTaxEstimate, 157);
+    document.getElementById('ek-gauge-center').textContent = formatEUR(netto);
+    document.getElementById('ek-gauge-sub').textContent = 'bleibt netto';
+    document.getElementById('ek-netto-label').textContent = 'netto: ' + formatEUR(netto);
+    document.getElementById('ek-steuer-label').textContent = 'Steuer: ' + formatEUR(totalTaxEstimate);
+
+    // Gauge 3: Steuer-Zusammensetzung (ESt/Soli/KiSt vs. Gewerbesteuer)
+    const estGroup = breakdown.est + breakdown.soli + breakdown.kirchensteuer;
+    setSmallGauge('stGaugeEst', 'stGaugeGewst', estGroup, breakdown.gewst, 157);
+    document.getElementById('st-gauge-center').textContent = formatEUR(breakdown.total);
+    document.getElementById('st-gauge-sub').textContent = 'gesamt';
+    document.getElementById('st-est-label').textContent = 'ESt u.a.: ' + formatEUR(estGroup);
+    document.getElementById('st-gewst-label').textContent = 'GewSt: ' + formatEUR(breakdown.gewst);
+  }
+
+  const BESCHEID_KEY = 'sparrechner_bescheid_v1';
+  function loadBescheide(){
+    try{ const raw = localStorage.getItem(BESCHEID_KEY); return raw ? JSON.parse(raw) : {}; }
+    catch(e){ return {}; }
+  }
+  function saveBescheide(obj){ localStorage.setItem(BESCHEID_KEY, JSON.stringify(obj)); }
+
+  const bescheidEstInput = document.getElementById('gw-bescheid-est');
+  const bescheidSoliInput = document.getElementById('gw-bescheid-soli');
+  const bescheidKistInput = document.getElementById('gw-bescheid-kist');
+  const bescheidGewstInput = document.getElementById('gw-bescheid-gewst');
+  const bescheidSaveBtn = document.getElementById('gw-bescheid-save-btn');
+  const bescheidHint = document.getElementById('gw-bescheid-hint');
+  const bescheidCompareWrap = document.getElementById('gw-bescheid-compare');
+  const bescheidTbody = document.getElementById('gw-bescheid-tbody');
+
+  function diffCell(schaetzung, bescheid){
+    const diff = bescheid - schaetzung;
+    const cls = Math.abs(diff) < 1 ? 'diff-ok' : (diff > 0 ? 'diff-warn' : 'diff-ok');
+    const sign = diff > 0 ? '+' : (diff < 0 ? '−' : '');
+    return '<td class="' + cls + '">' + sign + formatEUR(Math.abs(diff)) + '</td>';
+  }
+
+  function renderBescheidCompare(){
+    const yearStr = String(gwViewYear);
+    document.getElementById('gw-bescheid-year-label').textContent = yearStr;
+    const all = loadBescheide();
+    const saved = all[yearStr];
+
+    bescheidEstInput.value = saved ? (saved.est || '') : '';
+    bescheidSoliInput.value = saved ? (saved.soli || '') : '';
+    bescheidKistInput.value = saved ? (saved.kist || '') : '';
+    bescheidGewstInput.value = saved ? (saved.gewst || '') : '';
+
+    if(!saved){
+      bescheidCompareWrap.style.display = 'none';
+      return;
+    }
+
+    const yearEntries = loadGewinn().filter(e => e.month.startsWith(yearStr));
+    const yearTotal = yearEntries.reduce((s, e) => s + e.amount, 0);
+    const gewinnMap = buildYearGewinnMap(yearStr);
+    const est = estimatedTaxBreakdownThroughMonth(gewinnMap, yearStr, 12);
+
+    const bEst = parseFloat(saved.est) || 0;
+    const bSoli = parseFloat(saved.soli) || 0;
+    const bKist = parseFloat(saved.kist) || 0;
+    const bGewst = parseFloat(saved.gewst) || 0;
+    const bTotal = bEst + bSoli + bKist + bGewst;
+
+    bescheidTbody.innerHTML =
+      '<tr><td>Einkommensteuer</td><td>' + formatEUR(est.est) + '</td><td>' + formatEUR(bEst) + '</td>' + diffCell(est.est, bEst) + '</tr>' +
+      '<tr><td>Solidaritätszuschlag</td><td>' + formatEUR(est.soli) + '</td><td>' + formatEUR(bSoli) + '</td>' + diffCell(est.soli, bSoli) + '</tr>' +
+      '<tr><td>Kirchensteuer</td><td>' + formatEUR(est.kirchensteuer) + '</td><td>' + formatEUR(bKist) + '</td>' + diffCell(est.kirchensteuer, bKist) + '</tr>' +
+      '<tr><td>Gewerbesteuer</td><td>' + formatEUR(est.gewst) + '</td><td>' + formatEUR(bGewst) + '</td>' + diffCell(est.gewst, bGewst) + '</tr>' +
+      '<tr style="font-weight:600; border-top:1.5px solid var(--ink)"><td>Gesamt</td><td>' + formatEUR(est.total) + '</td><td>' + formatEUR(bTotal) + '</td>' + diffCell(est.total, bTotal) + '</tr>';
+
+    bescheidCompareWrap.style.display = 'block';
+  }
+
+  function saveBescheidForYear(){
+    const yearStr = String(gwViewYear);
+    const all = loadBescheide();
+    all[yearStr] = {
+      est: bescheidEstInput.value, soli: bescheidSoliInput.value,
+      kist: bescheidKistInput.value, gewst: bescheidGewstInput.value
+    };
+    saveBescheide(all);
+    bescheidHint.textContent = 'Bescheid für ' + yearStr + ' gespeichert.';
+    bescheidHint.style.color = 'var(--sage)';
+    setTimeout(() => { bescheidHint.textContent = ''; }, 2500);
+    renderBescheidCompare();
+  }
+  bescheidSaveBtn.addEventListener('click', saveBescheidForYear);
+
+  function downloadYearPdf(){
+    const yearStr = String(gwViewYear);
+    const hintEl = document.getElementById('gw-year-pdf-hint');
+    const entries = loadGewinn().filter(e => e.month.startsWith(yearStr)).sort((a,b) => a.month.localeCompare(b.month));
+
+    if(entries.length === 0){
+      hintEl.textContent = 'Für ' + yearStr + ' ist noch nichts erfasst.';
+      hintEl.style.color = 'var(--danger)';
+      return;
+    }
+    hintEl.textContent = '';
+
+    const einnahmenTotal = entries.reduce((s, e) => s + (e.einnahmen !== undefined ? e.einnahmen : e.amount), 0);
+    const ausgabenTotal = entries.reduce((s, e) => s + (e.ausgaben || 0), 0);
+    const gewinnTotal = entries.reduce((s, e) => s + e.amount, 0);
+    const gewinnMap = buildYearGewinnMap(yearStr);
+    const breakdown = estimatedTaxBreakdownThroughMonth(gewinnMap, yearStr, 12);
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const marginX = 20;
+    let y = 24;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text('Budget-Ledger — Steuerjahr ' + yearStr, marginX, y);
+    y += 6;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(120);
+    doc.text('Unverbindliche Schätzung, keine Einreichung beim Finanzamt. Erstellt am ' + new Date().toLocaleDateString('de-DE') + '.', marginX, y);
+    doc.setTextColor(0);
+    y += 14;
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+    doc.text('Monatliche Einnahmen & Ausgaben', marginX, y); y += 8;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+    doc.text('Monat', marginX, y);
+    doc.text('Einnahmen', marginX + 70, y, { align: 'right' });
+    doc.text('Ausgaben', marginX + 120, y, { align: 'right' });
+    doc.text('Gewinn', marginX + 170, y, { align: 'right' });
+    y += 5;
+    doc.setLineWidth(0.2);
+    doc.line(marginX, y, marginX + 170, y);
+    y += 5;
+    doc.setFontSize(10);
+    entries.forEach(e => {
+      const ein = e.einnahmen !== undefined ? e.einnahmen : e.amount;
+      const aus = e.ausgaben || 0;
+      doc.text(monthLabel(e.month), marginX, y);
+      doc.text(formatEUR(ein), marginX + 70, y, { align: 'right' });
+      doc.text(formatEUR(aus), marginX + 120, y, { align: 'right' });
+      doc.text(formatEUR(e.amount), marginX + 170, y, { align: 'right' });
+      y += 6;
+      if(e.ausgabenKategorien && Object.keys(e.ausgabenKategorien).length > 0){
+        doc.setFontSize(8); doc.setTextColor(110);
+        const cats = Object.entries(e.ausgabenKategorien).map(([k, v]) => {
+          const cat = EXPENSE_CATEGORIES.find(c => c.key === k);
+          return (cat ? cat.label : k) + ' ' + formatEUR(v);
+        }).join(' · ');
+        const lines = doc.splitTextToSize(cats, 150);
+        doc.text(lines, marginX + 4, y);
+        y += lines.length * 4 + 2;
+        doc.setFontSize(10); doc.setTextColor(0);
+      }
+    });
+    y += 1;
+    doc.line(marginX, y, marginX + 170, y); y += 6;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Gesamt ' + yearStr, marginX, y);
+    doc.text(formatEUR(einnahmenTotal), marginX + 70, y, { align: 'right' });
+    doc.text(formatEUR(ausgabenTotal), marginX + 120, y, { align: 'right' });
+    doc.text(formatEUR(gewinnTotal), marginX + 170, y, { align: 'right' });
+    y += 14;
+
+    if(y > 230){ doc.addPage(); y = 24; }
+
+    doc.setFontSize(12);
+    doc.text('Steuerschätzung ' + yearStr, marginX, y); y += 8;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    doc.text('Einkommensteuer vor §35-Anrechnung', marginX, y); doc.text(formatEUR(breakdown.estVorErmaessigung), marginX + 150, y, { align: 'right' }); y += 6;
+    if(breakdown.ermaessigung35 > 0){
+      doc.text('§35 EStG Anrechnung (Gewerbesteuer auf ESt)', marginX, y); doc.text('− ' + formatEUR(breakdown.ermaessigung35), marginX + 150, y, { align: 'right' }); y += 6;
+      doc.setFont('helvetica', 'bold');
+      doc.text('Einkommensteuer nach Anrechnung', marginX, y); doc.text(formatEUR(breakdown.est), marginX + 150, y, { align: 'right' }); y += 6;
+      doc.setFont('helvetica', 'normal');
+    }
+    doc.text('Solidaritätszuschlag', marginX, y); doc.text(formatEUR(breakdown.soli), marginX + 150, y, { align: 'right' }); y += 6;
+    if(breakdown.kirchensteuer > 0){
+      doc.text('Kirchensteuer', marginX, y); doc.text(formatEUR(breakdown.kirchensteuer), marginX + 150, y, { align: 'right' }); y += 6;
+    }
+    if(breakdown.gewst > 0){
+      doc.text('Gewerbesteuer', marginX, y); doc.text(formatEUR(breakdown.gewst), marginX + 150, y, { align: 'right' }); y += 6;
+    }
+    y += 2; doc.line(marginX, y, marginX + 170, y); y += 7;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    doc.text('Geschätzte Steuerlast gesamt', marginX, y);
+    doc.text(formatEUR(breakdown.total), marginX + 150, y, { align: 'right' });
+    y += 8;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    doc.text('Netto nach Steuer', marginX, y);
+    doc.text(formatEUR(gewinnTotal - breakdown.total), marginX + 150, y, { align: 'right' });
+    y += 14;
+
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(120);
+    const disclaimer = 'Diese Unterlage ist eine unverbindliche Orientierung zur Vorbereitung, inkl. vereinfachter §35-EStG-Anrechnung und AfA aus dem Anlagenverzeichnis (falls im Assistenten erfasst). Sie ersetzt keine Steuererklärung, keinen Steuerberater und keinen amtlichen Steuerbescheid des Finanzamts. Die tatsächliche Einreichung erfolgt ausschließlich über ELSTER oder einen Steuerberater.';
+    const lines = doc.splitTextToSize(disclaimer, 170);
+    doc.text(lines, marginX, y);
+
+    doc.save('Budget-Ledger-Steuerjahr-' + yearStr + '.pdf');
+    hintEl.textContent = 'PDF für ' + yearStr + ' erstellt und heruntergeladen.';
+    hintEl.style.color = 'var(--sage)';
+  }
+
+  function saveCurrentGewinn(){
+    const month = gwMonthInput.value || currentMonthStr();
+    const einnahmen = parseFloat(String(gwEinnahmenInput.value).replace(',', '.')) || 0;
+    const ausgabenKategorien = collectLedgerAusgaben();
+    const ausgaben = Object.values(ausgabenKategorien).reduce((s, v) => s + v, 0);
+    if(einnahmen <= 0 && ausgaben <= 0){
+      gwHint.textContent = 'Bitte Einnahmen oder Ausgaben eintragen.';
+      gwHint.style.color = 'var(--danger)';
+      return;
+    }
+    const amount = einnahmen - ausgaben;
+    const list = loadGewinn().filter(e => e.month !== month);
+    list.push({ month, amount, einnahmen, ausgaben, ausgabenKategorien });
+    saveGewinn(list);
+    gwHint.textContent = monthLabel(month) + ' gespeichert.';
+    gwHint.style.color = 'var(--sage)';
+    setTimeout(() => {
+      gwHint.textContent = 'Wird lokal auf diesem Gerät gespeichert.';
+      gwHint.style.color = 'var(--ink-soft)';
+    }, 2200);
+    renderGewinn();
+    syncCategoriesFromMonths();
+  }
+
+  const GW_KEY = 'sparrechner_gewinn_v1';
+  const SETTINGS_KEY = 'sparrechner_tax_settings_v1';
+  const GRUNDFREIBETRAG_2026 = 12348;
+  const GEWST_FREIBETRAG = 24500;
+  const KINDERFREIBETRAG_2026 = 9756;
+
+  const EXPENSE_CATEGORIES = [
+    { key: 'wareneinkauf', label: 'Waren-/Materialeinkauf' },
+    { key: 'raumkosten', label: 'Raumkosten (anteilig)' },
+    { key: 'fahrtkosten', label: 'Fahrtkosten' },
+    { key: 'werbekosten', label: 'Werbe- & Marketingkosten' },
+    { key: 'versicherungen', label: 'Versicherungen & Beiträge' },
+    { key: 'fortbildung', label: 'Fortbildung / Lizenzen / Challenge-Gebühren' },
+    { key: 'steuerberatung', label: 'Rechts- & Steuerberatungskosten' },
+    { key: 'abschreibungen', label: 'Abschreibungen (AfA)' },
+    { key: 'hardsoftware', label: 'Hard- & Software' },
+    { key: 'telekommunikation', label: 'Telefon / Internet (anteilig)' },
+    { key: 'buerobedarf', label: 'Bürobedarf' },
+    { key: 'sonstige', label: 'Sonstige Betriebsausgaben' }
+  ];
+
+  const ASSETS_KEY = 'sparrechner_assets_v1';
+  function loadAssets(){
+    try{ const raw = localStorage.getItem(ASSETS_KEY); return raw ? JSON.parse(raw) : []; }
+    catch(e){ return []; }
+  }
+  function saveAssets(list){ localStorage.setItem(ASSETS_KEY, JSON.stringify(list)); }
+
+  // AfA für ein Wirtschaftsgut im gewählten Jahr: linear über die Nutzungsdauer,
+  // monatsgenau im Anschaffungsjahr (§7 Abs. 1 S. 4 EStG). GWG bis 800 € netto: Sofortabschreibung
+  // vollständig im Anschaffungsjahr (§6 Abs. 2 EStG). Vereinfachung: letztes Teiljahr wird nicht
+  // anteilig gekürzt, sondern voll bis zum Ende der Nutzungsdauer abgeschrieben.
+  function computeAfaForYear(asset, year){
+    const cost = parseFloat(asset.cost) || 0;
+    const nutzungsdauer = parseFloat(asset.nutzungsdauer) || 1;
+    if(!asset.date || cost <= 0 || nutzungsdauer <= 0) return 0;
+    const purchaseDate = new Date(asset.date);
+    if(isNaN(purchaseDate.getTime())) return 0;
+    const purchaseYear = purchaseDate.getFullYear();
+    const purchaseMonth = purchaseDate.getMonth() + 1;
+    const targetYear = parseInt(year, 10);
+    if(targetYear < purchaseYear) return 0;
+
+    if(cost <= 800){
+      return targetYear === purchaseYear ? Math.round(cost * 100) / 100 : 0;
+    }
+
+    const yearsSincePurchase = targetYear - purchaseYear;
+    if(yearsSincePurchase >= Math.ceil(nutzungsdauer)) return 0;
+    const annualAfa = cost / nutzungsdauer;
+    if(yearsSincePurchase === 0){
+      const monateAnteilig = 13 - purchaseMonth;
+      return Math.round(annualAfa * (monateAnteilig / 12) * 100) / 100;
+    }
+    return Math.round(annualAfa * 100) / 100;
+  }
+
+  function totalAfaForYear(year){
+    return loadAssets().reduce((s, a) => s + computeAfaForYear(a, year), 0);
+  }
+
+  function formatEUR(value){
+    return '€ ' + value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function monthLabel(m){
+    const [y, mo] = m.split('-');
+    const names = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+    return names[parseInt(mo,10)-1] + ' ' + y;
+  }
+  function loadGewinn(){
+    try{ const raw = localStorage.getItem(GW_KEY); return raw ? JSON.parse(raw) : []; }
+    catch(e){ return []; }
+  }
+  function saveGewinn(list){ localStorage.setItem(GW_KEY, JSON.stringify(list)); }
+  function loadTaxSettings(){
+    try{ const raw = localStorage.getItem(SETTINGS_KEY); return raw ? JSON.parse(raw) : {}; }
+    catch(e){ return {}; }
+  }
+  function saveTaxSettings(partial){
+    const current = loadTaxSettings();
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(Object.assign(current, partial)));
+  }
+
+  function einkommensteuer2026(zve){
+    zve = Math.floor(Math.max(zve, 0));
+    if(zve <= 12348) return 0;
+    if(zve <= 17799){ const y = (zve - 12348) / 10000; return Math.floor((914.51 * y + 1400) * y); }
+    if(zve <= 69878){ const z = (zve - 17799) / 10000; return Math.floor((181.19 * z + 2397) * z + 1025.38); }
+    if(zve <= 277825){ return Math.floor(0.42 * zve - 10637.32); }
+    return Math.floor(0.45 * zve - 18971.07);
+  }
+  function solidaritaetszuschlag(est, freigrenze){
+    if(est <= freigrenze) return 0;
+    const voll = est * 0.055;
+    const milderung = (est - freigrenze) * 0.119;
+    return Math.round(Math.min(voll, milderung) * 100) / 100;
+  }
+  function gewerbesteuermessbetrag(gewerbeertragJahr, freibetrag){
+    const steuerpflichtig = Math.max(0, Math.floor((gewerbeertragJahr - freibetrag) / 100) * 100);
+    return steuerpflichtig * 0.035;
+  }
+  function gewerbesteuer(gewerbeertragJahr, hebesatzProzent, freibetrag){
+    const messbetrag = gewerbesteuermessbetrag(gewerbeertragJahr, freibetrag);
+    return Math.round(messbetrag * (hebesatzProzent / 100) * 100) / 100;
+  }
+  // §35 EStG: Steuerermäßigung bei Einkünften aus Gewerbebetrieb — das 4-fache des
+  // Gewerbesteuer-Messbetrags, gedeckelt auf (a) die tatsächlich zu zahlende Gewerbesteuer
+  // und (b) den Anteil der tariflichen ESt, der auf die gewerblichen Einkünfte entfällt
+  // (Ermäßigungshöchstbetrag). Vereinfachte Modellierung ohne Berücksichtigung von
+  // Mitunternehmerschaften, ausländischen Steueranrechnungen o. Ä.
+  function paragraph35Ermaessigung(messbetrag, gewst, est, gewerbeGewinn, gesamtPositiveEinkuenfte){
+    if(messbetrag <= 0 || gewst <= 0 || est <= 0) return 0;
+    const roh = 4 * messbetrag;
+    const gedeckeltAufGewSt = Math.min(roh, gewst);
+    const anteilGewerblich = gesamtPositiveEinkuenfte > 0 ? Math.min(1, gewerbeGewinn / gesamtPositiveEinkuenfte) : 0;
+    const ermaessigungshoechstbetrag = est * anteilGewerblich;
+    return Math.round(Math.min(gedeckeltAufGewSt, ermaessigungshoechstbetrag) * 100) / 100;
+  }
+  function berechneEinkommensteuerBasis(zve, useCustom, customRatePct){
+    if(useCustom){
+      const basis = Math.max(0, zve - GRUNDFREIBETRAG_2026);
+      return Math.round(basis * (customRatePct / 100) * 100) / 100;
+    }
+    return einkommensteuer2026(zve);
+  }
+
+  // --- Wizard state ---
+  const TOTAL_STEPS = 14;
+  let currentStep = 0;
+  let quickMode = false;
+  const monthInputs = {};
+  const catInputs = {};
+
+  const nameInput = document.getElementById('wz-name');
+  const steuerIdInput = document.getElementById('wz-steuerid');
+  const finanzamtInput = document.getElementById('wz-finanzamt');
+  const strasseInput = document.getElementById('wz-strasse');
+  const plzOrtInput = document.getElementById('wz-plz-ort');
+
+  const famLedig = document.getElementById('wz-fam-ledig');
+  const famVerheiratet = document.getElementById('wz-fam-verheiratet');
+  const kinderInput = document.getElementById('wz-kinder');
+
+  const betriebsnameInput = document.getElementById('wz-betriebsname');
+  const beginnInput = document.getElementById('wz-beginn');
+  const rechtsformInput = document.getElementById('wz-rechtsform');
+  const betriebssteuernummerInput = document.getElementById('wz-betriebssteuernummer');
+  const ustIdInput = document.getElementById('wz-ustid');
+  const ibanInput = document.getElementById('wz-iban');
+  const taetigkeitInput = document.getElementById('wz-taetigkeit');
+
+  const ustKlein = document.getElementById('wz-ust-klein');
+  const ustRegel = document.getElementById('wz-ust-regel');
+  const ustField = document.getElementById('wz-ust-field');
+  const ustEingenommenInput = document.getElementById('wz-ust-eingenommen');
+  const vorsteuerInput = document.getElementById('wz-vorsteuer');
+
+  const yearSelect = document.getElementById('wz-year');
+  const monthGrid = document.getElementById('wz-month-grid');
+  const catRowsWrap = document.getElementById('wz-cat-rows');
+  const catSumEl = document.getElementById('wz-cat-sum');
+  const catReconcileEl = document.getElementById('wz-cat-reconcile');
+  const assetRowsWrap = document.getElementById('wz-asset-rows');
+  const addAssetBtn = document.getElementById('wz-add-asset-btn');
+  const afaSumEl = document.getElementById('wz-afa-sum');
+  const afaYearLabelEl = document.getElementById('wz-afa-year-label');
+
+  const otherIncomeInput = document.getElementById('wz-other-income');
+
+  const krankenversicherungInput = document.getElementById('wz-krankenversicherung');
+  const vorsorgeInput = document.getElementById('wz-vorsorge');
+  const vorauszahlungenInput = document.getElementById('wz-vorauszahlungen');
+  const verlustvortragInput = document.getElementById('wz-verlustvortrag');
+
+  const kirchensteuerCheck = document.getElementById('wz-kirchensteuer');
+  const kirchensteuerField = document.getElementById('wz-kirchensteuer-field');
+  const kirchensteuerSatz = document.getElementById('wz-kirchensteuer-satz');
+  const kappungCheck = document.getElementById('wz-kappung');
+  const kappungField = document.getElementById('wz-kappung-field');
+  const kappungSatzInput = document.getElementById('wz-kappung-satz');
+  kappungCheck.addEventListener('change', () => {
+    kappungField.style.display = kappungCheck.checked ? 'block' : 'none';
+  });
+  const includeGewstCheck = document.getElementById('wz-include-gewst');
+  const hebesatzInput = document.getElementById('wz-hebesatz');
+  const taetigkeitGewerbe = document.getElementById('wz-taetigkeit-gewerbe');
+  const taetigkeitFreiberuflich = document.getElementById('wz-taetigkeit-freiberuflich');
+  const gewstFields = document.getElementById('wz-gewst-fields');
+  const freiberuflichHint = document.getElementById('wz-freiberuflich-hint');
+  const taxModeAuto = document.getElementById('wz-tax-mode-auto');
+  const taxModeCustom = document.getElementById('wz-tax-mode-custom');
+  const customRateField = document.getElementById('wz-custom-rate-field');
+  const customRateInput = document.getElementById('wz-custom-rate');
+
+  function applyTaetigkeitsart(){
+    const isGewerbe = taetigkeitGewerbe.checked;
+    includeGewstCheck.checked = isGewerbe;
+    gewstFields.style.display = isGewerbe ? 'block' : 'none';
+    freiberuflichHint.style.display = isGewerbe ? 'none' : 'block';
+    const checklistItem = document.getElementById('wz-checklist-anlage');
+    if(checklistItem){
+      checklistItem.textContent = isGewerbe
+        ? 'Anlage G (Einkünfte aus Gewerbebetrieb) ausfüllen'
+        : 'Anlage S (selbstständige Arbeit) statt Anlage G ausfüllen';
+    }
+  }
+  taetigkeitGewerbe.addEventListener('change', applyTaetigkeitsart);
+  taetigkeitFreiberuflich.addEventListener('change', applyTaetigkeitsart);
+
+  const reviewBlock = document.getElementById('wz-review');
+  const progressTrack = document.getElementById('progress-track');
+  const progressLabel = document.getElementById('progress-label');
+  const backBtn = document.getElementById('wz-back-btn');
+  const nextBtn = document.getElementById('wz-next-btn');
+  const generateBtn = document.getElementById('wz-generate-btn');
+  const generateHint = document.getElementById('wz-generate-hint');
+  const returningActions = document.getElementById('wz-returning-actions');
+  const quickBtn = document.getElementById('wz-quick-btn');
+  const fullBtn = document.getElementById('wz-full-btn');
+  const welcomeText = document.getElementById('wz-welcome-text');
+
+  function hasExistingData(){
+    const s = loadTaxSettings();
+    return !!(s.betriebsname || s.name);
+  }
+
+  quickBtn.addEventListener('click', () => {
+    quickMode = true;
+    goToStep(6);
+  });
+  fullBtn.addEventListener('click', () => {
+    quickMode = false;
+    goToStep(1);
+  });
+
+  ustRegel.addEventListener('change', () => { ustField.style.display = 'grid'; });
+  ustKlein.addEventListener('change', () => { ustField.style.display = 'none'; });
+  kirchensteuerCheck.addEventListener('change', () => {
+    kirchensteuerField.style.display = kirchensteuerCheck.checked ? 'block' : 'none';
+  });
+  taxModeCustom.addEventListener('change', () => { customRateField.style.display = 'block'; });
+  taxModeAuto.addEventListener('change', () => { customRateField.style.display = 'none'; });
+
+  for(let i = 0; i < TOTAL_STEPS + 1; i++){
+    const seg = document.createElement('div');
+    seg.className = 'progress-seg';
+    progressTrack.appendChild(seg);
+  }
+
+  // Kategorien-Zeilen aufbauen
+  EXPENSE_CATEGORIES.forEach(cat => {
+    const row = document.createElement('div');
+    row.className = 'cat-row';
+    const label = document.createElement('label');
+    label.textContent = cat.label;
+    const input = document.createElement('input');
+    input.type = 'number'; input.step = '0.01'; input.min = '0'; input.placeholder = '0,00';
+    input.addEventListener('input', updateCatSum);
+    row.appendChild(label);
+    row.appendChild(input);
+    catRowsWrap.appendChild(row);
+    catInputs[cat.key] = input;
+  });
+
+  function addAssetRow(asset){
+    asset = asset || { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: '', date: '', cost: '', nutzungsdauer: '' };
+    const row = document.createElement('div');
+    row.className = 'wz-asset-row';
+    row.dataset.id = asset.id;
+
+    function field(labelText, type, value, extra){
+      const wrap = document.createElement('div');
+      const label = document.createElement('label');
+      label.className = 'mini';
+      label.textContent = labelText;
+      const input = document.createElement('input');
+      input.type = type;
+      if(value) input.value = value;
+      if(extra) Object.keys(extra).forEach(k => input.setAttribute(k, extra[k]));
+      wrap.appendChild(label);
+      wrap.appendChild(input);
+      return { wrap, input };
+    }
+
+    const nameF = field('Bezeichnung', 'text', asset.name, { placeholder: 'z. B. Notebook' });
+    const dateF = field('Anschaffung', 'date', asset.date);
+    const costF = field('Kosten netto', 'number', asset.cost, { step: '0.01', min: '0', placeholder: '0,00' });
+    const jahreF = field('Jahre', 'number', asset.nutzungsdauer, { step: '1', min: '1', placeholder: '3' });
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'wz-asset-remove';
+    removeBtn.textContent = '✕';
+    removeBtn.addEventListener('click', () => {
+      row.remove();
+      persistAssetsFromRows();
+      updateAfaSum();
+    });
+
+    [nameF.input, dateF.input, costF.input, jahreF.input].forEach(inp => {
+      inp.addEventListener('input', () => { persistAssetsFromRows(); updateAfaSum(); });
+      inp.addEventListener('change', () => { persistAssetsFromRows(); updateAfaSum(); });
+    });
+
+    row.appendChild(nameF.wrap);
+    row.appendChild(dateF.wrap);
+    row.appendChild(costF.wrap);
+    row.appendChild(jahreF.wrap);
+    row.appendChild(removeBtn);
+    assetRowsWrap.appendChild(row);
+  }
+
+  function persistAssetsFromRows(){
+    const assets = [];
+    assetRowsWrap.querySelectorAll('.wz-asset-row').forEach(row => {
+      const inputs = row.querySelectorAll('input');
+      const [nameInp, dateInp, costInp, jahreInp] = inputs;
+      const cost = parseFloat(String(costInp.value).replace(',', '.')) || 0;
+      if(nameInp.value || dateInp.value || cost > 0){
+        assets.push({
+          id: row.dataset.id, name: nameInp.value, date: dateInp.value,
+          cost: costInp.value, nutzungsdauer: jahreInp.value
+        });
+      }
+    });
+    saveAssets(assets);
+  }
+
+  function updateAfaSum(){
+    const year = yearSelect.value;
+    afaYearLabelEl.textContent = year;
+    const total = totalAfaForYear(year);
+    afaSumEl.textContent = formatEUR(total);
+    // Berechnete AfA übernimmt automatisch die Kategorie "Abschreibungen (AfA)",
+    // sofern mindestens ein Wirtschaftsgut erfasst ist.
+    if(loadAssets().length > 0 && catInputs['abschreibungen']){
+      catInputs['abschreibungen'].value = total > 0 ? total : '';
+      catInputs['abschreibungen'].setAttribute('readonly', 'readonly');
+      catInputs['abschreibungen'].style.opacity = '0.65';
+      updateCatSum();
+    } else if(catInputs['abschreibungen']){
+      catInputs['abschreibungen'].removeAttribute('readonly');
+      catInputs['abschreibungen'].style.opacity = '1';
+    }
+  }
+
+  function renderAssetRows(){
+    assetRowsWrap.innerHTML = '';
+    const assets = loadAssets();
+    if(assets.length === 0){
+      addAssetRow();
+    } else {
+      assets.forEach(a => addAssetRow(a));
+    }
+    updateAfaSum();
+  }
+
+  addAssetBtn.addEventListener('click', () => { addAssetRow(); });
+
+  function updateCatSum(){
+    let sum = 0;
+    EXPENSE_CATEGORIES.forEach(cat => {
+      sum += parseFloat(String(catInputs[cat.key].value).replace(',', '.')) || 0;
+    });
+    catSumEl.textContent = formatEUR(sum);
+
+    const monthTotal = monthlyExpenseTotal();
+    const diff = sum - monthTotal;
+    if(monthTotal > 0){
+      if(Math.abs(diff) < 1){
+        catReconcileEl.textContent = 'Stimmt mit den erfassten Ausgaben überein.';
+        catReconcileEl.className = 'cat-reconcile';
+      } else {
+        catReconcileEl.textContent = 'Differenz zu den erfassten Ausgaben (' + formatEUR(monthTotal) + '): ' + formatEUR(diff);
+        catReconcileEl.className = 'cat-reconcile warn';
+      }
+    } else {
+      catReconcileEl.textContent = '';
+    }
+    return sum;
+  }
+
+  function monthlyExpenseTotal(){
+    let sum = 0;
+    Object.keys(monthInputs).forEach(monthStr => {
+      sum += parseFloat(String(monthInputs[monthStr].ausInput.value).replace(',', '.')) || 0;
+    });
+    return sum;
+  }
+
+  function buildMonthGrid(year){
+    monthGrid.innerHTML = '';
+    for(const k in monthInputs) delete monthInputs[k];
+    const existing = loadGewinn().filter(e => e.month.startsWith(year));
+    const byMonth = {};
+    existing.forEach(e => {
+      byMonth[e.month] = {
+        einnahmen: e.einnahmen !== undefined ? e.einnahmen : e.amount,
+        ausgaben: e.ausgaben !== undefined ? e.ausgaben : 0
+      };
+    });
+
+    for(let m = 1; m <= 12; m++){
+      const monthStr = year + '-' + String(m).padStart(2,'0');
+      const row = document.createElement('div');
+      row.className = 'month-row';
+
+      const label = document.createElement('span');
+      label.className = 'm-label';
+      label.textContent = monthLabel(monthStr);
+
+      const einWrap = document.createElement('div');
+      const einInput = document.createElement('input');
+      einInput.type = 'number'; einInput.step = '0.01'; einInput.min = '0'; einInput.placeholder = '0,00';
+      if(byMonth[monthStr]) einInput.value = byMonth[monthStr].einnahmen || '';
+      einWrap.appendChild(einInput);
+
+      const ausWrap = document.createElement('div');
+      const ausInput = document.createElement('input');
+      ausInput.type = 'number'; ausInput.step = '0.01'; ausInput.min = '0'; ausInput.placeholder = '0,00';
+      if(byMonth[monthStr]) ausInput.value = byMonth[monthStr].ausgaben || '';
+      ausWrap.appendChild(ausInput);
+
+      const netEl = document.createElement('span');
+      netEl.className = 'm-net';
+      netEl.textContent = formatEUR((byMonth[monthStr]?.einnahmen || 0) - (byMonth[monthStr]?.ausgaben || 0));
+
+      function updateNet(){
+        const e = parseFloat(String(einInput.value).replace(',', '.')) || 0;
+        const a = parseFloat(String(ausInput.value).replace(',', '.')) || 0;
+        netEl.textContent = formatEUR(e - a);
+      }
+      einInput.addEventListener('input', updateNet);
+      ausInput.addEventListener('input', updateNet);
+
+      row.appendChild(label);
+      row.appendChild(einWrap);
+      row.appendChild(ausWrap);
+      row.appendChild(netEl);
+      monthGrid.appendChild(row);
+
+      monthInputs[monthStr] = { einInput, ausInput, netEl };
+    }
+  }
+
+  function computeCategorySumsFromMonths(year){
+    const sums = {};
+    EXPENSE_CATEGORIES.forEach(cat => { sums[cat.key] = 0; });
+    loadGewinn()
+      .filter(e => e.month.startsWith(year) && e.ausgabenKategorien)
+      .forEach(e => {
+        Object.keys(e.ausgabenKategorien).forEach(key => {
+          if(sums[key] !== undefined) sums[key] += e.ausgabenKategorien[key];
+        });
+      });
+    return sums;
+  }
+
+  function syncCategoriesFromMonths(){
+    if(!yearSelect || !yearSelect.value) return;
+    const sums = computeCategorySumsFromMonths(yearSelect.value);
+    EXPENSE_CATEGORIES.forEach(cat => {
+      if(catInputs[cat.key]) catInputs[cat.key].value = sums[cat.key] > 0 ? sums[cat.key] : '';
+    });
+    updateCatSum();
+  }
+
+  function populateYearSelect(){
+    const nowYear = new Date().getFullYear();
+    yearSelect.innerHTML = '';
+    for(let y = nowYear - 2; y <= nowYear + 1; y++){
+      const opt = document.createElement('option');
+      opt.value = y.toString();
+      opt.textContent = y.toString();
+      if(y === nowYear) opt.selected = true;
+      yearSelect.appendChild(opt);
+    }
+  }
+  yearSelect.addEventListener('change', () => { buildMonthGrid(yearSelect.value); syncCategoriesFromMonths(); updateAfaSum(); });
+
+  function prefillFromSettings(){
+    const s = loadTaxSettings();
+    if(s.name) nameInput.value = s.name;
+    if(s.steuerid) steuerIdInput.value = s.steuerid;
+    if(s.finanzamt) finanzamtInput.value = s.finanzamt;
+    if(s.strasse) strasseInput.value = s.strasse;
+    if(s.plzOrt) plzOrtInput.value = s.plzOrt;
+
+    if(s.familienstand === 'verheiratet') famVerheiratet.checked = true;
+    if(s.kinder) kinderInput.value = s.kinder;
+
+    if(s.betriebsname) betriebsnameInput.value = s.betriebsname;
+    if(s.beginn) beginnInput.value = s.beginn;
+    if(s.rechtsform) rechtsformInput.value = s.rechtsform;
+    if(s.betriebssteuernummer) betriebssteuernummerInput.value = s.betriebssteuernummer;
+    if(s.ustid) ustIdInput.value = s.ustid;
+    if(s.iban) ibanInput.value = s.iban;
+    if(s.taetigkeit) taetigkeitInput.value = s.taetigkeit;
+
+    if(s.kleinunternehmer === false){ ustRegel.checked = true; ustField.style.display = 'grid'; }
+    if(s.ustEingenommen) ustEingenommenInput.value = s.ustEingenommen;
+    if(s.vorsteuer) vorsteuerInput.value = s.vorsteuer;
+
+    if(s.otherIncome) otherIncomeInput.value = s.otherIncome;
+
+    if(s.expenseCategories){
+      EXPENSE_CATEGORIES.forEach(cat => {
+        if(s.expenseCategories[cat.key]) catInputs[cat.key].value = s.expenseCategories[cat.key];
+      });
+    }
+
+    if(s.krankenversicherung) krankenversicherungInput.value = s.krankenversicherung;
+    if(s.vorsorge) vorsorgeInput.value = s.vorsorge;
+    if(s.vorauszahlungen) vorauszahlungenInput.value = s.vorauszahlungen;
+    if(s.verlustvortrag) verlustvortragInput.value = s.verlustvortrag;
+
+    if(typeof s.kirchensteuer === 'boolean'){
+      kirchensteuerCheck.checked = s.kirchensteuer;
+      kirchensteuerField.style.display = s.kirchensteuer ? 'block' : 'none';
+    }
+    if(s.kirchensteuerSatz) kirchensteuerSatz.value = s.kirchensteuerSatz;
+    if(typeof s.kirchensteuerKappung === 'boolean'){
+      kappungCheck.checked = s.kirchensteuerKappung;
+      kappungField.style.display = s.kirchensteuerKappung ? 'block' : 'none';
+    }
+    if(s.kirchensteuerKappungSatz) kappungSatzInput.value = s.kirchensteuerKappungSatz;
+    if(typeof s.includeGewst === 'boolean'){
+      includeGewstCheck.checked = s.includeGewst;
+      taetigkeitGewerbe.checked = s.includeGewst;
+      taetigkeitFreiberuflich.checked = !s.includeGewst;
+      applyTaetigkeitsart();
+    }
+    if(s.hebesatz) hebesatzInput.value = s.hebesatz;
+    if(s.taxMode === 'custom'){ taxModeCustom.checked = true; customRateField.style.display = 'block'; }
+    if(s.customRate) customRateInput.value = s.customRate;
+  }
+
+  function goToStep(n){
+    document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+    document.querySelector('.step[data-step="' + n + '"]').classList.add('active');
+    currentStep = n;
+
+    document.querySelectorAll('.progress-seg').forEach((seg, i) => {
+      seg.classList.toggle('done', i <= n);
+    });
+    progressLabel.textContent = n < TOTAL_STEPS ? ('Schritt ' + (n+1) + ' von ' + (TOTAL_STEPS+1)) : 'Fertig';
+
+    const returning = n === 0 && hasExistingData();
+    returningActions.style.display = returning ? 'grid' : 'none';
+    if(returning){
+      welcomeText.textContent = 'Deine Angaben von letztem Mal sind gespeichert. Trag einfach den Gewinn für den neuen Monat ein — alles andere bleibt, wie es war. Oder geh alles noch mal komplett durch, falls sich etwas geändert hat.';
+    }
+
+    backBtn.style.visibility = n === 0 ? 'hidden' : 'visible';
+    nextBtn.style.display = (n === TOTAL_STEPS || returning) ? 'none' : 'block';
+
+    if(n === 6) buildMonthGrid(yearSelect.value);
+    if(n === 7){ syncCategoriesFromMonths(); updateAfaSum(); }
+    if(n === 13) renderReview();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function persistStepData(){
+    const year = yearSelect.value;
+    const allEntries = loadGewinn();
+    const others = allEntries.filter(e => !e.month.startsWith(year));
+    const existingByMonth = {};
+    allEntries.filter(e => e.month.startsWith(year)).forEach(e => { existingByMonth[e.month] = e; });
+
+    const yearEntries = [];
+    Object.keys(monthInputs).forEach(monthStr => {
+      const ein = parseFloat(String(monthInputs[monthStr].einInput.value).replace(',', '.')) || 0;
+      const aus = parseFloat(String(monthInputs[monthStr].ausInput.value).replace(',', '.')) || 0;
+      if(ein > 0 || aus > 0){
+        // Eingabe im Gitter vorhanden -> übernehmen (Kategorien vom bestehenden Eintrag erhalten)
+        const entry = { month: monthStr, amount: ein - aus, einnahmen: ein, ausgaben: aus };
+        const existing = existingByMonth[monthStr];
+        if(existing && existing.ausgabenKategorien) entry.ausgabenKategorien = existing.ausgabenKategorien;
+        yearEntries.push(entry);
+        delete existingByMonth[monthStr];
+      }
+      // Gitter für diesen Monat leer (0/0) -> nichts tun, ein evtl. bestehender Eintrag bleibt
+      // unten über existingByMonth erhalten, statt hier stillschweigend gelöscht zu werden.
+    });
+    // Bereits gespeicherte Monate, die im aktuell angezeigten Gitter gar nicht (leer) vorkamen
+    // (z. B. weil das Gitter seit einer Änderung im Ledger nicht neu aufgebaut wurde), erhalten.
+    Object.values(existingByMonth).forEach(e => yearEntries.push(e));
+
+    saveGewinn(others.concat(yearEntries));
+
+    const expenseCategories = {};
+    EXPENSE_CATEGORIES.forEach(cat => { expenseCategories[cat.key] = catInputs[cat.key].value; });
+
+    saveTaxSettings({
+      name: nameInput.value, steuerid: steuerIdInput.value, finanzamt: finanzamtInput.value,
+      strasse: strasseInput.value, plzOrt: plzOrtInput.value,
+      familienstand: famVerheiratet.checked ? 'verheiratet' : 'ledig',
+      kinder: kinderInput.value,
+      betriebsname: betriebsnameInput.value, beginn: beginnInput.value, rechtsform: rechtsformInput.value,
+      betriebssteuernummer: betriebssteuernummerInput.value, ustid: ustIdInput.value, iban: ibanInput.value,
+      taetigkeit: taetigkeitInput.value,
+      kleinunternehmer: ustKlein.checked,
+      ustEingenommen: ustEingenommenInput.value, vorsteuer: vorsteuerInput.value,
+      otherIncome: otherIncomeInput.value,
+      expenseCategories: expenseCategories,
+      krankenversicherung: krankenversicherungInput.value, vorsorge: vorsorgeInput.value,
+      vorauszahlungen: vorauszahlungenInput.value, verlustvortrag: verlustvortragInput.value,
+      kirchensteuer: kirchensteuerCheck.checked, kirchensteuerSatz: kirchensteuerSatz.value,
+      kirchensteuerKappung: kappungCheck.checked, kirchensteuerKappungSatz: kappungSatzInput.value,
+      includeGewst: includeGewstCheck.checked, hebesatz: hebesatzInput.value,
+      taxMode: taxModeCustom.checked ? 'custom' : 'auto', customRate: customRateInput.value
+    });
+
+    // Ledger-Tabelle & Halbkreise sofort mit den neuen Einstellungen neu berechnen,
+    // sonst zeigen sie veraltete Steuerwerte, bis dort erneut gespeichert wird.
+    if(typeof renderGewinn === 'function') renderGewinn();
+  }
+
+  function computeWizardSummary(){
+    const year = yearSelect.value;
+    const entries = loadGewinn().filter(e => e.month.startsWith(year)).sort((a,b) => a.month.localeCompare(b.month));
+    const gewerbeEinnahmen = entries.reduce((s, e) => s + (e.einnahmen !== undefined ? e.einnahmen : e.amount), 0);
+    const gewerbeAusgaben = entries.reduce((s, e) => s + (e.ausgaben || 0), 0);
+    const gewerbeGewinn = gewerbeEinnahmen - gewerbeAusgaben;
+
+    const otherIncome = parseFloat(String(otherIncomeInput.value).replace(',', '.')) || 0;
+    const hebesatz = parseFloat(String(hebesatzInput.value).replace(',', '.')) || 400;
+    const useCustom = taxModeCustom.checked;
+    const customRatePct = parseFloat(String(customRateInput.value).replace(',', '.')) || 0;
+    const verheiratet = famVerheiratet.checked;
+    const kinderAnzahl = parseInt(String(kinderInput.value), 10) || 0;
+    const krankenversicherung = parseFloat(String(krankenversicherungInput.value).replace(',', '.')) || 0;
+    const vorsorge = parseFloat(String(vorsorgeInput.value).replace(',', '.')) || 0;
+    const vorauszahlungen = parseFloat(String(vorauszahlungenInput.value).replace(',', '.')) || 0;
+    const verlustvortrag = parseFloat(String(verlustvortragInput.value).replace(',', '.')) || 0;
+
+    const sonderausgaben = krankenversicherung + vorsorge;
+    const kinderfreibetragGesamt = kinderAnzahl * KINDERFREIBETRAG_2026;
+
+    const zveVorAbzug = gewerbeGewinn + otherIncome;
+    const zve = Math.max(0, zveVorAbzug - sonderausgaben - verlustvortrag - kinderfreibetragGesamt);
+
+    let estVorErmaessigung;
+    let soliFreigrenze;
+    if(verheiratet){
+      estVorErmaessigung = 2 * berechneEinkommensteuerBasis(zve / 2, useCustom, customRatePct);
+      soliFreigrenze = 39900;
+    } else {
+      estVorErmaessigung = berechneEinkommensteuerBasis(zve, useCustom, customRatePct);
+      soliFreigrenze = 19950;
+    }
+
+    const messbetrag = includeGewstCheck.checked ? gewerbesteuermessbetrag(gewerbeGewinn, GEWST_FREIBETRAG) : 0;
+    const gewst = includeGewstCheck.checked ? gewerbesteuer(gewerbeGewinn, hebesatz, GEWST_FREIBETRAG) : 0;
+
+    const gesamtPositiveEinkuenfte = gewerbeGewinn + otherIncome;
+    const ermaessigung35 = includeGewstCheck.checked
+      ? paragraph35Ermaessigung(messbetrag, gewst, estVorErmaessigung, gewerbeGewinn, gesamtPositiveEinkuenfte)
+      : 0;
+    const est = Math.max(0, estVorErmaessigung - ermaessigung35);
+
+    const soli = solidaritaetszuschlag(est, soliFreigrenze);
+    const kSatz = kirchensteuerCheck.checked ? parseFloat(kirchensteuerSatz.value) : 0;
+    let kirchensteuerBetrag = Math.round(est * (kSatz / 100) * 100) / 100;
+    if(kappungCheck.checked && kSatz > 0){
+      const kappungSatzVal = parseFloat(String(kappungSatzInput.value).replace(',', '.')) || 3.5;
+      const kappungGrenze = Math.round(zve * (kappungSatzVal / 100) * 100) / 100;
+      kirchensteuerBetrag = Math.min(kirchensteuerBetrag, kappungGrenze);
+    }
+
+    const total = est + soli + gewst + kirchensteuerBetrag;
+    const restzahllast = total - vorauszahlungen;
+
+    const kleinunternehmer = ustKlein.checked;
+    const ustEingenommen = parseFloat(String(ustEingenommenInput.value).replace(',', '.')) || 0;
+    const vorsteuer = parseFloat(String(vorsteuerInput.value).replace(',', '.')) || 0;
+    const ustZahllast = kleinunternehmer ? 0 : Math.max(0, ustEingenommen - vorsteuer);
+
+    const catSum = EXPENSE_CATEGORIES.reduce((s, cat) => s + (parseFloat(String(catInputs[cat.key].value).replace(',', '.')) || 0), 0);
+
+    return {
+      year, entries, gewerbeEinnahmen, gewerbeAusgaben, gewerbeGewinn, otherIncome, hebesatz,
+      verheiratet, kinderAnzahl, kinderfreibetragGesamt, sonderausgaben, verlustvortrag,
+      zveVorAbzug, zve, est, estVorErmaessigung, ermaessigung35, messbetrag, soli,
+      gewst, kirchensteuerBetrag, kSatz, total,
+      vorauszahlungen, restzahllast, useCustom, customRatePct,
+      kleinunternehmer, ustEingenommen, vorsteuer, ustZahllast, catSum
+    };
+  }
+
+  function renderReview(){
+    const s = computeWizardSummary();
+    reviewBlock.innerHTML =
+      '<div class="rgroup">Persönlich</div>' +
+      rline('Name', nameInput.value || '—', 1) +
+      rline('Familienstand', s.verheiratet ? 'Verheiratet (Splitting)' : 'Ledig', 2) +
+      rline('Kinder', s.kinderAnzahl + ' (Freibetrag ' + formatEUR(s.kinderfreibetragGesamt) + ')', 2) +
+      '<div class="rgroup">Betrieb</div>' +
+      rline('Betrieb', betriebsnameInput.value || '—', 3) +
+      rline('Umsatzsteuer-Status', s.kleinunternehmer ? 'Kleinunternehmer' : 'Regelbesteuert', 4) +
+      '<div class="rgroup">Zahlen ' + s.year + '</div>' +
+      rline('Erfasste Monate', s.entries.length + ' von 12', 6) +
+      rline('Betriebseinnahmen', formatEUR(s.gewerbeEinnahmen), 6) +
+      rline('Betriebsausgaben', formatEUR(s.gewerbeAusgaben), 6) +
+      rline('davon kategorisiert', formatEUR(s.catSum), 7) +
+      rline('davon AfA (Anlagenverzeichnis)', formatEUR(totalAfaForYear(s.year)), 7) +
+      rline('Gewerbegewinn', formatEUR(s.gewerbeGewinn), 6) +
+      rline('Zusätzliches Einkommen', formatEUR(s.otherIncome), 8) +
+      rline('Sonderausgaben', formatEUR(s.sonderausgaben), 9) +
+      rline('Verlustvortrag', formatEUR(s.verlustvortrag), 9) +
+      rline('Kirchensteuer', s.kSatz > 0 ? (s.kSatz + ' %' + (kappungCheck.checked ? ', gekappt' : '')) : 'nein', 10) +
+      rline('Tätigkeitsart', taetigkeitGewerbe.checked ? 'Gewerbe' : 'Freiberuflich (§18 EStG)', 11) +
+      rline('Gewerbesteuer', includeGewstCheck.checked ? ('Hebesatz ' + s.hebesatz + ' %') : 'entfällt (freiberuflich)', 11) +
+      rline('Steuersatz-Modus', s.useCustom ? ('eigener Satz ' + s.customRatePct + ' %') : 'automatisch §32a EStG', 12) +
+      '<div class="rline" style="margin-top:10px;"><span>Einkommensteuer vor §35-Anrechnung</span><span>' + formatEUR(s.estVorErmaessigung) + '</span></div>' +
+      (s.ermaessigung35 > 0 ? '<div class="rline"><span>§35 EStG Anrechnung (Gewerbesteuer)</span><span>− ' + formatEUR(s.ermaessigung35) + '</span></div>' : '') +
+      '<div class="rline" style="border-top:1px solid var(--ink); margin-top:10px; padding-top:10px;"><strong>Geschätzte Steuerlast gesamt</strong><strong>' + formatEUR(s.total) + '</strong></div>' +
+      '<div class="rline"><span>abzgl. Vorauszahlungen</span><span>' + formatEUR(s.vorauszahlungen) + '</span></div>' +
+      '<div class="rline"><strong>Verbleibende Zahllast (geschätzt)</strong><strong>' + formatEUR(s.restzahllast) + '</strong></div>' +
+      (s.ustZahllast > 0 ? '<div class="rline"><span>zzgl. Umsatzsteuer-Zahllast</span><span>' + formatEUR(s.ustZahllast) + '</span></div>' : '');
+  }
+  function rline(label, value, stepIdx){
+    return '<div class="rline"><span>' + label + ': <strong>' + value + '</strong></span>' +
+      '<button class="redit" data-goto="' + stepIdx + '">Ändern</button></div>';
+  }
+  reviewBlock.addEventListener('click', (ev) => {
+    if(ev.target.classList.contains('redit')){
+      goToStep(parseInt(ev.target.dataset.goto, 10));
+    }
+  });
+
+  nextBtn.addEventListener('click', () => {
+    persistStepData();
+    if(quickMode && currentStep === 6){ goToStep(13); return; }
+    if(currentStep < TOTAL_STEPS) goToStep(currentStep + 1);
+  });
+  backBtn.addEventListener('click', () => {
+    if(quickMode && currentStep === 13){ goToStep(6); return; }
+    if(currentStep > 0) goToStep(currentStep - 1);
+  });
+
+  function generateFinalPdf(){
+    persistStepData();
+    const s = computeWizardSummary();
+    if(s.entries.length === 0){
+      generateHint.textContent = 'Es sind noch keine Monatswerte erfasst — bitte einen Schritt zurückgehen.';
+      generateHint.style.color = 'var(--danger)';
+      return;
+    }
+    generateHint.textContent = '';
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const marginX = 20;
+    let y = 24;
+
+    function ensureSpace(needed){
+      if(y + needed > 280){ doc.addPage(); y = 24; }
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(17);
+    doc.text('Abgabe-Mappe Steuerjahr ' + s.year, marginX, y);
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(120);
+    doc.text('Erstellt mit dem Budget-Ledger Steuer-Assistenten am ' + new Date().toLocaleDateString('de-DE') + '. Unverbindliche Schätzung zur Vorbereitung — keine Einreichung beim Finanzamt, kein amtlicher Steuerbescheid.', marginX, y, { maxWidth: 170 });
+    doc.setTextColor(0);
+    y += 16;
+
+    // 1. Stammdaten
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+    doc.text('1. Stammdaten', marginX, y); y += 8;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    [
+      ['Name', nameInput.value || '—'],
+      ['Steuer-ID/-nummer', steuerIdInput.value || '—'],
+      ['Zuständiges Finanzamt', finanzamtInput.value || '—'],
+      ['Anschrift', (strasseInput.value || '—') + ', ' + (plzOrtInput.value || '—')],
+      ['Familienstand', s.verheiratet ? 'Verheiratet (Splittingtarif)' : 'Ledig (Grundtarif)'],
+      ['Kinder mit Freibetrag', s.kinderAnzahl + ' (' + formatEUR(s.kinderfreibetragGesamt) + ')'],
+      ['Betrieb', betriebsnameInput.value || '—'],
+      ['Rechtsform', rechtsformInput.value || '—'],
+      ['Beginn der Tätigkeit', beginnInput.value || '—'],
+      ['Betriebs-Steuernummer', betriebssteuernummerInput.value || '—'],
+      ['USt-IdNr.', ustIdInput.value || '—'],
+      ['IBAN', ibanInput.value || '—'],
+      ['Umsatzsteuer-Status', s.kleinunternehmer ? 'Kleinunternehmer (§19 UStG)' : 'Regelbesteuert']
+    ].forEach(([label, val]) => {
+      doc.text(label, marginX, y);
+      doc.text(String(val), marginX + 62, y);
+      y += 6;
+    });
+    if(taetigkeitInput.value){
+      y += 1;
+      doc.text('Tätigkeit:', marginX, y); y += 5;
+      const tLines = doc.splitTextToSize(taetigkeitInput.value, 170);
+      doc.text(tLines, marginX, y); y += tLines.length * 5 + 2;
+    }
+    y += 6;
+    ensureSpace(80);
+
+    // 2. Monatliche Einnahmen & Ausgaben
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+    doc.text('2. Monatliche Einnahmen & Ausgaben', marginX, y); y += 8;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+    doc.text('Monat', marginX, y);
+    doc.text('Einnahmen', marginX + 70, y, { align: 'right' });
+    doc.text('Ausgaben', marginX + 120, y, { align: 'right' });
+    doc.text('Gewinn', marginX + 170, y, { align: 'right' });
+    y += 5;
+    doc.setLineWidth(0.2);
+    doc.line(marginX, y, marginX + 170, y); y += 5;
+    doc.setFontSize(10);
+    s.entries.forEach(e => {
+      ensureSpace(8);
+      const ein = e.einnahmen !== undefined ? e.einnahmen : e.amount;
+      const aus = e.ausgaben || 0;
+      doc.text(monthLabel(e.month), marginX, y);
+      doc.text(formatEUR(ein), marginX + 70, y, { align: 'right' });
+      doc.text(formatEUR(aus), marginX + 120, y, { align: 'right' });
+      doc.text(formatEUR(ein - aus), marginX + 170, y, { align: 'right' });
+      y += 6;
+    });
+    y += 1;
+    doc.line(marginX, y, marginX + 170, y); y += 6;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Gesamt', marginX, y);
+    doc.text(formatEUR(s.gewerbeEinnahmen), marginX + 70, y, { align: 'right' });
+    doc.text(formatEUR(s.gewerbeAusgaben), marginX + 120, y, { align: 'right' });
+    doc.text(formatEUR(s.gewerbeGewinn), marginX + 170, y, { align: 'right' });
+    y += 14;
+    ensureSpace(100);
+
+    // 3. Betriebsausgaben nach Kategorien
+    doc.setFontSize(12);
+    doc.text('3. Betriebsausgaben nach Kategorien', marginX, y); y += 8;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    EXPENSE_CATEGORIES.forEach(cat => {
+      const val = parseFloat(String(catInputs[cat.key].value).replace(',', '.')) || 0;
+      if(val > 0){
+        ensureSpace(7);
+        doc.text(cat.label, marginX, y);
+        doc.text(formatEUR(val), marginX + 150, y, { align: 'right' });
+        y += 6;
+      }
+    });
+    y += 1;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Summe Kategorien', marginX, y);
+    doc.text(formatEUR(s.catSum), marginX + 150, y, { align: 'right' });
+    y += 12;
+    ensureSpace(90);
+
+    // 4. Zu versteuerndes Einkommen
+    doc.setFontSize(12);
+    doc.text('4. Zu versteuerndes Einkommen', marginX, y); y += 8;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    if(s.otherIncome > 0){
+      doc.text('Zusätzliches Einkommen', marginX, y);
+      doc.text(formatEUR(s.otherIncome), marginX + 150, y, { align: 'right' });
+      y += 6;
+    }
+    doc.text('Gewerbegewinn + zusätzliches Einkommen', marginX, y);
+    doc.text(formatEUR(s.zveVorAbzug), marginX + 150, y, { align: 'right' });
+    y += 6;
+    if(s.sonderausgaben > 0){
+      doc.text('abzgl. Sonderausgaben (Kranken-/Pflegeversicherung, Vorsorge)', marginX, y);
+      doc.text('− ' + formatEUR(s.sonderausgaben), marginX + 150, y, { align: 'right' });
+      y += 6;
+    }
+    if(s.verlustvortrag > 0){
+      doc.text('abzgl. Verlustvortrag', marginX, y);
+      doc.text('− ' + formatEUR(s.verlustvortrag), marginX + 150, y, { align: 'right' });
+      y += 6;
+    }
+    if(s.kinderfreibetragGesamt > 0){
+      doc.text('abzgl. Kinderfreibetrag', marginX, y);
+      doc.text('− ' + formatEUR(s.kinderfreibetragGesamt), marginX + 150, y, { align: 'right' });
+      y += 6;
+    }
+    doc.setFont('helvetica', 'bold');
+    doc.text('Zu versteuerndes Einkommen (geschätzt)', marginX, y);
+    doc.text(formatEUR(s.zve), marginX + 150, y, { align: 'right' });
+    y += 9;
+
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(100);
+    doc.text('Grundfreibetrag Einkommensteuer berücksichtigt: ' + formatEUR(GRUNDFREIBETRAG_2026) + (s.verheiratet ? ' (doppelt bei Splitting)' : ''), marginX, y);
+    y += 5.5;
+    if(s.gewst > 0){
+      doc.text('Gewerbesteuer-Freibetrag berücksichtigt: ' + formatEUR(GEWST_FREIBETRAG), marginX, y);
+      y += 5.5;
+    }
+    doc.setTextColor(0);
+    y += 6;
+    ensureSpace(100);
+
+    // 5. Steuerschätzung
+    doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+    doc.text('5. Steuerschätzung', marginX, y); y += 8;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    const estLabel = s.useCustom ? 'Einkommensteuer vor §35-Anrechnung (eigener Satz ' + s.customRatePct + ' %)' : 'Einkommensteuer vor §35-Anrechnung (§32a EStG 2026' + (s.verheiratet ? ', Splitting' : '') + ')';
+    doc.text(estLabel, marginX, y);
+    doc.text(formatEUR(s.estVorErmaessigung), marginX + 150, y, { align: 'right' });
+    y += 7;
+    if(s.ermaessigung35 > 0){
+      doc.text('§35 EStG Anrechnung (Gewerbesteuer auf ESt)', marginX, y);
+      doc.text('− ' + formatEUR(s.ermaessigung35), marginX + 150, y, { align: 'right' });
+      y += 7;
+      doc.setFont('helvetica', 'bold');
+      doc.text('Einkommensteuer nach Anrechnung', marginX, y);
+      doc.text(formatEUR(s.est), marginX + 150, y, { align: 'right' });
+      y += 7;
+      doc.setFont('helvetica', 'normal');
+    }
+    doc.text('Solidaritätszuschlag', marginX, y);
+    doc.text(formatEUR(s.soli), marginX + 150, y, { align: 'right' });
+    y += 7;
+    if(s.kirchensteuerBetrag > 0){
+      doc.text('Kirchensteuer (' + s.kSatz + ' %' + (kappungCheck.checked ? ', ggf. gekappt' : '') + ')', marginX, y);
+      doc.text(formatEUR(s.kirchensteuerBetrag), marginX + 150, y, { align: 'right' });
+      y += 7;
+    }
+    if(s.gewst > 0){
+      doc.text('Gewerbesteuer (Hebesatz ' + s.hebesatz + ' %)', marginX, y);
+      doc.text(formatEUR(s.gewst), marginX + 150, y, { align: 'right' });
+      y += 7;
+    }
+    y += 2;
+    doc.line(marginX, y, marginX + 170, y); y += 7;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    doc.text('Geschätzte Steuerlast gesamt', marginX, y);
+    doc.text(formatEUR(s.total), marginX + 150, y, { align: 'right' });
+    y += 8;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    doc.text('abzgl. bereits geleisteter Vorauszahlungen', marginX, y);
+    doc.text('− ' + formatEUR(s.vorauszahlungen), marginX + 150, y, { align: 'right' });
+    y += 7;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Verbleibende Zahllast (geschätzt)', marginX, y);
+    doc.text(formatEUR(s.restzahllast), marginX + 150, y, { align: 'right' });
+    y += 10;
+
+    if(!s.kleinunternehmer){
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+      doc.text('zzgl. Umsatzsteuer-Zahllast (separat, nicht Teil der Einkommensteuer)', marginX, y);
+      doc.text(formatEUR(s.ustZahllast), marginX + 150, y, { align: 'right' });
+      y += 10;
+    }
+    ensureSpace(80);
+
+    // 6. Checkliste
+    doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+    doc.text('6. Checkliste für die Abgabe', marginX, y); y += 8;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    const checklist = [
+      'Bei ELSTER anmelden (elster.de) oder Termin beim Steuerberater vereinbaren',
+      'Anlage EÜR mit Einnahmen, Ausgaben-Kategorien aus dieser Unterlage ausfüllen',
+      (taetigkeitGewerbe.checked ? 'Anlage G (Einkünfte aus Gewerbebetrieb) ausfüllen' : 'Anlage S (selbstständige Arbeit) statt Anlage G ausfüllen'),
+      (s.kleinunternehmer ? 'Kleinunternehmerstatus jährlich neu prüfen (Umsatzgrenzen 25.000 € / 100.000 €)' : 'Umsatzsteuer-Voranmeldungen fristgerecht abgeben'),
+      'Frist beachten — regulär 31. Juli des Folgejahres, mit Steuerberater später',
+      'Belege & Kontoauszüge zu allen Positionen bereithalten'
+    ];
+    checklist.forEach(item => {
+      ensureSpace(10);
+      const lines = doc.splitTextToSize('• ' + item, 170);
+      doc.text(lines, marginX, y);
+      y += lines.length * 5.5 + 1.5;
+    });
+    y += 6;
+    ensureSpace(30);
+
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(120);
+    const disclaimer = 'Diese Abgabe-Mappe ist eine unverbindliche Orientierung. Einkommensteuer, Solidaritätszuschlag, Kirchensteuer (inkl. optionaler Kappungsgrenze), Gewerbesteuer, die §35-EStG-Anrechnung der Gewerbesteuer sowie AfA über das Anlagenverzeichnis sind vereinfacht modelliert, ohne Mitunternehmerschaften, ausländische Steueranrechnung oder Mindestbesteuerungsregeln beim Verlustvortrag. Sie ersetzt keine Steuererklärung, keinen Steuerberater und keinen amtlichen Steuerbescheid des Finanzamts. Die tatsächliche Einreichung erfolgt ausschließlich über ELSTER oder einen Steuerberater.';
+    const dLines = doc.splitTextToSize(disclaimer, 170);
+    doc.text(dLines, marginX, y);
+
+    doc.save('Budget-Ledger-Abgabe-Mappe-' + s.year + '.pdf');
+
+    generateHint.textContent = 'PDF erstellt und heruntergeladen.';
+    generateHint.style.color = 'var(--sage)';
+  }
+
+  generateBtn.addEventListener('click', generateFinalPdf);
+
+  populateYearSelect();
+  buildMonthGrid(yearSelect.value);
+  prefillFromSettings();
+  syncCategoriesFromMonths();
+  renderAssetRows();
+  goToStep(0);
+
+
+  gwSaveBtn.addEventListener('click', saveCurrentGewinn);
+  if(!gwMonthInput.value) gwMonthInput.value = currentMonthStr();
+  addLedgerAusgabeRow();
+  updateGwLiveNet();
+
+  document.getElementById('gw-year-prev').addEventListener('click', () => {
+    gwViewYear--;
+    renderGewinn();
+  });
+  document.getElementById('gw-year-next').addEventListener('click', () => {
+    gwViewYear++;
+    renderGewinn();
+  });
+  document.getElementById('gw-year-pdf-btn').addEventListener('click', downloadYearPdf);
+
+  renderGewinn();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+
+<p class="site-footer">Budget-Ledger &middot; erstellt von AndrewFXTD &middot; alle Daten bleiben lokal auf diesem Gerät</p>
+
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<script>
+  (function(){
+    try{
+      var t = localStorage.getItem('sparrechner_theme_v1');
+      if(t && t !== 'midnight') document.documentElement.setAttribute('data-theme', t);
+    }catch(e){}
+  })();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budget-Ledger — Start</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#04060c">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sparrechner">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .start-wrap{
+    max-width: 640px; margin: 40px auto 0; padding: 0 16px;
+  }
+  .start-hero{ text-align:center; padding: 20px 12px 40px; }
+  .start-hero .eyebrow{
+    font-size: 10.5px; letter-spacing: 0.3em; text-transform:uppercase; color: var(--brass); margin: 0 0 14px;
+  }
+  .start-hero h1{
+    font-family:'Fraunces', serif; font-weight:500; font-size: 34px; color: var(--ink); margin: 0 0 12px;
+  }
+  .start-hero p{ font-size: 12.5px; color: var(--ink-soft); margin:0; letter-spacing:0.02em; }
+
+  .start-menu{ display:flex; flex-direction:column; gap: 14px; }
+  .start-card{
+    display:flex; align-items:center; gap: 18px;
+    background: var(--card); border: 1px solid var(--card-line);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 24px 50px -22px rgba(0,0,0,0.7);
+    padding: 22px 24px; text-decoration:none; position:relative;
+    transition: border-color 0.2s ease, transform 0.15s ease;
+  }
+  .start-card::before{
+    content:""; position:absolute; inset: 7px; border: 1px solid rgba(255,255,255,0.05); pointer-events:none;
+  }
+  .start-card:hover{ border-color: rgba(74,113,224,0.5); transform: translateY(-2px); }
+  .start-card .icon{
+    flex-shrink:0; width: 50px; height:50px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background: rgba(74,113,224,0.1); border: 1px solid rgba(74,113,224,0.35);
+    font-family:'Fraunces', serif; font-size: 20px; color: var(--brass);
+  }
+  .start-card .text{ flex:1; min-width:0; }
+  .start-card .num{
+    font-size: 9px; letter-spacing:0.14em; text-transform:uppercase; color: var(--brass); margin: 0 0 4px;
+  }
+  .start-card h2{
+    font-family:'Fraunces', serif; font-weight:500; font-size: 18px; color: var(--ink); margin: 0 0 4px;
+  }
+  .start-card p{ font-size: 11.5px; color: var(--ink-soft); margin:0; letter-spacing:0.01em; }
+  .start-card .arrow{ flex-shrink:0; color: var(--ink-soft); font-size: 16px; }
+
+  .start-foot{
+    text-align:center; padding: 36px 16px 10px; font-size:9.5px; letter-spacing:0.1em;
+    text-transform:uppercase; color: var(--ink-soft); opacity:0.6;
+  }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <span class="brand">Budget-Ledger</span>
+  <button class="menu-toggle" id="menu-toggle" type="button">☰ Menü</button>
+  <div class="menu-panel" id="menu-panel">
+    <a href="start.html" class="active">Start<span class="sub-label">Übersicht aller Bereiche</span></a>
+    <a href="index.html">Sparrechner<span class="sub-label">Übersicht &amp; Spartopf</span></a>
+    <a href="steuererklaerung.html">Steuererklärung<span class="sub-label">Gewerbe &amp; Unterlagen</span></a>
+    <a href="einkommensteuer.html">Einkommensteuer<span class="sub-label">Private Steuererklärung</span></a>
+    <a href="trading-journal.html">Trading Journal<span class="sub-label">Trades &amp; Kalender</span></a>
+    <div class="theme-switcher">
+      <span class="ts-label">Farbschema</span>
+      <div class="ts-row">
+        <button class="theme-swatch" data-swatch="midnight" title="Mitternacht (Standard)" type="button"></button>
+        <button class="theme-swatch" data-swatch="redblack" title="Rot-Schwarz" type="button"></button>
+        <button class="theme-swatch" data-swatch="emerald" title="Smaragd" type="button"></button>
+        <button class="theme-swatch" data-swatch="amber" title="Bernstein" type="button"></button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="start-wrap">
+  <div class="start-hero">
+    <p class="eyebrow">Budget-Ledger</p>
+    <h1>Was möchtest du tun?</h1>
+    <p>Wähl einen Bereich — alles wird lokal auf diesem Gerät gespeichert.</p>
+  </div>
+
+  <div class="start-menu">
+    <a class="start-card" href="index.html">
+      <span class="icon">€</span>
+      <span class="text">
+        <span class="num">01</span>
+        <h2>Sparrechner</h2>
+        <p>Einkommen selbst aufteilen, Monate speichern, Spartopf verwalten</p>
+      </span>
+      <span class="arrow">→</span>
+    </a>
+
+    <a class="start-card" href="steuererklaerung.html">
+      <span class="icon">§</span>
+      <span class="text">
+        <span class="num">02</span>
+        <h2>Steuererklärung</h2>
+        <p>Gewerblichen Gewinn erfassen, Steuer-Assistent, Abgabe-Mappe als PDF</p>
+      </span>
+      <span class="arrow">→</span>
+    </a>
+
+    <a class="start-card" href="einkommensteuer.html">
+      <span class="icon">%</span>
+      <span class="text">
+        <span class="num">03</span>
+        <h2>Einkommensteuer</h2>
+        <p>Private Steuererklärung — Lohn, Werbungskosten, Rechner &amp; Assistent</p>
+      </span>
+      <span class="arrow">→</span>
+    </a>
+
+    <a class="start-card" href="trading-journal.html">
+      <span class="icon">◐</span>
+      <span class="text">
+        <span class="num">04</span>
+        <h2>Trading Journal</h2>
+        <p>Trades &amp; Fotos pro Tag, Kalender, Dashboard mit Win/Loss-Statistik</p>
+      </span>
+      <span class="arrow">→</span>
+    </a>
+  </div>
+
+  <p class="start-foot">Alle Daten bleiben ausschließlich lokal auf diesem Gerät</p>
+</div>
+
+<script>
+  document.getElementById('menu-toggle').addEventListener('click', () => {
+    document.getElementById('menu-panel').classList.toggle('open');
+  });
+  document.addEventListener('click', (ev) => {
+    const panel = document.getElementById('menu-panel');
+    const toggle = document.getElementById('menu-toggle');
+    if(panel.classList.contains('open') && !panel.contains(ev.target) && !toggle.contains(ev.target)){
+      panel.classList.remove('open');
+    }
+  });
+
+  const THEME_KEY = 'sparrechner_theme_v1';
+  function applyTheme(theme){
+    if(!theme || theme === 'midnight') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', theme);
+    document.querySelectorAll('.theme-swatch').forEach(btn => {
+      btn.classList.toggle('active', (btn.dataset.swatch || 'midnight') === (theme || 'midnight'));
+    });
+  }
+  document.querySelectorAll('.theme-swatch').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const theme = btn.dataset.swatch;
+      try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
+      applyTheme(theme);
+    });
+  });
+  applyTheme((function(){ try{ return localStorage.getItem(THEME_KEY) || 'midnight'; }catch(e){ return 'midnight'; } })());
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+
+<p class="site-footer">Budget-Ledger &middot; erstellt von AndrewFXTD &middot; alle Daten bleiben lokal auf diesem Gerät</p>
+
+</body>
+</html>

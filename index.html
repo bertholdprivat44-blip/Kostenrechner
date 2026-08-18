@@ -2,10 +2,18 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
+<script>
+  (function(){
+    try{
+      var t = localStorage.getItem('sparrechner_theme_v1');
+      if(t && t !== 'midnight') document.documentElement.setAttribute('data-theme', t);
+    }catch(e){}
+  })();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AndrewFXTD — Sparrechner</title>
+<title>Budget-Ledger — Sparrechner</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#17231b">
+<meta name="theme-color" content="#04060c">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,389 +21,109 @@
 <meta name="apple-mobile-web-app-title" content="Sparrechner">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 <style>
-  :root{
-    --bg: #17231b;
-    --bg-vignette: #0f1712;
-    --card: #f4efe4;
-    --card-line: #d8cdb4;
-    --ink: #232019;
-    --ink-soft: #6b6355;
-    --brass: #a9813f;
-    --brass-deep: #7c5e2c;
-    --sage: #6e7d5f;
-    --danger: #8a3b2b;
+  .pct-edit{
+    display:inline-flex; align-items:baseline; gap:2px;
+    font-size: 10.5px; color: var(--sage); letter-spacing: 0.06em; margin-top:3px;
   }
-  *{ box-sizing: border-box; }
-  html,body{ height:100%; }
-  body{
-    margin:0;
-    min-height:100vh;
-    background:
-      radial-gradient(circle at 50% -10%, #24352a 0%, var(--bg) 55%, var(--bg-vignette) 100%);
-    font-family: 'IBM Plex Mono', monospace;
-    color: var(--ink);
-    padding: 32px 16px 56px;
+  .pct-input{
+    width: 40px; border:none; border-bottom: 1px dotted var(--sage); background:transparent;
+    color: var(--sage); font-family:'IBM Plex Mono', monospace; font-size: 10.5px;
+    padding: 0; text-align:right; -moz-appearance: textfield;
   }
+  .pct-input:focus{ outline:none; border-bottom-color: var(--brass); }
+  .pct-input::-webkit-outer-spin-button, .pct-input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  .pct-extra{ color: var(--ink-soft); font-size: 9.5px; margin-left:4px; letter-spacing:0.02em; }
 
-  .app-wrap{
-    max-width: 1000px;
-    margin: 0 auto;
-    display:flex;
-    flex-wrap: wrap;
-    gap: 24px;
-    align-items:flex-start;
-    justify-content:center;
+  .alloc-controls{
+    display:flex; justify-content:space-between; align-items:center;
+    padding: 2px 32px 16px; font-size: 10px; letter-spacing: 0.02em;
   }
-
-  .card{
-    background: var(--card);
-    border: 1px solid var(--card-line);
-    box-shadow: 0 30px 60px -25px rgba(0,0,0,0.6), 0 0 0 6px rgba(169,129,63,0.08);
-    position: relative;
+  .alloc-sum{ color: var(--ink-soft); }
+  .alloc-sum.warn{ color: var(--danger); }
+  .alloc-reset{
+    background:none; border:none; color: var(--brass); font-size: 10px;
+    text-decoration: underline; cursor:pointer; padding:0; letter-spacing:0.02em;
   }
-  .card::before{
-    content:"";
-    position:absolute;
-    inset: 8px;
-    border: 1px solid rgba(169,129,63,0.35);
-    pointer-events:none;
-  }
-
-  .ledger{ width:100%; max-width: 480px; flex-shrink:0; }
-  .overview{ width:100%; max-width: 480px; flex: 1 1 420px; }
-
-  .head{
-    padding: 34px 32px 22px;
-    text-align:center;
-    border-bottom: 1px solid var(--card-line);
-  }
-  .eyebrow{
-    font-size: 10.5px;
-    letter-spacing: 0.28em;
-    text-transform: uppercase;
-    color: var(--brass-deep);
-    margin: 0 0 10px;
-  }
-  h1{
-    font-family: 'Fraunces', serif;
-    font-optical-sizing: auto;
-    font-weight: 500;
-    font-size: 26px;
-    letter-spacing: 0.01em;
-    margin: 0 0 6px;
-    color: var(--ink);
-  }
-  h2{
-    font-family: 'Fraunces', serif;
-    font-weight: 500;
-    font-size: 15px;
-    color: var(--ink);
-    margin: 0;
-  }
-  .sub{
-    font-size: 11.5px;
-    color: var(--ink-soft);
-    margin:0;
-    letter-spacing: 0.03em;
-  }
-
-  .income-block{
-    padding: 26px 32px 22px;
-    border-bottom: 1px solid var(--card-line);
-  }
-  .income-block label, .field label{
-    display:block;
-    font-size: 10.5px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    margin-bottom: 10px;
-  }
-  .income-input-row{
-    display:flex;
-    align-items:baseline;
-    border-bottom: 1.5px solid var(--brass);
-    padding-bottom: 6px;
-  }
-  .income-input-row span{
-    font-family:'Fraunces', serif;
-    font-size: 22px;
-    color: var(--brass-deep);
-    margin-right: 8px;
-  }
-  #income, #actual-saved, #wd-amount{
-    flex:1;
-    border:none;
-    background:transparent;
-    outline:none;
-    font-family:'IBM Plex Mono', monospace;
-    font-size: 24px;
-    font-weight: 500;
-    color: var(--ink);
-    -moz-appearance: textfield;
-    width: 100%;
-  }
-  #wd-amount{ font-size: 20px; }
-  #income::-webkit-outer-spin-button, #income::-webkit-inner-spin-button,
-  #actual-saved::-webkit-outer-spin-button, #actual-saved::-webkit-inner-spin-button,
-  #wd-amount::-webkit-outer-spin-button, #wd-amount::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
-  #income::placeholder, #actual-saved::placeholder, #wd-amount::placeholder{ color: #b7ae98; }
-
-  .rows{
-    padding: 10px 32px 4px;
-  }
-  .row{
-    display:flex;
-    align-items: baseline;
-    gap: 10px;
-    padding: 16px 0;
-    border-bottom: 1px dashed var(--card-line);
-  }
-  .row:last-child{ border-bottom:none; }
-
-  .row-num{
-    font-family:'Fraunces', serif;
-    font-size: 13px;
-    color: var(--brass);
-    width: 20px;
-    flex-shrink:0;
-  }
-  .row-label{
-    flex-shrink:0;
-    max-width: 168px;
-  }
-  .row-label .name{
-    display:block;
-    font-family:'Fraunces', serif;
-    font-size: 15.5px;
-    color: var(--ink);
-    line-height:1.25;
-  }
-  .row-label .pct{
-    display:block;
-    font-size: 10.5px;
-    color: var(--sage);
-    letter-spacing: 0.06em;
-    margin-top: 3px;
-  }
-  .row-label .wd-note{
-    display:none;
-    font-size: 10px;
-    color: var(--brass-deep);
-    letter-spacing: 0.02em;
-    margin-top: 4px;
-    font-style: italic;
-  }
-  .row-label .wd-note.active{ display:block; }
-  .leader{
-    flex:1;
-    border-bottom: 1px dotted #b7ae98;
-    transform: translateY(-4px);
-    min-width: 12px;
-  }
-  .row-amount{
-    flex-shrink:0;
-    font-size: 16.5px;
-    font-weight: 600;
-    color: var(--ink);
-    white-space:nowrap;
-    text-align:right;
-  }
-
-  .total{
-    margin: 6px 32px 0;
-    padding: 18px 0 22px;
-    border-top: 1.5px solid var(--ink);
-    display:flex;
-    justify-content: space-between;
-    align-items: baseline;
-  }
-  .total .name{
-    font-family:'Fraunces', serif;
-    font-size: 15px;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-  }
-  .total .amount{
-    font-family:'Fraunces', serif;
-    font-size: 21px;
-    color: var(--brass-deep);
-  }
-
-  .save-block{
-    padding: 22px 32px 28px;
-    border-top: 1px solid var(--card-line);
-    display:grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 18px 16px;
-  }
-  .field{ min-width:0; }
-  .field.small select, .field.small .income-input-row{ border-bottom: 1.5px solid var(--sage); padding-bottom: 5px; }
-  #month, #wd-month, #wd-category{
-    width:100%;
-    border:none;
-    border-bottom: 1.5px solid var(--sage);
-    background:transparent;
-    outline:none;
-    font-family:'IBM Plex Mono', monospace;
-    font-size: 15px;
-    color: var(--ink);
-    padding-bottom: 8px;
-  }
-  .save-btn{
-    grid-column: 1 / -1;
-    margin-top: 4px;
-    background: var(--brass-deep);
-    color: var(--card);
-    border: none;
-    padding: 13px 18px;
-    font-family: 'Fraunces', serif;
-    font-size: 14.5px;
-    letter-spacing: 0.03em;
-    cursor: pointer;
-    transition: background 0.15s ease;
-  }
-  .save-btn:hover{ background: var(--brass); }
-  .save-btn:active{ transform: translateY(1px); }
-  .save-hint{
-    grid-column: 1 / -1;
-    font-size: 10px;
-    color: var(--ink-soft);
-    letter-spacing: 0.02em;
-    margin-top: -8px;
-  }
-
-  .foot{
-    text-align:center;
-    padding: 0 24px 26px;
-    font-size: 9.5px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #a79f8c;
-  }
-
-  /* Overview card */
-  .ov-body{ padding: 26px 28px 10px; }
-  .ov-empty{
-    font-size: 12px;
-    color: var(--ink-soft);
-    line-height: 1.6;
-    padding: 4px 0 18px;
-  }
-  .ov-table{
-    width:100%;
-    border-collapse: collapse;
-    font-size: 12px;
-  }
-  .ov-table th{
-    text-align:left;
-    font-size: 9.5px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    font-weight:500;
-    padding: 0 6px 10px 0;
-    border-bottom: 1.5px solid var(--ink);
-  }
-  .ov-table th:not(:first-child), .ov-table td:not(:first-child){ text-align:right; }
-  .ov-table td{
-    padding: 11px 6px 11px 0;
-    border-bottom: 1px dashed var(--card-line);
-    vertical-align: middle;
-  }
-  .ov-table tr.m-row{ cursor:pointer; }
-  .ov-table tr.m-row:hover td{ background: rgba(169,129,63,0.08); }
-  .ov-table .month-cell{
-    font-family:'Fraunces', serif;
-    font-size: 13.5px;
-    color: var(--ink);
-  }
-  .ov-table .wd-cell{ color: var(--sage); }
-  .ov-table .combined-cell{ color: var(--brass-deep); font-weight:600; }
-  .del-btn{
-    background:none; border:none; cursor:pointer;
-    color: var(--ink-soft); font-size: 13px;
-    padding: 0 0 0 8px; line-height:1;
-  }
-  .del-btn:hover{ color: var(--danger); }
-
-  .withdraw-block{
-    padding: 4px 28px 24px;
-    border-top: 1px solid var(--card-line);
-    margin-top: 8px;
-  }
-  .withdraw-block .wd-row{
-    display:grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    padding-top: 18px;
-  }
-  .wd-btn-row{ padding-top: 14px; }
-  .wd-list{ margin-top: 14px; }
-  .wd-item{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    font-size: 11.5px;
-    padding: 8px 0;
-    border-bottom: 1px dashed var(--card-line);
-    color: var(--ink-soft);
-  }
-  .wd-item .wd-amt{ color: var(--sage); font-weight:600; }
-  .pot-hint{
-    font-size: 10.5px;
-    color: var(--ink-soft);
-    letter-spacing: 0.02em;
-    padding-top: 12px;
-  }
-
-  .ov-summary{
-    padding: 18px 28px 26px;
-    border-top: 1.5px solid var(--ink);
-    display:grid;
-    grid-template-columns: 1fr 1fr;
-    row-gap: 14px;
-  }
-  .ov-summary .stat-label{
-    display:block;
-    font-size: 9.5px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    margin-bottom: 4px;
-  }
-  .ov-summary .stat-value{
-    font-family:'Fraunces', serif;
-    font-size: 18px;
-    color: var(--brass-deep);
-  }
-
-  @media (max-width: 400px){
-    .row-label{ max-width: 128px; }
-    h1{ font-size: 22px; }
-    .save-block, .withdraw-block .wd-row{ grid-template-columns: 1fr; }
-  }
+  .alloc-reset:hover{ color: var(--sage); }
 </style>
 </head>
 <body>
+
+<nav class="topnav">
+  <span class="brand">Budget-Ledger</span>
+  <button class="menu-toggle" id="menu-toggle" type="button">☰ Menü</button>
+  <div class="menu-panel" id="menu-panel">
+    <a href="start.html">Start<span class="sub-label">Übersicht aller Bereiche</span></a>
+    <a href="index.html" class="active">Sparrechner<span class="sub-label">Übersicht &amp; Spartopf</span></a>
+    <a href="steuererklaerung.html">Steuererklärung<span class="sub-label">Gewerbe &amp; Unterlagen</span></a>
+    <a href="einkommensteuer.html">Einkommensteuer<span class="sub-label">Private Steuererklärung</span></a>
+    <a href="trading-journal.html">Trading Journal<span class="sub-label">Trades &amp; Kalender</span></a>
+    <div class="theme-switcher">
+      <span class="ts-label">Farbschema</span>
+      <div class="ts-row">
+        <button class="theme-swatch" data-swatch="midnight" title="Mitternacht (Standard)" type="button"></button>
+        <button class="theme-swatch" data-swatch="redblack" title="Rot-Schwarz" type="button"></button>
+        <button class="theme-swatch" data-swatch="emerald" title="Smaragd" type="button"></button>
+        <button class="theme-swatch" data-swatch="amber" title="Bernstein" type="button"></button>
+      </div>
+    </div>
+  </div>
+</nav>
 
 <div class="app-wrap">
 
   <div class="card ledger">
     <div class="head">
-      <p class="eyebrow">AndrewFXTD · Budget-Ledger</p>
+      <p class="eyebrow">Persönliches Budget</p>
       <h1>Sparrechner</h1>
-      <p class="sub">Monatliches Einkommen nach der 55 / 5 / 10 / 15 / 15 Verteilung</p>
+      <p class="sub">Monatliches Einkommen nach deiner eigenen Verteilung — Standard 55 / 5 / 10 / 15 / 15</p>
     </div>
 
     <div class="income-block">
-      <label for="income">Monatliches Nettoeinkommen</label>
+      <label for="income">Hauptberufliches Einkommen (monatlich)</label>
       <div class="income-input-row">
         <span>€</span>
         <input type="number" id="income" placeholder="0,00" min="0" step="0.01" inputmode="decimal">
       </div>
+      <label class="check-row">
+        <input type="checkbox" id="income-include" checked>
+        <span>In der Verteilung berücksichtigen</span>
+      </label>
+
+      <div class="income-divider"></div>
+
+      <label for="gewerbe-income">Sonstige Einkünfte (z. B. Gewerbe, monatlich)</label>
+      <div class="income-input-row">
+        <span>€</span>
+        <input type="number" id="gewerbe-income" placeholder="0,00" min="0" step="0.01" inputmode="decimal">
+      </div>
+      <label class="check-row">
+        <input type="checkbox" id="gewerbe-include">
+        <span>In der Verteilung berücksichtigen</span>
+      </label>
+
+      <div class="income-divider"></div>
+
+      <label for="extra-income">Extra-Einkommen</label>
+      <div class="income-input-row">
+        <span>€</span>
+        <input type="number" id="extra-income" placeholder="0,00" min="0" step="0.01" inputmode="decimal">
+      </div>
+      <div class="field small" style="margin-top:10px">
+        <label for="extra-source">Quelle</label>
+        <select id="extra-source" class="select-input">
+          <option value="trading">Trading</option>
+          <option value="gespart">Gespartes</option>
+        </select>
+      </div>
+      <button class="save-btn secondary" id="extra-pull-btn" type="button" style="margin-top:10px; display:none">Betrag aus Trading Journal übernehmen</button>
+      <p class="save-hint" id="extra-pull-hint" style="margin-top:6px"></p>
+      <label class="check-row">
+        <input type="checkbox" id="extra-include">
+        <span>In der Verteilung berücksichtigen</span>
+      </label>
     </div>
 
     <div class="rows">
@@ -403,7 +131,7 @@
         <span class="row-num">01</span>
         <span class="row-label">
           <span class="name">Wohnen &amp; Lebensmittel</span>
-          <span class="pct">× 0,55</span>
+          <span class="pct-edit">× <input type="number" class="pct-input" data-key="wohnen" value="55" min="0" max="100" step="0.5"><span class="pct-extra">%</span></span>
           <span class="wd-note" data-key="wohnen"></span>
         </span>
         <span class="leader"></span>
@@ -413,7 +141,7 @@
         <span class="row-num">02</span>
         <span class="row-label">
           <span class="name">Für mich selbst</span>
-          <span class="pct">× 0,05</span>
+          <span class="pct-edit">× <input type="number" class="pct-input" data-key="selbst" value="5" min="0" max="100" step="0.5"><span class="pct-extra">%</span></span>
           <span class="wd-note" data-key="selbst"></span>
         </span>
         <span class="leader"></span>
@@ -423,7 +151,7 @@
         <span class="row-num">03</span>
         <span class="row-label">
           <span class="name">Schulden</span>
-          <span class="pct">× 0,10</span>
+          <span class="pct-edit">× <input type="number" class="pct-input" data-key="schulden" value="10" min="0" max="100" step="0.5"><span class="pct-extra">%</span></span>
           <span class="wd-note" data-key="schulden"></span>
         </span>
         <span class="leader"></span>
@@ -433,7 +161,7 @@
         <span class="row-num">04</span>
         <span class="row-label">
           <span class="name">Kurzfristige Ziele</span>
-          <span class="pct">× 0,15 · z. B. Urlaub</span>
+          <span class="pct-edit">× <input type="number" class="pct-input" data-key="ziele" value="15" min="0" max="100" step="0.5"><span class="pct-extra">% · z. B. Urlaub</span></span>
           <span class="wd-note" data-key="ziele"></span>
         </span>
         <span class="leader"></span>
@@ -443,12 +171,17 @@
         <span class="row-num">05</span>
         <span class="row-label">
           <span class="name">Investieren</span>
-          <span class="pct">× 0,15</span>
+          <span class="pct-edit">× <input type="number" class="pct-input" data-key="investieren" value="15" min="0" max="100" step="0.5"><span class="pct-extra">%</span></span>
           <span class="wd-note" data-key="investieren"></span>
         </span>
         <span class="leader"></span>
         <span class="row-amount" data-factor="0.15" data-key="investieren">€ 0,00</span>
       </div>
+    </div>
+
+    <div class="alloc-controls">
+      <span class="alloc-sum" id="alloc-sum">Summe: 100 %</span>
+      <button class="alloc-reset" id="alloc-reset" type="button">Zurücksetzen auf Standard (55/5/10/15/15)</button>
     </div>
 
     <div class="total">
@@ -551,11 +284,54 @@
 </div>
 
 <script>
+  document.getElementById('menu-toggle').addEventListener('click', () => {
+    document.getElementById('menu-panel').classList.toggle('open');
+  });
+  document.addEventListener('click', (ev) => {
+    const panel = document.getElementById('menu-panel');
+    const toggle = document.getElementById('menu-toggle');
+    if(panel.classList.contains('open') && !panel.contains(ev.target) && !toggle.contains(ev.target)){
+      panel.classList.remove('open');
+    }
+  });
+
+  const THEME_KEY = 'sparrechner_theme_v1';
+  function applyTheme(theme){
+    if(!theme || theme === 'midnight') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', theme);
+    document.querySelectorAll('.theme-swatch').forEach(btn => {
+      btn.classList.toggle('active', (btn.dataset.swatch || 'midnight') === (theme || 'midnight'));
+    });
+  }
+  document.querySelectorAll('.theme-swatch').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const theme = btn.dataset.swatch;
+      try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
+      applyTheme(theme);
+    });
+  });
+  applyTheme((function(){ try{ return localStorage.getItem(THEME_KEY) || 'midnight'; }catch(e){ return 'midnight'; } })());
+
   const STORAGE_KEY = 'sparrechner_months_v1';
   const WD_KEY = 'sparrechner_withdrawals_v1';
   const DRAFT_KEY = 'sparrechner_draft_v1';
+  const ALLOC_KEY = 'sparrechner_allocation_v1';
+  const DEFAULT_ALLOC = { wohnen: 55, selbst: 5, schulden: 10, ziele: 15, investieren: 15 };
+
+  const pctInputs = {};
+  document.querySelectorAll('.pct-input').forEach(inp => { pctInputs[inp.dataset.key] = inp; });
+  const allocSumEl = document.getElementById('alloc-sum');
+  const allocResetBtn = document.getElementById('alloc-reset');
 
   const incomeInput = document.getElementById('income');
+  const incomeIncludeCheck = document.getElementById('income-include');
+  const gewerbeIncomeInput = document.getElementById('gewerbe-income');
+  const gewerbeIncludeCheck = document.getElementById('gewerbe-include');
+  const extraIncomeInput = document.getElementById('extra-income');
+  const extraSourceSelect = document.getElementById('extra-source');
+  const extraIncludeCheck = document.getElementById('extra-include');
+  const extraPullBtn = document.getElementById('extra-pull-btn');
+  const extraPullHint = document.getElementById('extra-pull-hint');
   const monthInput = document.getElementById('month');
   const actualSavedInput = document.getElementById('actual-saved');
   const rowAmounts = document.querySelectorAll('.row-amount');
@@ -615,6 +391,12 @@
   function saveDraft(){
     localStorage.setItem(DRAFT_KEY, JSON.stringify({
       income: incomeInput.value,
+      gewerbeIncome: gewerbeIncomeInput.value,
+      incomeInclude: incomeIncludeCheck.checked,
+      gewerbeInclude: gewerbeIncludeCheck.checked,
+      extraIncome: extraIncomeInput.value,
+      extraSource: extraSourceSelect.value,
+      extraInclude: extraIncludeCheck.checked,
       actualSaved: actualSavedInput.value,
       month: monthInput.value
     }));
@@ -622,13 +404,51 @@
   function loadDraft(){
     try{
       const raw = localStorage.getItem(DRAFT_KEY);
-      if(!raw) return;
-      const d = JSON.parse(raw);
-      if(d.income) incomeInput.value = d.income;
-      if(d.actualSaved) actualSavedInput.value = d.actualSaved;
-      if(d.month) monthInput.value = d.month;
+      if(raw){
+        const d = JSON.parse(raw);
+        if(d.income) incomeInput.value = d.income;
+        if(d.gewerbeIncome) gewerbeIncomeInput.value = d.gewerbeIncome;
+        if(typeof d.incomeInclude === 'boolean') incomeIncludeCheck.checked = d.incomeInclude;
+        if(typeof d.gewerbeInclude === 'boolean') gewerbeIncludeCheck.checked = d.gewerbeInclude;
+        if(d.extraIncome) extraIncomeInput.value = d.extraIncome;
+        if(d.extraSource) extraSourceSelect.value = d.extraSource;
+        if(typeof d.extraInclude === 'boolean') extraIncludeCheck.checked = d.extraInclude;
+        if(d.actualSaved) actualSavedInput.value = d.actualSaved;
+        if(d.month) monthInput.value = d.month;
+      }
     }catch(e){}
+    updateExtraPullVisibility();
   }
+
+  const JOURNAL_KEY = 'sparrechner_journal_v1';
+  function loadJournalEntries(){
+    try{ const raw = localStorage.getItem(JOURNAL_KEY); return raw ? JSON.parse(raw) : {}; }
+    catch(e){ return {}; }
+  }
+  function tradingPlForMonth(monthStr){
+    if(!monthStr) return 0;
+    const journal = loadJournalEntries();
+    let sum = 0;
+    Object.keys(journal).forEach(dateKey => {
+      if(dateKey.startsWith(monthStr) && typeof journal[dateKey].pl === 'number'){
+        sum += journal[dateKey].pl;
+      }
+    });
+    return sum;
+  }
+  function updateExtraPullVisibility(){
+    extraPullBtn.style.display = extraSourceSelect.value === 'trading' ? 'block' : 'none';
+    extraPullHint.textContent = '';
+  }
+  extraSourceSelect.addEventListener('change', updateExtraPullVisibility);
+  extraPullBtn.addEventListener('click', () => {
+    const monthStr = monthInput.value || currentMonthStr();
+    const pl = tradingPlForMonth(monthStr);
+    extraIncomeInput.value = pl > 0 ? pl.toFixed(2) : '0';
+    extraPullHint.textContent = 'Aus Trading Journal übernommen: ' + formatEUR(pl) + ' für ' + monthLabel(monthStr) + '.';
+    extraPullHint.style.color = pl >= 0 ? 'var(--sage)' : 'var(--danger)';
+    recalc();
+  });
 
   function creditsForMonthByCategory(month){
     const credits = {};
@@ -641,8 +461,73 @@
     return credits;
   }
 
-  function recalc(){
+  function loadAllocation(){
+    try{
+      const raw = localStorage.getItem(ALLOC_KEY);
+      return raw ? Object.assign({}, DEFAULT_ALLOC, JSON.parse(raw)) : Object.assign({}, DEFAULT_ALLOC);
+    }catch(e){ return Object.assign({}, DEFAULT_ALLOC); }
+  }
+  function saveAllocation(alloc){ localStorage.setItem(ALLOC_KEY, JSON.stringify(alloc)); }
+
+  function collectAllocationFromInputs(){
+    const alloc = {};
+    Object.keys(pctInputs).forEach(key => {
+      alloc[key] = parseFloat(String(pctInputs[key].value).replace(',', '.')) || 0;
+    });
+    return alloc;
+  }
+
+  function updateAllocSum(){
+    const alloc = collectAllocationFromInputs();
+    const sum = Object.values(alloc).reduce((s, v) => s + v, 0);
+    const sumRounded = Math.round(sum * 10) / 10;
+    allocSumEl.textContent = 'Summe: ' + sumRounded.toLocaleString('de-DE') + ' %';
+    allocSumEl.classList.toggle('warn', Math.abs(sum - 100) > 0.05);
+  }
+
+  function applyAllocationToRows(alloc){
+    rowAmounts.forEach(el => {
+      const key = el.dataset.key;
+      if(alloc[key] !== undefined) el.dataset.factor = (alloc[key] / 100).toString();
+    });
+    updateAllocSum();
+  }
+
+  function applyAllocation(alloc){
+    Object.keys(pctInputs).forEach(key => {
+      if(alloc[key] !== undefined) pctInputs[key].value = alloc[key];
+    });
+    applyAllocationToRows(alloc);
+  }
+
+  Object.values(pctInputs).forEach(inp => {
+    inp.addEventListener('input', () => {
+      const alloc = collectAllocationFromInputs();
+      applyAllocationToRows(alloc);
+      saveAllocation(alloc);
+      recalc();
+    });
+  });
+
+  allocResetBtn.addEventListener('click', () => {
+    applyAllocation(DEFAULT_ALLOC);
+    saveAllocation(DEFAULT_ALLOC);
+    recalc();
+  });
+
+  function selectedMonthlyIncome(){
     const income = parseFloat(String(incomeInput.value).replace(',', '.')) || 0;
+    const gewerbe = parseFloat(String(gewerbeIncomeInput.value).replace(',', '.')) || 0;
+    const extra = parseFloat(String(extraIncomeInput.value).replace(',', '.')) || 0;
+    let total = 0;
+    if(incomeIncludeCheck.checked) total += income;
+    if(gewerbeIncludeCheck.checked) total += gewerbe;
+    if(extraIncludeCheck.checked) total += extra;
+    return total;
+  }
+
+  function recalc(){
+    const income = selectedMonthlyIncome();
     const credits = creditsForMonthByCategory(monthInput.value);
     let sum = 0;
     rowAmounts.forEach(el => {
@@ -831,12 +716,18 @@
   }
 
   incomeInput.addEventListener('input', recalc);
+  gewerbeIncomeInput.addEventListener('input', recalc);
+  incomeIncludeCheck.addEventListener('change', recalc);
+  gewerbeIncludeCheck.addEventListener('change', recalc);
+  extraIncomeInput.addEventListener('input', recalc);
+  extraIncludeCheck.addEventListener('change', recalc);
   actualSavedInput.addEventListener('input', saveDraft);
   monthInput.addEventListener('change', recalc);
   saveBtn.addEventListener('click', saveCurrentMonth);
   wdBtn.addEventListener('click', withdrawFromPot);
 
   if(!monthInput.value) monthInput.value = currentMonthStr();
+  applyAllocation(loadAllocation());
   loadDraft();
   recalc();
   renderOverview();
@@ -847,6 +738,8 @@
     });
   }
 </script>
+
+<p class="site-footer">Budget-Ledger &middot; erstellt von AndrewFXTD &middot; alle Daten bleiben lokal auf diesem Gerät</p>
 
 </body>
 </html>

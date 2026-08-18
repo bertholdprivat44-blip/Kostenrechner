@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<script>
+  (function(){
+    try{
+      var t = localStorage.getItem('sparrechner_theme_v1');
+      if(t && t !== 'midnight') document.documentElement.setAttribute('data-theme', t);
+    }catch(e){}
+  })();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budget-Ledger — Einkommensteuer</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#04060c">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sparrechner">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .help-btn{
+    position: fixed;
+    bottom: 26px;
+    right: 26px;
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: var(--brass-deep);
+    color: var(--card);
+    border: none;
+    font-family:'Fraunces', serif;
+    font-size: 19px;
+    cursor: pointer;
+    box-shadow: 0 12px 26px -8px rgba(0,0,0,0.6);
+    z-index: 30;
+  }
+  .help-btn:hover{ background: var(--brass); }
+
+  .help-overlay{
+    display:none;
+    position: fixed; inset: 0;
+    background: rgba(2,4,10,0.8);
+    z-index: 40;
+    padding: 24px 16px;
+    overflow-y: auto;
+  }
+  .help-overlay.open{ display:block; }
+  .help-modal{
+    max-width: 640px;
+    margin: 0 auto;
+    background: var(--card);
+    border: 1px solid var(--card-line);
+    position: relative;
+  }
+  .help-modal-head{
+    padding: 28px 32px 18px;
+    border-bottom: 1px solid var(--card-line);
+    position: sticky; top:0;
+    background: var(--card);
+  }
+  .help-close{
+    position:absolute; top: 20px; right: 20px;
+    background:none; border:none; font-size: 20px; color: var(--ink-soft); cursor:pointer;
+  }
+  .help-close:hover{ color: var(--danger); }
+  .help-body{ padding: 8px 32px 32px; }
+  .help-section{ border-bottom: 1px solid var(--card-line); }
+  .help-section:last-child{ border-bottom:none; }
+  .help-q{
+    width:100%; text-align:left; background:none; border:none; cursor:pointer;
+    padding: 16px 0; display:flex; justify-content:space-between; align-items:center;
+    font-family:'Fraunces', serif; font-size: 15px; color: var(--ink);
+  }
+  .help-q .chev{ color: var(--brass-deep); font-size: 13px; transition: transform 0.15s ease; }
+  .help-q.open .chev{ transform: rotate(180deg); }
+  .help-a{
+    display:none;
+    padding: 0 0 18px;
+    font-size: 12.5px;
+    line-height: 1.75;
+    color: var(--ink-soft);
+  }
+  .help-a.open{ display:block; }
+  .help-a ul{ margin: 6px 0; padding-left: 18px; }
+  .help-a li{ margin-bottom: 5px; }
+  .help-a strong{ color: var(--ink); }
+  .help-a a{ color: var(--brass-deep); }
+  .help-a table{ width:100%; border-collapse: collapse; margin-top: 8px; }
+  .help-a table th{ text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color: var(--ink-soft); padding: 4px 8px 4px 0; border-bottom: 1px solid var(--card-line); }
+  .help-a table td{ padding: 6px 8px 6px 0; border-bottom: 1px dashed var(--card-line); }
+  .wizard-card{ width:100%; max-width: 660px; }
+  .progress-track{ display:flex; gap:2px; padding: 24px 32px 0; flex-wrap:wrap; }
+  .progress-seg{ flex:1; min-width:6px; height:3px; background: var(--card-line); }
+  .progress-seg.done{ background: var(--brass-deep); }
+  .progress-label{ padding: 10px 32px 0; font-size: 10px; letter-spacing:0.1em; text-transform:uppercase; color: var(--ink-soft); }
+  .step{ display:none; padding: 20px 32px 6px; }
+  .step.active{ display:block; }
+  .step h2.step-title{ font-size: 19px; margin-bottom: 8px; }
+  .step p.step-help{ font-size: 12px; color: var(--ink-soft); line-height:1.6; margin: 0 0 20px; }
+  .form-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 16px 16px; }
+  .form-grid .field.full{ grid-column: 1 / -1; }
+  .field textarea{
+    width:100%; border:none; border-bottom: 1.5px solid var(--card-line);
+    background:transparent; outline:none; font-family:'IBM Plex Mono', monospace;
+    font-size: 13px; color: var(--ink); padding-bottom:6px; resize: vertical; min-height: 50px;
+  }
+  .field input[type="text"], .field input[type="date"]{
+    width:100%; border:none; border-bottom: 1.5px solid var(--card-line);
+    background:transparent; outline:none; font-family:'IBM Plex Mono', monospace;
+    font-size: 15px; color: var(--ink); padding-bottom:6px;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus{ border-bottom-color: var(--brass); }
+  .month-grid{ display:flex; flex-direction:column; gap: 10px; }
+  .month-row{
+    display:grid; grid-template-columns: 60px 1fr 1fr 90px; gap: 10px; align-items:end;
+    padding-bottom: 8px; border-bottom: 1px dashed var(--card-line);
+  }
+  .month-row .m-label{ font-family:'Fraunces', serif; font-size: 13.5px; padding-bottom: 6px; }
+  .month-row input{
+    width:100%; border:none; border-bottom: 1.5px solid var(--card-line);
+    background:transparent; outline:none; font-family:'IBM Plex Mono', monospace;
+    font-size: 13.5px; color: var(--ink); padding-bottom:4px;
+  }
+  .month-row .m-net{ font-size: 13px; text-align:right; color: var(--brass-deep); font-weight:600; padding-bottom:6px; }
+  .month-grid-header{
+    display:grid; grid-template-columns: 60px 1fr 1fr 90px; gap:10px;
+    font-size: 8.5px; letter-spacing:0.08em; text-transform:uppercase; color: var(--ink-soft);
+    padding-bottom: 6px; border-bottom: 1.5px solid var(--ink);
+  }
+  .cat-row{
+    display:grid; grid-template-columns: 1fr 130px; gap: 12px; align-items:center;
+    padding: 9px 0; border-bottom: 1px dashed var(--card-line);
+  }
+  .cat-row label{ font-size: 12.5px; color: var(--ink); margin:0; text-transform:none; letter-spacing:0; }
+  .cat-row input{
+    width:100%; border:none; border-bottom: 1.5px solid var(--card-line);
+    background:transparent; outline:none; font-family:'IBM Plex Mono', monospace;
+    font-size: 14px; color: var(--ink); padding-bottom:4px; text-align:right;
+  }
+  .cat-total{
+    display:flex; justify-content:space-between; padding-top:12px; margin-top:6px;
+    border-top: 1.5px solid var(--ink); font-family:'Fraunces', serif; font-size:14px;
+  }
+  .cat-reconcile{ font-size: 10.5px; color: var(--ink-soft); margin-top: 8px; }
+  .cat-reconcile.warn{ color: var(--danger); }
+  .expense-hint{
+    font-size: 10.5px; color: var(--ink-soft); line-height:1.6; margin-top:14px;
+    padding: 12px 14px; border: 1px dashed var(--card-line); background: rgba(74,113,224,0.05);
+  }
+  .wizard-nav{ display:flex; justify-content:space-between; gap:12px; padding: 22px 32px 30px; }
+  .wizard-nav .save-btn{ width:auto; flex:1; }
+  .review-block{ margin: 0 32px 20px; border:1px solid var(--card-line); padding: 16px 18px; font-size: 12px; line-height:1.8; }
+  .review-block .rline{ display:flex; justify-content:space-between; gap: 10px; }
+  .review-block .rgroup{ font-family:'Fraunces', serif; font-size: 13px; color: var(--brass-deep); margin: 10px 0 4px; }
+  .review-block .redit{ background:none; border:none; color: var(--brass-deep); font-size:10.5px; text-decoration:underline; cursor:pointer; padding:0; white-space:nowrap; }
+  .checklist{ margin: 0 32px 20px; font-size: 12px; line-height:2; color: var(--ink-soft); }
+  .checklist li{ margin-left: 18px; }
+  .done-badge{ text-align:center; padding: 30px 32px 10px; }
+  .done-badge .big{ font-size: 42px; }
+
+  .est-total{ display:flex; justify-content:space-between; align-items:baseline; padding: 16px 32px; border-top: 1px solid var(--card-line); }
+  .est-total .name{ font-size: 12px; color: var(--ink-soft); }
+  .est-total .amount{ font-family:'Fraunces', serif; font-size: 22px; color: var(--brass); }
+  .est-total .amount.pos{ color: var(--sage); }
+  .est-total .amount.neg{ color: var(--danger); }
+  .est-summary-row{ display:flex; justify-content:space-between; padding: 10px 32px; font-size:12.5px; border-bottom:1px dashed var(--card-line); }
+  .est-summary-row:last-child{ border-bottom:none; }
+  .est-summary-row .label{ color: var(--ink-soft); }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <span class="brand">Budget-Ledger</span>
+  <button class="menu-toggle" id="menu-toggle" type="button">☰ Menü</button>
+  <div class="menu-panel" id="menu-panel">
+    <a href="start.html">Start<span class="sub-label">Übersicht aller Bereiche</span></a>
+    <a href="index.html">Sparrechner<span class="sub-label">Übersicht &amp; Spartopf</span></a>
+    <a href="steuererklaerung.html">Steuererklärung<span class="sub-label">Gewerbe &amp; Unterlagen</span></a>
+    <a href="einkommensteuer.html" class="active">Einkommensteuer<span class="sub-label">Private Steuererklärung</span></a>
+    <a href="trading-journal.html">Trading Journal<span class="sub-label">Trades &amp; Kalender</span></a>
+    <div class="theme-switcher">
+      <span class="ts-label">Farbschema</span>
+      <div class="ts-row">
+        <button class="theme-swatch" data-swatch="midnight" title="Mitternacht (Standard)" type="button"></button>
+        <button class="theme-swatch" data-swatch="redblack" title="Rot-Schwarz" type="button"></button>
+        <button class="theme-swatch" data-swatch="emerald" title="Smaragd" type="button"></button>
+        <button class="theme-swatch" data-swatch="amber" title="Bernstein" type="button"></button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="app-wrap">
+
+  <div class="card ledger">
+    <div class="head">
+      <p class="eyebrow">Private Steuererklärung</p>
+      <h1>Einkommensteuer-Rechner</h1>
+      <p class="sub">Für dein Hauptjob-Einkommen — unabhängig vom Gewerbe. Netto-/Bruttoangaben laut Lohnsteuerbescheinigung.</p>
+    </div>
+
+    <div class="year-nav">
+      <button class="nav-arrow" id="est-year-prev" type="button">◀</button>
+      <span class="year-nav-label" id="est-year-label">2026</span>
+      <button class="nav-arrow" id="est-year-next" type="button">▶</button>
+    </div>
+
+    <div class="save-block" style="border-top:none; padding-top:22px">
+      <div class="field">
+        <label for="est-familienstand">Familienstand</label>
+        <select id="est-familienstand" class="select-input">
+          <option value="ledig">Ledig / Einzelveranlagung</option>
+          <option value="verheiratet">Verheiratet (Splitting)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="est-kinder">Kinder (Kinderfreibetrag)</label>
+        <input type="number" id="est-kinder" min="0" step="1" placeholder="0">
+      </div>
+
+      <div class="field full" style="grid-column:1/-1">
+        <label>Bruttoarbeitslohn (Jahr, lt. Lohnsteuerbescheinigung)</label>
+        <div class="income-input-row"><span>€</span><input type="number" id="est-brutto" step="0.01" min="0" placeholder="0,00"></div>
+      </div>
+
+      <div class="field">
+        <label for="est-lst">Einbehaltene Lohnsteuer</label>
+        <div class="income-input-row"><span>€</span><input type="number" id="est-lst" step="0.01" min="0" placeholder="0,00"></div>
+      </div>
+      <div class="field">
+        <label for="est-lst-soli">Einbehaltener Soli</label>
+        <div class="income-input-row"><span>€</span><input type="number" id="est-lst-soli" step="0.01" min="0" placeholder="0,00"></div>
+      </div>
+      <div class="field">
+        <label for="est-lst-kist">Einbehaltene Kirchensteuer</label>
+        <div class="income-input-row"><span>€</span><input type="number" id="est-lst-kist" step="0.01" min="0" placeholder="0,00"></div>
+      </div>
+      <div class="field"></div>
+
+      <div class="field full" style="grid-column:1/-1">
+        <label>Werbungskosten (Jahr) <span style="text-transform:none; letter-spacing:0; color:var(--ink-soft); font-size:9.5px;">— Pauschbetrag 1.230 € wird automatisch angesetzt, falls höher</span></label>
+        <div class="income-input-row"><span>€</span><input type="number" id="est-werbungskosten" step="0.01" min="0" placeholder="0,00"></div>
+      </div>
+
+      <div class="field">
+        <label for="est-vorsorge">Vorsorgeaufwendungen (Kranken-/Pflege-/Rentenvers.)</label>
+        <div class="income-input-row"><span>€</span><input type="number" id="est-vorsorge" step="0.01" min="0" placeholder="0,00"></div>
+      </div>
+      <div class="field">
+        <label for="est-spenden">Spenden &amp; Mitgliedsbeiträge</label>
+        <div class="income-input-row"><span>€</span><input type="number" id="est-spenden" step="0.01" min="0" placeholder="0,00"></div>
+      </div>
+
+      <div class="field full" style="grid-column:1/-1">
+        <label>Weitere Einkünfte (Kapitalerträge über Sparerpauschbetrag, Vermietung, Sonstiges)</label>
+        <div class="income-input-row"><span>€</span><input type="number" id="est-weitere" step="0.01" min="0" placeholder="0,00"></div>
+      </div>
+
+      <label class="check-row" style="grid-column:1/-1; margin-top:4px">
+        <input type="checkbox" id="est-kirchensteuer">
+        <span>Kirchensteuerpflichtig</span>
+      </label>
+      <div class="field" id="est-kist-satz-field" style="display:none">
+        <label for="est-kist-satz">Kirchensteuersatz</label>
+        <select id="est-kist-satz" class="select-input">
+          <option value="8">8 % (Bayern, Baden-Württemberg)</option>
+          <option value="9">9 % (alle anderen Bundesländer)</option>
+        </select>
+      </div>
+
+      <button class="save-btn" id="est-save-btn" type="button" style="grid-column:1/-1; margin-top:6px">Angaben für <span id="est-save-year-label">2026</span> speichern</button>
+      <p class="save-hint" id="est-hint" style="grid-column:1/-1">Wird lokal auf diesem Gerät gespeichert.</p>
+    </div>
+
+    <div class="est-summary-row"><span class="label">Zu versteuerndes Einkommen</span><span id="est-zve">€ 0,00</span></div>
+    <div class="est-summary-row"><span class="label">Einkommensteuer</span><span id="est-est">€ 0,00</span></div>
+    <div class="est-summary-row"><span class="label">Solidaritätszuschlag</span><span id="est-soli">€ 0,00</span></div>
+    <div class="est-summary-row"><span class="label">Kirchensteuer</span><span id="est-kist">€ 0,00</span></div>
+    <div class="est-summary-row" style="font-weight:600"><span class="label">Steuerschuld gesamt</span><span id="est-gesamt">€ 0,00</span></div>
+    <div class="est-summary-row"><span class="label">Bereits einbehalten (Lohnsteuer + Soli + KiSt)</span><span id="est-einbehalten">€ 0,00</span></div>
+
+    <div class="est-total">
+      <span class="name" id="est-result-label">Voraussichtliches Ergebnis</span>
+      <span class="amount" id="est-result-amount">€ 0,00</span>
+    </div>
+
+    <p class="foot">Unverbindliche Schätzung. Ersetzt keine Steuerberatung und keine echte Steuererklärung bei ELSTER.</p>
+  </div>
+
+  <div class="card wizard-card">
+    <div class="head">
+      <p class="eyebrow">Orientierung · keine Rechtsberatung · keine Einreichung</p>
+      <h1>Einkommensteuer-Assistent</h1>
+      <p class="sub">Schritt für Schritt zur ausfüllbereiten privaten Steuererklärung — unabhängig vom Gewerbe</p>
+    </div>
+
+    <div class="progress-track" id="ewz-progress-track"></div>
+    <p class="progress-label" id="ewz-progress-label">Schritt 1 von 10</p>
+
+    <div class="step active" data-step="0">
+      <h2 class="step-title">Bevor es losgeht</h2>
+      <p class="step-help">
+        Dieser Assistent führt dich durch die wichtigsten Angaben für deine <strong>private</strong>
+        Einkommensteuererklärung — z. B. für Lohn aus einer Anstellung, Kapitalerträge oder Vermietung.
+        Er ist komplett getrennt vom Gewerbe-Bereich. Am Ende bekommst du eine PDF-Übersicht mit allen
+        Werten, die du bei ELSTER einträgst.
+      </p>
+      <p class="step-help">Halte bereit: deine Lohnsteuerbescheinigung, ggf. Belege für Werbungskosten, Vorsorgeaufwendungen und Spenden.</p>
+    </div>
+
+    <div class="step" data-step="1">
+      <h2 class="step-title">Persönliche Angaben</h2>
+      <p class="step-help">Für den Hauptvordruck ESt 1A.</p>
+      <div class="form-grid">
+        <div class="field full">
+          <label for="ewz-name">Name</label>
+          <input type="text" id="ewz-name" placeholder="Vor- und Nachname">
+        </div>
+        <div class="field">
+          <label for="ewz-steuerid">Steuer-ID</label>
+          <input type="text" id="ewz-steuerid" placeholder="11-stellig">
+        </div>
+        <div class="field">
+          <label for="ewz-finanzamt">Zuständiges Finanzamt</label>
+          <input type="text" id="ewz-finanzamt" placeholder="z. B. Finanzamt Musterstadt">
+        </div>
+        <div class="field full">
+          <label for="ewz-anschrift">Anschrift</label>
+          <input type="text" id="ewz-anschrift" placeholder="Straße, PLZ, Ort">
+        </div>
+      </div>
+    </div>
+
+    <div class="step" data-step="2">
+      <h2 class="step-title">Familienstand &amp; Kinder</h2>
+      <p class="step-help">Verheiratete können das Splitting nutzen — meist günstiger.</p>
+      <label class="check-row" style="margin-top:0">
+        <input type="radio" name="ewz-fam" id="ewz-fam-ledig" checked>
+        <span>Ledig / Einzelveranlagung</span>
+      </label>
+      <label class="check-row">
+        <input type="radio" name="ewz-fam" id="ewz-fam-verheiratet">
+        <span>Verheiratet (Splittingtarif)</span>
+      </label>
+      <div class="field" style="margin-top:16px; max-width:220px">
+        <label for="ewz-kinder">Anzahl Kinder (Kinderfreibetrag)</label>
+        <input type="number" id="ewz-kinder" min="0" step="1" placeholder="0">
+      </div>
+    </div>
+
+    <div class="step" data-step="3">
+      <h2 class="step-title">Arbeitslohn &amp; einbehaltene Steuern</h2>
+      <p class="step-help">Diese Werte stehen alle auf deiner Lohnsteuerbescheinigung (von deinem Arbeitgeber, meist elektronisch übermittelt).</p>
+      <div class="form-grid">
+        <div class="field full">
+          <label for="ewz-brutto">Bruttoarbeitslohn (Jahr)</label>
+          <div class="income-input-row"><span>€</span><input type="number" id="ewz-brutto" step="0.01" min="0" placeholder="0,00"></div>
+        </div>
+        <div class="field">
+          <label for="ewz-lst">Einbehaltene Lohnsteuer</label>
+          <div class="income-input-row"><span>€</span><input type="number" id="ewz-lst" step="0.01" min="0" placeholder="0,00"></div>
+        </div>
+        <div class="field">
+          <label for="ewz-lst-soli">Einbehaltener Soli</label>
+          <div class="income-input-row"><span>€</span><input type="number" id="ewz-lst-soli" step="0.01" min="0" placeholder="0,00"></div>
+        </div>
+        <div class="field">
+          <label for="ewz-lst-kist">Einbehaltene Kirchensteuer</label>
+          <div class="income-input-row"><span>€</span><input type="number" id="ewz-lst-kist" step="0.01" min="0" placeholder="0,00"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" data-step="4">
+      <h2 class="step-title">Weitere Einkünfte</h2>
+      <p class="step-help">
+        Nur falls zutreffend: Kapitalerträge über dem Sparerpauschbetrag (1.000 € ledig / 2.000 € verheiratet),
+        Einkünfte aus Vermietung &amp; Verpachtung, oder sonstige Einkünfte. Sonst einfach 0 lassen.
+      </p>
+      <div class="field full">
+        <label for="ewz-weitere">Weitere Einkünfte gesamt (Jahr)</label>
+        <div class="income-input-row"><span>€</span><input type="number" id="ewz-weitere" step="0.01" min="0" placeholder="0,00"></div>
+      </div>
+    </div>
+
+    <div class="step" data-step="5">
+      <h2 class="step-title">Werbungskosten</h2>
+      <p class="step-help">
+        Kosten, die durch den Job entstehen — z. B. Pendlerpauschale (Entfernungskilometer × Arbeitstage × 0,30 €,
+        ab dem 21. km 0,38 €), Arbeitsmittel, Fortbildungen, Homeoffice-Pauschale (6 € pro Tag, max. 1.260 €/Jahr).
+        Ohne Nachweis gilt automatisch der <strong>Arbeitnehmer-Pauschbetrag von 1.230 €</strong> — trag hier nur
+        ein, was diesen Betrag übersteigt.
+      </p>
+      <div class="field full">
+        <label for="ewz-werbungskosten">Werbungskosten gesamt (Jahr)</label>
+        <div class="income-input-row"><span>€</span><input type="number" id="ewz-werbungskosten" step="0.01" min="0" placeholder="0,00"></div>
+      </div>
+      <p class="save-hint" id="ewz-wk-hint" style="margin-top:10px"></p>
+    </div>
+
+    <div class="step" data-step="6">
+      <h2 class="step-title">Sonderausgaben</h2>
+      <p class="step-help">Vorsorgeaufwendungen sind meist der größte Posten — Beiträge zur gesetzlichen oder privaten Kranken- und Pflegeversicherung sowie Rentenversicherung.</p>
+      <div class="form-grid">
+        <div class="field full">
+          <label for="ewz-vorsorge">Vorsorgeaufwendungen (Jahr)</label>
+          <div class="income-input-row"><span>€</span><input type="number" id="ewz-vorsorge" step="0.01" min="0" placeholder="0,00"></div>
+        </div>
+        <div class="field full">
+          <label for="ewz-spenden">Spenden &amp; Mitgliedsbeiträge (Jahr)</label>
+          <div class="income-input-row"><span>€</span><input type="number" id="ewz-spenden" step="0.01" min="0" placeholder="0,00"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" data-step="7">
+      <h2 class="step-title">Kirchensteuer</h2>
+      <p class="step-help">Bist du Mitglied einer kirchensteuererhebenden Religionsgemeinschaft?</p>
+      <label class="check-row" style="margin-top:0">
+        <input type="checkbox" id="ewz-kirchensteuer">
+        <span>Ja, kirchensteuerpflichtig</span>
+      </label>
+      <div id="ewz-kirchensteuer-field" style="display:none; margin-top:16px">
+        <label for="ewz-kirchensteuer-satz">Bundesland-Satz</label>
+        <select id="ewz-kirchensteuer-satz" class="select-input">
+          <option value="8">8 % (Bayern, Baden-Württemberg)</option>
+          <option value="9">9 % (alle anderen Bundesländer)</option>
+        </select>
+        <div class="income-divider"></div>
+        <label class="check-row" style="margin-top:0">
+          <input type="checkbox" id="ewz-kappung">
+          <span>Kappungsgrenze beantragen (deckelt Kirchensteuer auf % vom zvE)</span>
+        </label>
+        <div id="ewz-kappung-field" style="display:none; margin-top:12px">
+          <label for="ewz-kappung-satz">Kappungssatz (% vom zvE)</label>
+          <div class="income-input-row"><input type="number" id="ewz-kappung-satz" step="0.05" min="1" max="6" placeholder="3,5"><span style="margin-left:8px; font-size:16px;">%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" data-step="8">
+      <h2 class="step-title">Alles richtig?</h2>
+      <p class="step-help">Letzter Check, bevor die Unterlage erstellt wird. Über „Ändern" springst du direkt zurück.</p>
+      <div class="review-block" id="ewz-review"></div>
+    </div>
+
+    <div class="step" data-step="9">
+      <div class="done-badge">
+        <p style="font-size:12px; color:var(--ink-soft); margin-bottom:6px">Voraussichtliches Ergebnis</p>
+        <p class="big" id="ewz-final-amount" style="font-family:'Fraunces', serif;">€ 0,00</p>
+        <p style="font-size:12px; color:var(--ink-soft); margin-top:4px" id="ewz-final-label">Erstattung</p>
+      </div>
+      <div style="padding: 6px 32px 0; text-align:center">
+        <button class="save-btn" id="ewz-generate-btn" type="button">Steuerunterlage als PDF erstellen</button>
+      </div>
+      <div class="income-divider" style="margin:24px 0 16px"></div>
+      <p class="progress-label" style="padding:0 0 8px">Checkliste für die tatsächliche Abgabe</p>
+      <ul class="checklist">
+        <li>Bei ELSTER anmelden (elster.de) oder Termin beim Steuerberater vereinbaren</li>
+        <li>Hauptvordruck ESt 1A ausfüllen</li>
+        <li>Anlage N (nichtselbständige Arbeit) mit Bruttolohn &amp; Werbungskosten ausfüllen</li>
+        <li>Ggf. Anlage KAP (Kapitalerträge) oder Anlage V (Vermietung) ergänzen</li>
+        <li>Anlage Vorsorgeaufwand für Kranken-/Pflege-/Rentenversicherung ausfüllen</li>
+        <li>Frist beachten — regulär 31. Juli des Folgejahres, mit Steuerberater später</li>
+        <li>Belege &amp; Lohnsteuerbescheinigung bereithalten</li>
+      </ul>
+    </div>
+
+    <div class="wizard-nav" style="display:flex; justify-content:space-between; padding:24px 32px 32px">
+      <button class="save-btn secondary" id="ewz-back-btn" type="button">Zurück</button>
+      <button class="save-btn" id="ewz-next-btn" type="button">Weiter</button>
+    </div>
+  </div>
+
+</div>
+
+<button class="help-btn" id="help-btn" type="button" title="Anleitung zur privaten Steuererklärung">?</button>
+
+<div class="help-overlay" id="help-overlay">
+  <div class="help-modal">
+    <div class="help-modal-head">
+      <h2 style="font-family:'Fraunces', serif; font-size:18px; margin:0">Anleitung: Private Steuererklärung</h2>
+      <button class="help-close" id="help-close" type="button">✕</button>
+    </div>
+    <div class="help-body">
+
+      <div class="help-section">
+        <div class="help-q" data-target="eh1"><span>Was brauche ich?</span><span class="chev">▾</span></div>
+        <div class="help-a" id="eh1">
+          <ul>
+            <li>Lohnsteuerbescheinigung von deinem Arbeitgeber (Pflichtangabe für Anlage N)</li>
+            <li>Belege für Werbungskosten, falls über dem Pauschbetrag (1.230 €)</li>
+            <li>Nachweise zu Vorsorgeaufwendungen, Spenden</li>
+            <li>Falls vorhanden: Steuerbescheinigung der Bank (Kapitalerträge)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-q" data-target="eh2"><span>Welche Formulare?</span><span class="chev">▾</span></div>
+        <div class="help-a" id="eh2">
+          <table>
+            <tr><td>ESt 1A</td><td>Hauptvordruck — persönliche Angaben, Zusammenfassung aller Einkünfte</td></tr>
+            <tr><td>Anlage N</td><td>Einkünfte aus nichtselbständiger Arbeit (Lohn) &amp; Werbungskosten</td></tr>
+            <tr><td>Anlage Vorsorgeaufwand</td><td>Kranken-, Pflege-, Rentenversicherung</td></tr>
+            <tr><td>Anlage KAP</td><td>Nur falls Kapitalerträge über dem Sparerpauschbetrag</td></tr>
+            <tr><td>Anlage V</td><td>Nur bei Einkünften aus Vermietung &amp; Verpachtung</td></tr>
+            <tr><td>Anlage Kind</td><td>Pro Kind, falls Kinderfreibetrag genutzt wird</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-q" data-target="eh3"><span>Wo einreichen?</span><span class="chev">▾</span></div>
+        <div class="help-a" id="eh3">
+          <ul>
+            <li><strong>ELSTER (kostenlos):</strong> mein.elster.de — direkt bei der Finanzverwaltung, offizieller Weg</li>
+            <li><strong>Steuer-Apps (ca. 30–40 €):</strong> Taxfix, WISO Steuer, smartsteuer — geführter Dialog, sendet über ELSTER-Schnittstelle</li>
+            <li><strong>Steuerberater (ca. 150–800 €):</strong> übernimmt Prüfung, Einreichung und Haftung</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-q" data-target="eh4"><span>Muss ich überhaupt eine Steuererklärung abgeben?</span><span class="chev">▾</span></div>
+        <div class="help-a" id="eh4">
+          <p>Als Angestellte/r mit nur einem Arbeitgeber und Steuerklasse I/IV ohne Faktor meist nicht verpflichtend
+             (freiwillige Abgabe lohnt sich aber oft — im Schnitt gibt's eine Erstattung). Pflicht besteht z. B. bei:
+             mehreren Arbeitgebern gleichzeitig, Steuerklasse V/VI, Lohnersatzleistungen über 410 €/Jahr (Kurzarbeitergeld,
+             Elterngeld etc.), oder wenn zusätzlich Gewinneinkünfte (z. B. aus Gewerbe) vorliegen.</p>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-q" data-target="eh5"><span>Fristen</span><span class="chev">▾</span></div>
+        <div class="help-a" id="eh5">
+          <p>Bei Pflichtveranlagung: regulär 31. Juli des Folgejahres, mit Steuerberater bis 28./29. Februar des
+             übernächsten Jahres. Bei freiwilliger Abgabe (Antragsveranlagung): 4 Jahre rückwirkend möglich.</p>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-q" data-target="eh6"><span>Was diese App nicht kann</span><span class="chev">▾</span></div>
+        <div class="help-a" id="eh6">
+          <ul>
+            <li>Keine rechtsverbindliche Steuerberatung</li>
+            <li>Keine tatsächliche Übermittlung ans Finanzamt (kein ELSTER-Zugang)</li>
+            <li>Vorsorgeaufwendungen ohne Höchstbetragsgrenzen nach §10 EStG (vereinfachte Schätzung)</li>
+            <li>Keine Berücksichtigung von außergewöhnlichen Belastungen (§33 EStG) oder haushaltsnahen Dienstleistungen (§35a EStG)</li>
+            <li>Kein amtlicher Steuerbescheid — nur eine Schätzung zur Vorbereitung</li>
+          </ul>
+          <p>Für alles darüber hinaus: Steuerberater oder direkt beim Finanzamt nachfragen.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<p class="site-footer">Budget-Ledger &middot; erstellt von AndrewFXTD &middot; alle Daten bleiben lokal auf diesem Gerät</p>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+  document.getElementById('menu-toggle').addEventListener('click', () => {
+    document.getElementById('menu-panel').classList.toggle('open');
+  });
+  document.addEventListener('click', (ev) => {
+    const panel = document.getElementById('menu-panel');
+    const toggle = document.getElementById('menu-toggle');
+    if(panel.classList.contains('open') && !panel.contains(ev.target) && !toggle.contains(ev.target)){
+      panel.classList.remove('open');
+    }
+  });
+
+  const THEME_KEY = 'sparrechner_theme_v1';
+  function applyTheme(theme){
+    if(!theme || theme === 'midnight') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', theme);
+    document.querySelectorAll('.theme-swatch').forEach(btn => {
+      btn.classList.toggle('active', (btn.dataset.swatch || 'midnight') === (theme || 'midnight'));
+    });
+  }
+  document.querySelectorAll('.theme-swatch').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const theme = btn.dataset.swatch;
+      try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
+      applyTheme(theme);
+    });
+  });
+  applyTheme((function(){ try{ return localStorage.getItem(THEME_KEY) || 'midnight'; }catch(e){ return 'midnight'; } })());
+
+  // Hilfe-Modal
+  const helpBtn = document.getElementById('help-btn');
+  const helpOverlay = document.getElementById('help-overlay');
+  const helpClose = document.getElementById('help-close');
+  helpBtn.addEventListener('click', () => { helpOverlay.classList.add('open'); });
+  helpClose.addEventListener('click', () => { helpOverlay.classList.remove('open'); });
+  helpOverlay.addEventListener('click', (ev) => { if(ev.target === helpOverlay) helpOverlay.classList.remove('open'); });
+  document.querySelectorAll('.help-q').forEach(q => {
+    q.addEventListener('click', () => {
+      const target = document.getElementById(q.dataset.target);
+      const isOpen = target.classList.contains('open');
+      target.classList.toggle('open', !isOpen);
+      q.classList.toggle('open', !isOpen);
+    });
+  });
+
+  function formatEUR(value){
+    return '€ ' + value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  const GRUNDFREIBETRAG_2026 = 12348;
+  const KINDERFREIBETRAG_2026 = 9756;
+  const WERBUNGSKOSTEN_PAUSCHBETRAG = 1230;
+
+  function einkommensteuer2026(zve){
+    zve = Math.floor(Math.max(zve, 0));
+    if(zve <= 12348) return 0;
+    if(zve <= 17799){ const y = (zve - 12348) / 10000; return Math.floor((914.51 * y + 1400) * y); }
+    if(zve <= 69878){ const z = (zve - 17799) / 10000; return Math.floor((181.19 * z + 2397) * z + 1025.38); }
+    if(zve <= 277825){ return Math.floor(0.42 * zve - 10637.32); }
+    return Math.floor(0.45 * zve - 18971.07);
+  }
+  function solidaritaetszuschlag(est, freigrenze){
+    if(est <= freigrenze) return 0;
+    const voll = est * 0.055;
+    const milderung = (est - freigrenze) * 0.119;
+    return Math.round(Math.min(voll, milderung) * 100) / 100;
+  }
+
+  // Gemeinsame Berechnung für Schnellrechner UND Assistent
+  function computeEst(data){
+    const brutto = parseFloat(data.brutto) || 0;
+    const weitere = parseFloat(data.weitere) || 0;
+    const werbungskosten = Math.max(parseFloat(data.werbungskosten) || 0, WERBUNGSKOSTEN_PAUSCHBETRAG);
+    const vorsorge = parseFloat(data.vorsorge) || 0;
+    const spenden = parseFloat(data.spenden) || 0;
+    const kinderAnzahl = parseInt(data.kinder, 10) || 0;
+    const kinderfreibetrag = kinderAnzahl * KINDERFREIBETRAG_2026;
+    const verheiratet = data.familienstand === 'verheiratet';
+
+    const einkuenfteNichtselbst = Math.max(0, brutto - werbungskosten);
+    const summeEinkuenfte = einkuenfteNichtselbst + weitere;
+    const sonderausgaben = vorsorge + spenden;
+    const zve = Math.max(0, summeEinkuenfte - sonderausgaben - kinderfreibetrag);
+
+    let est, soliFreigrenze;
+    if(verheiratet){
+      est = 2 * einkommensteuer2026(zve / 2);
+      soliFreigrenze = 39900;
+    } else {
+      est = einkommensteuer2026(zve);
+      soliFreigrenze = 19950;
+    }
+    const soli = solidaritaetszuschlag(est, soliFreigrenze);
+
+    const kSatz = data.kirchensteuer ? (parseFloat(data.kirchensteuerSatz) || 9) : 0;
+    let kist = Math.round(est * (kSatz / 100) * 100) / 100;
+    if(data.kappung && kSatz > 0){
+      const kappungSatz = parseFloat(data.kappungSatz) || 3.5;
+      kist = Math.min(kist, Math.round(zve * (kappungSatz / 100) * 100) / 100);
+    }
+
+    const gesamt = est + soli + kist;
+
+    const einbehalten = (parseFloat(data.lst) || 0) + (parseFloat(data.lstSoli) || 0) + (parseFloat(data.lstKist) || 0);
+    const differenz = einbehalten - gesamt; // positiv = Erstattung, negativ = Nachzahlung
+
+    return { brutto, weitere, werbungskosten, vorsorge, spenden, kinderfreibetrag, einkuenfteNichtselbst,
+      summeEinkuenfte, sonderausgaben, zve, est, soli, kist, gesamt, einbehalten, differenz, verheiratet, kinderAnzahl, kSatz };
+  }
+
+  // ===================== Speicherung (pro Jahr) =====================
+  const EWZ_KEY = 'sparrechner_einkommensteuer_v1';
+  function loadAllEst(){
+    try{ const raw = localStorage.getItem(EWZ_KEY); return raw ? JSON.parse(raw) : {}; }
+    catch(e){ return {}; }
+  }
+  function saveEstForYear(year, data){
+    const all = loadAllEst();
+    all[String(year)] = Object.assign({}, all[String(year)] || {}, data);
+    localStorage.setItem(EWZ_KEY, JSON.stringify(all));
+  }
+  function loadEstForYear(year){
+    const all = loadAllEst();
+    return all[String(year)] || {};
+  }
+
+  // ===================== Schnellrechner =====================
+  let estViewYear = new Date().getFullYear();
+
+  const estEls = {
+    familienstand: document.getElementById('est-familienstand'),
+    kinder: document.getElementById('est-kinder'),
+    brutto: document.getElementById('est-brutto'),
+    lst: document.getElementById('est-lst'),
+    lstSoli: document.getElementById('est-lst-soli'),
+    lstKist: document.getElementById('est-lst-kist'),
+    werbungskosten: document.getElementById('est-werbungskosten'),
+    vorsorge: document.getElementById('est-vorsorge'),
+    spenden: document.getElementById('est-spenden'),
+    weitere: document.getElementById('est-weitere'),
+    kirchensteuer: document.getElementById('est-kirchensteuer'),
+    kirchensteuerSatz: document.getElementById('est-kist-satz'),
+  };
+  const estKistField = document.getElementById('est-kist-satz-field');
+  estEls.kirchensteuer.addEventListener('change', () => {
+    estKistField.style.display = estEls.kirchensteuer.checked ? 'block' : 'none';
+    recalcQuick();
+  });
+
+  function collectEstFormData(){
+    return {
+      familienstand: estEls.familienstand.value,
+      kinder: estEls.kinder.value,
+      brutto: estEls.brutto.value,
+      lst: estEls.lst.value,
+      lstSoli: estEls.lstSoli.value,
+      lstKist: estEls.lstKist.value,
+      werbungskosten: estEls.werbungskosten.value,
+      vorsorge: estEls.vorsorge.value,
+      spenden: estEls.spenden.value,
+      weitere: estEls.weitere.value,
+      kirchensteuer: estEls.kirchensteuer.checked,
+      kirchensteuerSatz: estEls.kirchensteuerSatz.value
+    };
+  }
+
+  function applyEstFormData(d){
+    estEls.familienstand.value = d.familienstand || 'ledig';
+    estEls.kinder.value = d.kinder || '';
+    estEls.brutto.value = d.brutto || '';
+    estEls.lst.value = d.lst || '';
+    estEls.lstSoli.value = d.lstSoli || '';
+    estEls.lstKist.value = d.lstKist || '';
+    estEls.werbungskosten.value = d.werbungskosten || '';
+    estEls.vorsorge.value = d.vorsorge || '';
+    estEls.spenden.value = d.spenden || '';
+    estEls.weitere.value = d.weitere || '';
+    estEls.kirchensteuer.checked = !!d.kirchensteuer;
+    estKistField.style.display = d.kirchensteuer ? 'block' : 'none';
+    if(d.kirchensteuerSatz) estEls.kirchensteuerSatz.value = d.kirchensteuerSatz;
+  }
+
+  function recalcQuick(){
+    const r = computeEst(collectEstFormData());
+    document.getElementById('est-zve').textContent = formatEUR(r.zve);
+    document.getElementById('est-est').textContent = formatEUR(r.est);
+    document.getElementById('est-soli').textContent = formatEUR(r.soli);
+    document.getElementById('est-kist').textContent = formatEUR(r.kist);
+    document.getElementById('est-gesamt').textContent = formatEUR(r.gesamt);
+    document.getElementById('est-einbehalten').textContent = formatEUR(r.einbehalten);
+
+    const resultLabel = document.getElementById('est-result-label');
+    const resultAmount = document.getElementById('est-result-amount');
+    if(r.differenz >= 0){
+      resultLabel.textContent = 'Voraussichtliche Erstattung';
+      resultAmount.textContent = formatEUR(r.differenz);
+      resultAmount.className = 'amount pos';
+    } else {
+      resultLabel.textContent = 'Voraussichtliche Nachzahlung';
+      resultAmount.textContent = formatEUR(Math.abs(r.differenz));
+      resultAmount.className = 'amount neg';
+    }
+    return r;
+  }
+  Object.values(estEls).forEach(el => {
+    if(!el) return;
+    el.addEventListener('input', recalcQuick);
+    el.addEventListener('change', recalcQuick);
+  });
+
+  function refreshQuickFromStorage(){
+    document.getElementById('est-year-label').textContent = String(estViewYear);
+    document.getElementById('est-save-year-label').textContent = String(estViewYear);
+    applyEstFormData(loadEstForYear(estViewYear));
+    recalcQuick();
+  }
+
+  document.getElementById('est-year-prev').addEventListener('click', () => { estViewYear--; refreshQuickFromStorage(); });
+  document.getElementById('est-year-next').addEventListener('click', () => { estViewYear++; refreshQuickFromStorage(); });
+
+  document.getElementById('est-save-btn').addEventListener('click', () => {
+    saveEstForYear(estViewYear, collectEstFormData());
+    const hint = document.getElementById('est-hint');
+    hint.textContent = 'Für ' + estViewYear + ' gespeichert.';
+    hint.style.color = 'var(--sage)';
+    setTimeout(() => { hint.textContent = 'Wird lokal auf diesem Gerät gespeichert.'; hint.style.color = 'var(--ink-soft)'; }, 2200);
+    if(typeof refreshWizardFromStorage === 'function') refreshWizardFromStorage();
+  });
+
+  // ===================== Assistent =====================
+  const TOTAL_STEPS = 10;
+  let currentStep = 0;
+  const progressTrack = document.getElementById('ewz-progress-track');
+  const progressLabel = document.getElementById('ewz-progress-label');
+  const steps = document.querySelectorAll('.step[data-step]');
+  const nextBtn = document.getElementById('ewz-next-btn');
+  const backBtn = document.getElementById('ewz-back-btn');
+
+  for(let i=0;i<TOTAL_STEPS;i++){
+    const seg = document.createElement('div');
+    seg.className = 'progress-seg';
+    progressTrack.appendChild(seg);
+  }
+  const progressSegs = progressTrack.querySelectorAll('.progress-seg');
+
+  const ewzEls = {
+    name: document.getElementById('ewz-name'),
+    steuerid: document.getElementById('ewz-steuerid'),
+    finanzamt: document.getElementById('ewz-finanzamt'),
+    anschrift: document.getElementById('ewz-anschrift'),
+    famLedig: document.getElementById('ewz-fam-ledig'),
+    famVerheiratet: document.getElementById('ewz-fam-verheiratet'),
+    kinder: document.getElementById('ewz-kinder'),
+    brutto: document.getElementById('ewz-brutto'),
+    lst: document.getElementById('ewz-lst'),
+    lstSoli: document.getElementById('ewz-lst-soli'),
+    lstKist: document.getElementById('ewz-lst-kist'),
+    weitere: document.getElementById('ewz-weitere'),
+    werbungskosten: document.getElementById('ewz-werbungskosten'),
+    vorsorge: document.getElementById('ewz-vorsorge'),
+    spenden: document.getElementById('ewz-spenden'),
+    kirchensteuer: document.getElementById('ewz-kirchensteuer'),
+    kirchensteuerSatz: document.getElementById('ewz-kirchensteuer-satz'),
+    kappung: document.getElementById('ewz-kappung'),
+    kappungSatz: document.getElementById('ewz-kappung-satz'),
+  };
+  const ewzKirchensteuerField = document.getElementById('ewz-kirchensteuer-field');
+  const ewzKappungField = document.getElementById('ewz-kappung-field');
+  ewzEls.kirchensteuer.addEventListener('change', () => {
+    ewzKirchensteuerField.style.display = ewzEls.kirchensteuer.checked ? 'block' : 'none';
+  });
+  ewzEls.kappung.addEventListener('change', () => {
+    ewzKappungField.style.display = ewzEls.kappung.checked ? 'block' : 'none';
+  });
+  ewzEls.werbungskosten.addEventListener('input', updateWkHint);
+  function updateWkHint(){
+    const val = parseFloat(String(ewzEls.werbungskosten.value).replace(',', '.')) || 0;
+    const hint = document.getElementById('ewz-wk-hint');
+    const used = Math.max(val, WERBUNGSKOSTEN_PAUSCHBETRAG);
+    hint.textContent = 'Angesetzt werden: ' + formatEUR(used) + (val <= WERBUNGSKOSTEN_PAUSCHBETRAG ? ' (Pauschbetrag, da höher als deine Eingabe)' : ' (deine tatsächlichen Werbungskosten)');
+  }
+
+  function collectEwzFormData(){
+    return {
+      name: ewzEls.name.value, steuerid: ewzEls.steuerid.value, finanzamt: ewzEls.finanzamt.value, anschrift: ewzEls.anschrift.value,
+      familienstand: ewzEls.famVerheiratet.checked ? 'verheiratet' : 'ledig',
+      kinder: ewzEls.kinder.value,
+      brutto: ewzEls.brutto.value, lst: ewzEls.lst.value, lstSoli: ewzEls.lstSoli.value, lstKist: ewzEls.lstKist.value,
+      weitere: ewzEls.weitere.value,
+      werbungskosten: ewzEls.werbungskosten.value,
+      vorsorge: ewzEls.vorsorge.value, spenden: ewzEls.spenden.value,
+      kirchensteuer: ewzEls.kirchensteuer.checked, kirchensteuerSatz: ewzEls.kirchensteuerSatz.value,
+      kappung: ewzEls.kappung.checked, kappungSatz: ewzEls.kappungSatz.value
+    };
+  }
+
+  function applyEwzFormData(d){
+    ewzEls.name.value = d.name || ''; ewzEls.steuerid.value = d.steuerid || '';
+    ewzEls.finanzamt.value = d.finanzamt || ''; ewzEls.anschrift.value = d.anschrift || '';
+    if(d.familienstand === 'verheiratet'){ ewzEls.famVerheiratet.checked = true; } else { ewzEls.famLedig.checked = true; }
+    ewzEls.kinder.value = d.kinder || '';
+    ewzEls.brutto.value = d.brutto || ''; ewzEls.lst.value = d.lst || '';
+    ewzEls.lstSoli.value = d.lstSoli || ''; ewzEls.lstKist.value = d.lstKist || '';
+    ewzEls.weitere.value = d.weitere || '';
+    ewzEls.werbungskosten.value = d.werbungskosten || '';
+    ewzEls.vorsorge.value = d.vorsorge || ''; ewzEls.spenden.value = d.spenden || '';
+    ewzEls.kirchensteuer.checked = !!d.kirchensteuer;
+    ewzKirchensteuerField.style.display = d.kirchensteuer ? 'block' : 'none';
+    if(d.kirchensteuerSatz) ewzEls.kirchensteuerSatz.value = d.kirchensteuerSatz;
+    ewzEls.kappung.checked = !!d.kappung;
+    ewzKappungField.style.display = d.kappung ? 'block' : 'none';
+    if(d.kappungSatz) ewzEls.kappungSatz.value = d.kappungSatz;
+    updateWkHint();
+  }
+
+  function refreshWizardFromStorage(){
+    applyEwzFormData(loadEstForYear(estViewYear));
+  }
+
+  function persistWizardStep(){
+    saveEstForYear(estViewYear, collectEwzFormData());
+    refreshQuickFromStorage();
+  }
+
+  function rline(label, value, step){
+    return '<div class="rline"><span>' + label + '</span><span>' + value + ' <button class="redit" data-step="' + step + '">Ändern</button></span></div>';
+  }
+
+  function renderReview(){
+    const r = computeEst(collectEwzFormData());
+    const box = document.getElementById('ewz-review');
+    box.innerHTML =
+      rline('Name', ewzEls.name.value || '—', 1) +
+      rline('Finanzamt', ewzEls.finanzamt.value || '—', 1) +
+      rline('Familienstand', ewzEls.famVerheiratet.checked ? 'Verheiratet' : 'Ledig', 2) +
+      rline('Kinder', ewzEls.kinder.value || '0', 2) +
+      rline('Bruttoarbeitslohn', formatEUR(r.brutto), 3) +
+      rline('Einbehalten (LSt+Soli+KiSt)', formatEUR(r.einbehalten), 3) +
+      rline('Weitere Einkünfte', formatEUR(r.weitere), 4) +
+      rline('Werbungskosten (angesetzt)', formatEUR(r.werbungskosten), 5) +
+      rline('Sonderausgaben', formatEUR(r.sonderausgaben), 6) +
+      rline('Kirchensteuer', r.kSatz > 0 ? (r.kSatz + ' %') : 'nein', 7) +
+      '<div class="rline" style="border-top:1px solid var(--ink); margin-top:10px; padding-top:10px;"><strong>Zu versteuerndes Einkommen</strong><strong>' + formatEUR(r.zve) + '</strong></div>' +
+      '<div class="rline"><span>Einkommensteuer</span><span>' + formatEUR(r.est) + '</span></div>' +
+      '<div class="rline"><span>Solidaritätszuschlag</span><span>' + formatEUR(r.soli) + '</span></div>' +
+      '<div class="rline"><span>Kirchensteuer</span><span>' + formatEUR(r.kist) + '</span></div>' +
+      '<div class="rline"><strong>Steuerschuld gesamt</strong><strong>' + formatEUR(r.gesamt) + '</strong></div>' +
+      '<div class="rline" style="border-top:1px solid var(--ink); margin-top:10px; padding-top:10px;"><strong>' + (r.differenz >= 0 ? 'Voraussichtliche Erstattung' : 'Voraussichtliche Nachzahlung') + '</strong><strong style="color:' + (r.differenz >= 0 ? 'var(--sage)' : 'var(--danger)') + '">' + formatEUR(Math.abs(r.differenz)) + '</strong></div>';
+
+    box.querySelectorAll('.redit').forEach(btn => {
+      btn.addEventListener('click', () => goToStep(parseInt(btn.dataset.step, 10)));
+    });
+  }
+
+  function goToStep(n){
+    persistWizardStep();
+    currentStep = Math.max(0, Math.min(TOTAL_STEPS - 1, n));
+    steps.forEach(s => s.classList.toggle('active', parseInt(s.dataset.step, 10) === currentStep));
+    progressSegs.forEach((seg, i) => seg.classList.toggle('done', i <= currentStep));
+    progressLabel.textContent = 'Schritt ' + (currentStep + 1) + ' von ' + TOTAL_STEPS;
+    backBtn.style.visibility = currentStep === 0 ? 'hidden' : 'visible';
+    nextBtn.style.display = currentStep === TOTAL_STEPS - 1 ? 'none' : 'inline-block';
+    if(currentStep === 8) renderReview();
+    if(currentStep === 9){
+      const r = computeEst(collectEwzFormData());
+      document.getElementById('ewz-final-amount').textContent = formatEUR(Math.abs(r.differenz));
+      document.getElementById('ewz-final-amount').style.color = r.differenz >= 0 ? 'var(--sage)' : 'var(--danger)';
+      document.getElementById('ewz-final-label').textContent = r.differenz >= 0 ? 'Erstattung' : 'Nachzahlung';
+    }
+    window.scrollTo({ top: document.querySelector('.wizard-card').offsetTop - 20, behavior: 'smooth' });
+  }
+  nextBtn.addEventListener('click', () => goToStep(currentStep + 1));
+  backBtn.addEventListener('click', () => goToStep(currentStep - 1));
+
+  document.getElementById('ewz-generate-btn').addEventListener('click', () => {
+    persistWizardStep();
+    const r = computeEst(collectEwzFormData());
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const marginX = 20;
+    let y = 24;
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
+    doc.text('Budget-Ledger — Einkommensteuererklärung ' + estViewYear, marginX, y); y += 6;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(120);
+    doc.text('Unverbindliche Schätzung, keine Einreichung beim Finanzamt. Erstellt am ' + new Date().toLocaleDateString('de-DE') + '.', marginX, y);
+    doc.setTextColor(0); y += 14;
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+    doc.text('1. Persönliche Angaben', marginX, y); y += 8;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    [['Name', ewzEls.name.value || '—'], ['Finanzamt', ewzEls.finanzamt.value || '—'],
+     ['Anschrift', ewzEls.anschrift.value || '—'], ['Steuer-ID', ewzEls.steuerid.value || '—'],
+     ['Familienstand', ewzEls.famVerheiratet.checked ? 'Verheiratet (Splitting)' : 'Ledig'],
+     ['Kinder', ewzEls.kinder.value || '0']
+    ].forEach(([k,v]) => { doc.text(k, marginX, y); doc.text(String(v), marginX + 70, y); y += 6; });
+    y += 8;
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+    doc.text('2. Einkünfte & Abzüge', marginX, y); y += 8;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    [['Bruttoarbeitslohn', formatEUR(r.brutto)], ['Werbungskosten (angesetzt)', formatEUR(r.werbungskosten)],
+     ['Einkünfte aus nichtselbst. Arbeit', formatEUR(r.einkuenfteNichtselbst)],
+     ['Weitere Einkünfte', formatEUR(r.weitere)], ['Summe der Einkünfte', formatEUR(r.summeEinkuenfte)],
+     ['Sonderausgaben (Vorsorge+Spenden)', formatEUR(r.sonderausgaben)],
+     ['Kinderfreibetrag', formatEUR(r.kinderfreibetrag)]
+    ].forEach(([k,v]) => { doc.text(k, marginX, y); doc.text(String(v), marginX + 150, y, { align: 'right' }); y += 6; });
+    y += 2; doc.line(marginX, y, marginX + 170, y); y += 7;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Zu versteuerndes Einkommen', marginX, y); doc.text(formatEUR(r.zve), marginX + 150, y, { align: 'right' });
+    y += 14;
+
+    doc.setFontSize(12); doc.text('3. Steuerschätzung', marginX, y); y += 8;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    doc.text('Einkommensteuer' + (r.verheiratet ? ' (§32a EStG, Splitting)' : ' (§32a EStG)'), marginX, y);
+    doc.text(formatEUR(r.est), marginX + 150, y, { align: 'right' }); y += 6;
+    doc.text('Solidaritätszuschlag', marginX, y); doc.text(formatEUR(r.soli), marginX + 150, y, { align: 'right' }); y += 6;
+    if(r.kist > 0){ doc.text('Kirchensteuer (' + r.kSatz + ' %)', marginX, y); doc.text(formatEUR(r.kist), marginX + 150, y, { align: 'right' }); y += 6; }
+    y += 2; doc.line(marginX, y, marginX + 170, y); y += 7;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    doc.text('Steuerschuld gesamt', marginX, y); doc.text(formatEUR(r.gesamt), marginX + 150, y, { align: 'right' }); y += 8;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    doc.text('Bereits einbehalten (LSt+Soli+KiSt)', marginX, y); doc.text(formatEUR(r.einbehalten), marginX + 150, y, { align: 'right' }); y += 8;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    doc.text(r.differenz >= 0 ? 'Voraussichtliche Erstattung' : 'Voraussichtliche Nachzahlung', marginX, y);
+    doc.text(formatEUR(Math.abs(r.differenz)), marginX + 150, y, { align: 'right' });
+    y += 16;
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+    doc.text('4. Checkliste für die Abgabe', marginX, y); y += 8;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    [
+      'Bei ELSTER anmelden (elster.de) oder Termin beim Steuerberater vereinbaren',
+      'Hauptvordruck ESt 1A ausfüllen',
+      'Anlage N (nichtselbständige Arbeit) mit Bruttolohn & Werbungskosten ausfüllen',
+      'Ggf. Anlage KAP oder Anlage V ergänzen',
+      'Anlage Vorsorgeaufwand ausfüllen',
+      'Frist beachten — regulär 31. Juli des Folgejahres',
+      'Belege & Lohnsteuerbescheinigung bereithalten'
+    ].forEach(item => {
+      const lines = doc.splitTextToSize('• ' + item, 170);
+      doc.text(lines, marginX, y); y += lines.length * 5.2;
+    });
+    y += 8;
+
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(120);
+    const disclaimer = 'Diese Unterlage ist eine unverbindliche Orientierung zur Vorbereitung deiner privaten Einkommensteuererklärung. Vorsorgeaufwendungen sind ohne Höchstbetragsgrenzen nach §10 EStG vereinfacht angesetzt, außergewöhnliche Belastungen und haushaltsnahe Dienstleistungen sind nicht berücksichtigt. Sie ersetzt keine Steuererklärung, keinen Steuerberater und keinen amtlichen Steuerbescheid des Finanzamts. Die tatsächliche Einreichung erfolgt ausschließlich über ELSTER oder einen Steuerberater.';
+    const dLines = doc.splitTextToSize(disclaimer, 170);
+    doc.text(dLines, marginX, y);
+
+    doc.save('Budget-Ledger-Einkommensteuer-' + estViewYear + '.pdf');
+  });
+
+  // ===================== Init =====================
+  refreshQuickFromStorage();
+  refreshWizardFromStorage();
+  goToStep(0);
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+
+</body>
+</html>

@@ -1,13 +1,13 @@
 {
-  "name": "AndrewFXTD Sparrechner",
-  "short_name": "Sparrechner",
-  "description": "Budget-Ledger: Verteilt das monatliche Einkommen nach 55/5/10/15/15",
-  "start_url": "./index.html",
+  "name": "Budget-Ledger",
+  "short_name": "Budget-Ledger",
+  "description": "Budget-Ledger: verteilt das monatliche Einkommen, verwaltet Steuerunterlagen und ein Trading Journal an einem Ort",
+  "start_url": "./start.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#17231b",
-  "theme_color": "#17231b",
+  "background_color": "#04060c",
+  "theme_color": "#04060c",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }

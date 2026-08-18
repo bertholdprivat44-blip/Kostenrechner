@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<script>
+  (function(){
+    try{
+      var t = localStorage.getItem('sparrechner_theme_v1');
+      if(t && t !== 'midnight') document.documentElement.setAttribute('data-theme', t);
+    }catch(e){}
+  })();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budget-Ledger — Trading Journal</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#04060c">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sparrechner">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .journal-card{ width:100%; max-width: 620px; }
+  .dashboard-card{ width:100%; max-width: 620px; }
+
+  .dash-stats{
+    display:grid; grid-template-columns: repeat(4, 1fr);
+    gap: 10px; padding: 26px 26px 6px;
+  }
+  .dstat{ text-align:center; }
+  .dstat .dstat-label{ display:block; font-size:8px; letter-spacing:0.06em; text-transform:uppercase; color: var(--ink-soft); margin-bottom:5px; }
+  .dstat .dstat-value{ font-family:'Fraunces', serif; font-size: 14px; }
+  .dstat .dstat-value.pos{ color: var(--sage); }
+  .dstat .dstat-value.neg{ color: var(--danger); }
+  .dstat .dstat-value.neutral{ color: var(--ink); }
+  .start-balance-row{
+    display:flex; align-items:center; justify-content:center; gap:6px; margin-top:6px;
+  }
+  .start-balance-row label{ font-size:8px; color: var(--ink-faint, var(--ink-soft)); letter-spacing:0.04em; }
+  .start-balance-row input{
+    width:70px; border:none; border-bottom:1px solid var(--card-line); background:transparent;
+    outline:none; font-family:'IBM Plex Mono', monospace; font-size:10px; color: var(--ink-soft); text-align:center;
+  }
+
+  .dash-section-title{
+    padding: 22px 26px 4px; font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; color: var(--ink-soft);
+  }
+
+  .dash-grid{
+    display:grid; grid-template-columns: 1fr; gap: 4px;
+  }
+  .dash-panel{ padding: 10px 26px 20px; }
+  .dash-panel-title{
+    font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color: var(--ink-soft); margin-bottom:10px; text-align:center;
+  }
+
+  .bar-chart{ display:flex; align-items:flex-end; gap:6px; height:100px; padding: 0 4px; }
+  .bar-chart .bar-col{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; }
+  .bar-chart .bar{ width:100%; max-width:22px; border-radius:2px 2px 0 0; min-height:2px; }
+  .bar-chart .bar.pos{ background: var(--sage); }
+  .bar-chart .bar.neg{ background: var(--danger); align-self:flex-start; margin-top:auto; }
+  .bar-chart .bar-day{ font-size:8px; color: var(--ink-soft); margin-top:6px; }
+  .bar-chart-zero{ border-top:1px dashed var(--card-line); }
+
+  .risk-donuts{ display:flex; justify-content:space-around; gap:10px; flex-wrap:wrap; }
+  .risk-donut{ text-align:center; }
+  .risk-donut .donut-ratio{ font-family:'Fraunces', serif; font-size:15px; margin-top:-64px; }
+  .risk-donut .donut-label{ font-size:8.5px; letter-spacing:0.08em; text-transform:uppercase; color: var(--ink-soft); margin-top:2px; }
+  .risk-legend{ display:flex; justify-content:center; gap:14px; margin-top:6px; font-size:9px; }
+  .risk-legend .win{ color: var(--sage); }
+  .risk-legend .loss{ color: var(--danger); }
+  .risk-substats{ display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:16px; }
+  .risk-substat{ text-align:center; }
+  .risk-substat .rs-label{ display:block; font-size:8px; letter-spacing:0.05em; text-transform:uppercase; color: var(--ink-soft); }
+  .risk-substat .rs-value{ font-family:'Fraunces', serif; font-size:13px; color: var(--ink); }
+
+  .equity-wrap{ padding: 4px 4px 0; }
+  .equity-empty{ text-align:center; font-size:11px; color: var(--ink-soft); padding: 20px 0; }
+
+  .weekly-row{ display:flex; gap:20px; align-items:center; justify-content:center; }
+  .weekly-bars{ display:flex; align-items:flex-end; gap:10px; height:70px; }
+  .weekly-bars .wk-col{ display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; }
+  .weekly-bars .wk-bar{ width:34px; border-radius:2px 2px 0 0; min-height:2px; }
+  .weekly-bars .wk-label{ font-size:8px; color: var(--ink-soft); margin-top:6px; }
+  .weekly-change{ text-align:center; }
+  .weekly-change .wc-value{ font-family:'Fraunces', serif; font-size:16px; }
+  .weekly-change .wc-value.pos{ color: var(--sage); }
+  .weekly-change .wc-value.neg{ color: var(--danger); }
+  .weekly-change .wc-label{ font-size:8px; letter-spacing:0.05em; text-transform:uppercase; color: var(--ink-soft); margin-top:3px; }
+
+  .journal-nav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 22px 32px 4px;
+  }
+  .journal-nav .month-label{
+    font-family:'Fraunces', serif; font-size: 18px; color: var(--ink);
+  }
+  .nav-arrow{
+    background:none; border: 1px solid var(--card-line); width:36px; height:36px;
+    font-size: 15px; color: var(--brass-deep); cursor:pointer;
+  }
+  .nav-arrow:hover{ border-color: var(--brass); background: rgba(74,113,224,0.08); }
+
+  .journal-stats{
+    display:grid; grid-template-columns: repeat(3, 1fr);
+    gap: 14px; padding: 18px 32px 6px;
+  }
+  .jstat{ text-align:center; }
+  .jstat .jstat-label{
+    display:block; font-size: 9px; letter-spacing:0.08em; text-transform:uppercase; color: var(--ink-soft); margin-bottom:4px;
+  }
+  .jstat .jstat-value{
+    font-family:'Fraunces', serif; font-size: 17px; color: var(--brass-deep);
+  }
+  .jstat .jstat-value.neg{ color: var(--danger); }
+  .jstat .jstat-value.pos{ color: var(--sage); }
+
+  .gauge-wrap{ display:flex; flex-direction:column; align-items:center; padding: 14px 32px 4px; }
+  .gauge-labels{ display:flex; justify-content:space-between; width:100%; max-width: 220px; margin-top: -6px; }
+  .gauge-labels span{ font-size: 10.5px; font-weight:600; }
+  .gauge-labels .win-label{ color: var(--sage); }
+  .gauge-labels .loss-label{ color: var(--danger); }
+  .gauge-center{ text-align:center; margin-top: -40px; }
+  .gauge-center .net{ font-family:'Fraunces', serif; font-size: 17px; color: var(--ink); }
+  .gauge-center .sub{ font-size:9px; letter-spacing:0.08em; text-transform:uppercase; color: var(--ink-soft); margin-top:3px; }
+
+  .cal-weekdays{
+    display:grid; grid-template-columns: repeat(7, 1fr);
+    padding: 18px 20px 4px; gap: 4px;
+    font-size: 9px; text-transform:uppercase; letter-spacing:0.06em; color: var(--ink-soft); text-align:center;
+  }
+  .cal-grid{
+    display:grid; grid-template-columns: repeat(7, 1fr);
+    gap: 4px; padding: 6px 20px 26px;
+  }
+  .cal-cell{
+    aspect-ratio: 1 / 1;
+    border: 1px solid var(--card-line);
+    background: rgba(255,255,255,0.03);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    cursor:pointer; position:relative; padding: 4px;
+  }
+  .cal-cell:hover{ border-color: var(--brass); }
+  .cal-cell.empty{ border:none; background:none; cursor:default; }
+  .cal-cell.today{ box-shadow: inset 0 0 0 1.5px var(--brass-deep); }
+  .cal-cell .day-num{ font-family:'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-soft); }
+  .cal-cell.has-entry .day-num{ color: var(--ink); font-weight:600; }
+  .cal-cell .day-pl{ font-size: 9.5px; font-weight:600; margin-top:2px; }
+  .cal-cell .day-pl.pos{ color: var(--sage); }
+  .cal-cell .day-pl.neg{ color: var(--danger); }
+  .cal-cell .day-dot{
+    width:5px; height:5px; border-radius:50%; background: var(--brass); margin-top:2px;
+  }
+
+  .day-overlay{
+    display:none; position: fixed; inset:0; background: rgba(2,4,10,0.8);
+    z-index: 40; padding: 24px 16px; overflow-y:auto;
+  }
+  .day-overlay.open{ display:block; }
+  .day-modal{
+    max-width: 480px; margin: 0 auto; background: var(--card); border: 1px solid var(--card-line); position:relative;
+  }
+  .day-modal-head{ padding: 26px 32px 16px; border-bottom: 1px solid var(--card-line); position:relative; }
+  .day-close{ position:absolute; top:20px; right:20px; background:none; border:none; font-size:20px; color: var(--ink-soft); cursor:pointer; }
+  .day-close:hover{ color: var(--danger); }
+  .day-body{ padding: 20px 32px 8px; }
+  .day-body .field{ margin-bottom: 18px; }
+  .day-body textarea{
+    width:100%; border:none; border-bottom: 1.5px solid var(--card-line); background:transparent; outline:none;
+    font-family:'IBM Plex Mono', monospace; font-size: 13px; color: var(--ink); min-height: 70px; resize:vertical; padding-bottom:6px;
+  }
+  .day-body textarea:focus{ border-bottom-color: var(--brass); }
+  .img-actions{ display:flex; gap: 12px; margin: 4px 0 16px; flex-wrap:wrap; }
+  .img-btn{
+    display:inline-flex; align-items:center; gap:6px;
+    border: 1.5px solid var(--brass-deep); color: var(--brass-deep);
+    padding: 9px 14px; font-size: 11.5px; letter-spacing:0.02em; cursor:pointer;
+  }
+  .img-btn:hover{ background: rgba(74,113,224,0.08); }
+  .day-images{
+    display:grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px;
+  }
+  .day-img-wrap{ position:relative; aspect-ratio: 1/1; overflow:hidden; border:1px solid var(--card-line); }
+  .day-img-wrap img{ width:100%; height:100%; object-fit:cover; display:block; cursor:pointer; }
+  .day-img-remove{
+    position:absolute; top:3px; right:3px; background: rgba(2,4,10,0.8); color:#fff;
+    border:none; width:20px; height:20px; font-size:11px; cursor:pointer; line-height:1;
+  }
+  .day-actions{ padding: 6px 32px 28px; display:grid; gap:10px; }
+  .day-hint{ font-size:10.5px; color: var(--ink-soft); padding: 0 32px 20px; }
+
+  .img-lightbox{
+    display:none; position:fixed; inset:0; background: rgba(2,4,10,0.9); z-index:60;
+    align-items:center; justify-content:center; padding: 20px;
+  }
+  .img-lightbox.open{ display:flex; }
+  .img-lightbox img{ max-width:100%; max-height:100%; }
+  .img-lightbox-close{
+    position:fixed; top:20px; right:20px; background:none; border:none; color:#fff; font-size:26px; cursor:pointer;
+  }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <span class="brand">Budget-Ledger</span>
+  <button class="menu-toggle" id="menu-toggle" type="button">☰ Menü</button>
+  <div class="menu-panel" id="menu-panel">
+    <a href="start.html">Start<span class="sub-label">Übersicht aller Bereiche</span></a>
+    <a href="index.html">Sparrechner<span class="sub-label">Übersicht &amp; Spartopf</span></a>
+    <a href="steuererklaerung.html">Steuererklärung<span class="sub-label">Gewerbe &amp; Unterlagen</span></a>
+    <a href="einkommensteuer.html">Einkommensteuer<span class="sub-label">Private Steuererklärung</span></a>
+    <a href="trading-journal.html" class="active">Trading Journal<span class="sub-label">Trades &amp; Kalender</span></a>
+    <div class="theme-switcher">
+      <span class="ts-label">Farbschema</span>
+      <div class="ts-row">
+        <button class="theme-swatch" data-swatch="midnight" title="Mitternacht (Standard)" type="button"></button>
+        <button class="theme-swatch" data-swatch="redblack" title="Rot-Schwarz" type="button"></button>
+        <button class="theme-swatch" data-swatch="emerald" title="Smaragd" type="button"></button>
+        <button class="theme-swatch" data-swatch="amber" title="Bernstein" type="button"></button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="app-wrap">
+
+  <div class="card dashboard-card">
+    <div class="head">
+      <p class="eyebrow">Trading · Auswertung</p>
+      <h1>Übersicht</h1>
+      <p class="sub">Gesamtstatistik über alle erfassten Handelstage</p>
+    </div>
+
+    <div class="dash-stats">
+      <div class="dstat">
+        <span class="dstat-label">Netto P/L</span>
+        <span class="dstat-value" id="dash-net-pl">€ 0,00</span>
+      </div>
+      <div class="dstat">
+        <span class="dstat-label">Bruttogewinn</span>
+        <span class="dstat-value pos" id="dash-gross-profit">€ 0,00</span>
+      </div>
+      <div class="dstat">
+        <span class="dstat-label">Bruttoverlust</span>
+        <span class="dstat-value neg" id="dash-gross-loss">€ 0,00</span>
+      </div>
+      <div class="dstat">
+        <span class="dstat-label">Kontostand</span>
+        <span class="dstat-value neutral" id="dash-balance">€ 0,00</span>
+        <div class="start-balance-row">
+          <label for="dash-start-balance">Start</label>
+          <input type="number" id="dash-start-balance" step="0.01" placeholder="0">
+        </div>
+      </div>
+    </div>
+
+    <p class="dash-section-title">Gesamtübersicht</p>
+    <div class="dash-panel">
+      <p class="dash-panel-title">P/L nach Wochentag</p>
+      <div class="bar-chart" id="weekday-chart"></div>
+    </div>
+
+    <p class="dash-section-title">Kapital- &amp; Risikostatistik</p>
+    <div class="dash-panel">
+      <div class="risk-donuts">
+        <div class="risk-donut">
+          <svg viewBox="0 0 120 120" width="110" height="110">
+            <circle cx="60" cy="60" r="46" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="14"/>
+            <circle id="wlDonutWin" cx="60" cy="60" r="46" fill="none" style="stroke:var(--sage)" stroke-width="14"
+                    stroke-dasharray="289" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+            <circle id="wlDonutLoss" cx="60" cy="60" r="46" fill="none" style="stroke:var(--danger)" stroke-width="14"
+                    stroke-dasharray="289" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+          </svg>
+          <div class="donut-ratio" id="wl-ratio">0 : 0</div>
+          <div class="donut-label">Win / Loss</div>
+          <div class="risk-legend"><span class="win" id="wl-win-count">0 Win</span><span class="loss" id="wl-loss-count">0 Loss</span></div>
+        </div>
+        <div class="risk-donut">
+          <svg viewBox="0 0 120 120" width="110" height="110">
+            <circle cx="60" cy="60" r="46" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="14"/>
+            <circle id="plDonutWin" cx="60" cy="60" r="46" fill="none" style="stroke:var(--sage)" stroke-width="14"
+                    stroke-dasharray="289" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+            <circle id="plDonutLoss" cx="60" cy="60" r="46" fill="none" style="stroke:var(--danger)" stroke-width="14"
+                    stroke-dasharray="289" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+          </svg>
+          <div class="donut-ratio" id="pl-ratio">0 : 0</div>
+          <div class="donut-label">Profit / Loss</div>
+          <div class="risk-legend"><span class="win" id="pl-profit-amt">€ 0</span><span class="loss" id="pl-loss-amt">€ 0</span></div>
+        </div>
+      </div>
+      <div class="risk-substats">
+        <div class="risk-substat"><span class="rs-label">Winrate</span><span class="rs-value" id="rs-winrate">0 %</span></div>
+        <div class="risk-substat"><span class="rs-label">Profit-Faktor</span><span class="rs-value" id="rs-pf">0,00</span></div>
+        <div class="risk-substat"><span class="rs-label">Ø Gewinn</span><span class="rs-value" id="rs-avgwin">€ 0,00</span></div>
+        <div class="risk-substat"><span class="rs-label">Ø Verlust</span><span class="rs-value" id="rs-avgloss">€ 0,00</span></div>
+      </div>
+    </div>
+
+    <p class="dash-section-title">Performance</p>
+    <div class="dash-panel equity-wrap">
+      <svg id="equity-svg" viewBox="0 0 560 160" width="100%" style="display:block"></svg>
+      <p class="equity-empty" id="equity-empty" style="display:none">Noch keine Handelstage erfasst.</p>
+    </div>
+
+    <p class="dash-section-title">Wochenperformance</p>
+    <div class="dash-panel weekly-row">
+      <div class="weekly-bars">
+        <div class="wk-col"><div class="wk-bar" id="wk-bar-last" style="background:var(--card-line); height:4px"></div><span class="wk-label">Letzte Wo.</span></div>
+        <div class="wk-col"><div class="wk-bar" id="wk-bar-this" style="background:var(--card-line); height:4px"></div><span class="wk-label">Diese Wo.</span></div>
+      </div>
+      <div class="weekly-change">
+        <div class="wc-value" id="wk-change">0 %</div>
+        <div class="wc-label">vs. Vorwoche</div>
+      </div>
+    </div>
+
+    <p class="foot">Basis: alle in diesem Journal gespeicherten Tage</p>
+  </div>
+
+  <div class="card journal-card">
+    <div class="head">
+      <p class="eyebrow">Handelstagebuch</p>
+      <h1>Trading Journal</h1>
+      <p class="sub">Trades, Fotos und Notizen pro Handelstag</p>
+    </div>
+
+    <div class="journal-nav">
+      <button class="nav-arrow" id="prev-month">◀</button>
+      <span class="month-label" id="month-label">Monat Jahr</span>
+      <button class="nav-arrow" id="next-month">▶</button>
+    </div>
+
+    <div class="journal-stats">
+      <div class="jstat">
+        <span class="jstat-label">P/L gesamt</span>
+        <span class="jstat-value" id="stat-pl">€ 0,00</span>
+      </div>
+      <div class="jstat">
+        <span class="jstat-label">Winrate</span>
+        <span class="jstat-value" id="stat-winrate">0 %</span>
+      </div>
+      <div class="jstat">
+        <span class="jstat-label">Max. Drawdown</span>
+        <span class="jstat-value" id="stat-drawdown">€ 0,00</span>
+      </div>
+    </div>
+
+    <div class="gauge-wrap">
+      <svg viewBox="0 0 200 108" width="100%" style="max-width:220px">
+        <path d="M 16 92 A 84 84 0 0 1 184 92" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="12" stroke-linecap="round"/>
+        <path id="gaugeWin" d="M 16 92 A 84 84 0 0 1 184 92" fill="none" style="stroke:var(--sage)" stroke-width="12" stroke-linecap="round" stroke-dasharray="190" stroke-dashoffset="0"/>
+        <path id="gaugeLoss" d="M 16 92 A 84 84 0 0 1 184 92" fill="none" style="stroke:var(--danger)" stroke-width="12" stroke-linecap="round" stroke-dasharray="190" stroke-dashoffset="0"/>
+      </svg>
+      <div class="gauge-center">
+        <div class="net" id="gauge-net">€ 0,00</div>
+        <div class="sub">Netto diesen Monat</div>
+      </div>
+      <div class="gauge-labels">
+        <span class="win-label" id="gauge-win-label">+€ 0</span>
+        <span class="loss-label" id="gauge-loss-label">−€ 0</span>
+      </div>
+    </div>
+
+    <div class="cal-weekdays">
+      <span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+
+    <p class="foot">Tag antippen, um Trades, Gewinn/Verlust, Notizen &amp; Fotos einzutragen</p>
+  </div>
+</div>
+
+<div class="day-overlay" id="day-overlay">
+  <div class="day-modal">
+    <div class="day-modal-head">
+      <button class="day-close" id="day-close" type="button">✕</button>
+      <p class="eyebrow" id="day-modal-eyebrow">Handelstag</p>
+      <h1 style="font-size:20px" id="day-modal-title">—</h1>
+    </div>
+    <div class="day-body">
+      <div class="field">
+        <label for="day-pl">Gewinn / Verlust (€, negativ bei Verlust)</label>
+        <div class="income-input-row">
+          <span>€</span>
+          <input type="number" id="day-pl" class="money-input" placeholder="0,00" step="0.01">
+        </div>
+      </div>
+      <div class="field">
+        <label for="day-note">Notiz</label>
+        <textarea id="day-note" placeholder="Setup, Emotionen, was lief gut/schlecht ..."></textarea>
+      </div>
+      <label style="display:block; font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:10px;">Screenshots / Fotos</label>
+      <div class="img-actions">
+        <label class="img-btn">📷 Foto aufnehmen
+          <input type="file" accept="image/*" capture="environment" id="day-camera" style="display:none">
+        </label>
+        <label class="img-btn">🖼️ Bilder wählen
+          <input type="file" accept="image/*" id="day-gallery" style="display:none" multiple>
+        </label>
+      </div>
+      <div class="day-images" id="day-images"></div>
+    </div>
+    <div class="day-actions">
+      <button class="save-btn" id="day-save-btn" type="button">Speichern</button>
+      <button class="save-btn secondary" id="day-delete-btn" type="button" style="display:none">Eintrag löschen</button>
+    </div>
+    <p class="day-hint" id="day-hint"></p>
+  </div>
+</div>
+
+<div class="img-lightbox" id="img-lightbox">
+  <button class="img-lightbox-close" id="lightbox-close">✕</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<script>
+  document.getElementById('menu-toggle').addEventListener('click', () => {
+    document.getElementById('menu-panel').classList.toggle('open');
+  });
+  document.addEventListener('click', (ev) => {
+    const panel = document.getElementById('menu-panel');
+    const toggle = document.getElementById('menu-toggle');
+    if(panel.classList.contains('open') && !panel.contains(ev.target) && !toggle.contains(ev.target)){
+      panel.classList.remove('open');
+    }
+  });
+
+  const THEME_KEY = 'sparrechner_theme_v1';
+  function applyTheme(theme){
+    if(!theme || theme === 'midnight') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', theme);
+    document.querySelectorAll('.theme-swatch').forEach(btn => {
+      btn.classList.toggle('active', (btn.dataset.swatch || 'midnight') === (theme || 'midnight'));
+    });
+  }
+  document.querySelectorAll('.theme-swatch').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const theme = btn.dataset.swatch;
+      try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
+      applyTheme(theme);
+    });
+  });
+  applyTheme((function(){ try{ return localStorage.getItem(THEME_KEY) || 'midnight'; }catch(e){ return 'midnight'; } })());
+
+  const JOURNAL_KEY = 'sparrechner_journal_v1';
+  const MONTH_NAMES = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+
+  function formatEUR(value){
+    const sign = value < 0 ? '−' : '';
+    return sign + '€ ' + Math.abs(value).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function pad2(n){ return String(n).padStart(2, '0'); }
+  function dateKey(y, m, d){ return y + '-' + pad2(m+1) + '-' + pad2(d); }
+  function todayKey(){
+    const d = new Date();
+    return dateKey(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
+  function loadJournal(){
+    try{ const raw = localStorage.getItem(JOURNAL_KEY); return raw ? JSON.parse(raw) : {}; }
+    catch(e){ return {}; }
+  }
+  function saveJournal(obj){
+    try{
+      localStorage.setItem(JOURNAL_KEY, JSON.stringify(obj));
+      return true;
+    }catch(e){
+      return false;
+    }
+  }
+
+  let viewYear, viewMonth; // viewMonth: 0-11
+  let activeDayKey = null;
+  let pendingImages = [];
+
+  function initMonth(){
+    const now = new Date();
+    viewYear = now.getFullYear();
+    viewMonth = now.getMonth();
+  }
+
+  function computeMonthStats(){
+    const journal = loadJournal();
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    let totalPL = 0, wins = 0, tradingDays = 0, winSum = 0, lossSum = 0;
+    let cumulative = 0, peak = 0, maxDrawdown = 0;
+
+    for(let d = 1; d <= daysInMonth; d++){
+      const key = dateKey(viewYear, viewMonth, d);
+      const entry = journal[key];
+      if(entry && typeof entry.pl === 'number'){
+        tradingDays++;
+        totalPL += entry.pl;
+        if(entry.pl > 0){ wins++; winSum += entry.pl; } else if(entry.pl < 0){ lossSum += entry.pl; }
+        cumulative += entry.pl;
+        if(cumulative > peak) peak = cumulative;
+        const dd = peak - cumulative;
+        if(dd > maxDrawdown) maxDrawdown = dd;
+      }
+    }
+    const winrate = tradingDays > 0 ? (wins / tradingDays) * 100 : 0;
+    return { totalPL, winrate, maxDrawdown, tradingDays, winSum, lossSum: Math.abs(lossSum) };
+  }
+
+  function renderStats(){
+    const s = computeMonthStats();
+    const plEl = document.getElementById('stat-pl');
+    plEl.textContent = formatEUR(s.totalPL);
+    plEl.className = 'jstat-value ' + (s.totalPL > 0 ? 'pos' : (s.totalPL < 0 ? 'neg' : ''));
+
+    document.getElementById('stat-winrate').textContent = s.tradingDays > 0 ? s.winrate.toFixed(1).replace('.', ',') + ' %' : '—';
+    document.getElementById('stat-drawdown').textContent = formatEUR(-s.maxDrawdown);
+
+    const total = s.winSum + s.lossSum;
+    const arcLen = 190;
+    const winLen = total > 0 ? arcLen * (s.winSum / total) : 0;
+    const lossLen = arcLen - winLen;
+    document.getElementById('gaugeWin').setAttribute('stroke-dasharray', winLen + ' ' + arcLen);
+    document.getElementById('gaugeLoss').setAttribute('stroke-dasharray', lossLen + ' ' + arcLen);
+    document.getElementById('gaugeLoss').setAttribute('stroke-dashoffset', -winLen);
+    document.getElementById('gauge-net').textContent = formatEUR(s.totalPL);
+    document.getElementById('gauge-win-label').textContent = '+' + formatEUR(s.winSum);
+    document.getElementById('gauge-loss-label').textContent = '−' + formatEUR(s.lossSum);
+  }
+
+  function renderCalendar(){
+    document.getElementById('month-label').textContent = MONTH_NAMES[viewMonth] + ' ' + viewYear;
+    const grid = document.getElementById('cal-grid');
+    grid.innerHTML = '';
+
+    const firstOfMonth = new Date(viewYear, viewMonth, 1);
+    const leadBlanks = (firstOfMonth.getDay() + 6) % 7; // Montag = 0
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const journal = loadJournal();
+    const tKey = todayKey();
+
+    for(let i = 0; i < leadBlanks; i++){
+      const empty = document.createElement('div');
+      empty.className = 'cal-cell empty';
+      grid.appendChild(empty);
+    }
+
+    for(let d = 1; d <= daysInMonth; d++){
+      const key = dateKey(viewYear, viewMonth, d);
+      const entry = journal[key];
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell' + (entry ? ' has-entry' : '') + (key === tKey ? ' today' : '');
+
+      const num = document.createElement('span');
+      num.className = 'day-num';
+      num.textContent = d;
+      cell.appendChild(num);
+
+      if(entry && typeof entry.pl === 'number' && entry.pl !== 0){
+        const plSpan = document.createElement('span');
+        plSpan.className = 'day-pl ' + (entry.pl > 0 ? 'pos' : 'neg');
+        plSpan.textContent = (entry.pl > 0 ? '+' : '') + Math.round(entry.pl);
+        cell.appendChild(plSpan);
+      }
+      if(entry && entry.images && entry.images.length > 0){
+        const dot = document.createElement('span');
+        dot.className = 'day-dot';
+        cell.appendChild(dot);
+      }
+
+      cell.addEventListener('click', () => openDayModal(key));
+      grid.appendChild(cell);
+    }
+
+    renderStats();
+  }
+
+  document.getElementById('prev-month').addEventListener('click', () => {
+    viewMonth--;
+    if(viewMonth < 0){ viewMonth = 11; viewYear--; }
+    renderCalendar();
+  });
+  document.getElementById('next-month').addEventListener('click', () => {
+    viewMonth++;
+    if(viewMonth > 11){ viewMonth = 0; viewYear++; }
+    renderCalendar();
+  });
+
+  // --- Day modal ---
+  const dayOverlay = document.getElementById('day-overlay');
+  const dayModalTitle = document.getElementById('day-modal-title');
+  const dayPlInput = document.getElementById('day-pl');
+  const dayNoteInput = document.getElementById('day-note');
+  const dayImagesWrap = document.getElementById('day-images');
+  const dayCameraInput = document.getElementById('day-camera');
+  const dayGalleryInput = document.getElementById('day-gallery');
+  const daySaveBtn = document.getElementById('day-save-btn');
+  const dayDeleteBtn = document.getElementById('day-delete-btn');
+  const dayHint = document.getElementById('day-hint');
+
+  function formatDayTitle(key){
+    const [y, m, d] = key.split('-').map(Number);
+    const weekdays = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+    const dt = new Date(y, m-1, d);
+    return weekdays[dt.getDay()] + ', ' + d + '. ' + MONTH_NAMES[m-1] + ' ' + y;
+  }
+
+  function openDayModal(key){
+    activeDayKey = key;
+    const journal = loadJournal();
+    const entry = journal[key] || {};
+    dayModalTitle.textContent = formatDayTitle(key);
+    dayPlInput.value = typeof entry.pl === 'number' ? entry.pl : '';
+    dayNoteInput.value = entry.note || '';
+    pendingImages = entry.images ? entry.images.slice() : [];
+    dayHint.textContent = '';
+    dayDeleteBtn.style.display = (journal[key]) ? 'block' : 'none';
+    renderDayImages();
+    dayOverlay.classList.add('open');
+  }
+  function closeDayModal(){
+    dayOverlay.classList.remove('open');
+    activeDayKey = null;
+    pendingImages = [];
+  }
+  document.getElementById('day-close').addEventListener('click', closeDayModal);
+  dayOverlay.addEventListener('click', (ev) => { if(ev.target === dayOverlay) closeDayModal(); });
+
+  function renderDayImages(){
+    dayImagesWrap.innerHTML = '';
+    pendingImages.forEach((src, idx) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'day-img-wrap';
+      const img = document.createElement('img');
+      img.src = src;
+      img.addEventListener('click', () => openLightbox(src));
+      const rm = document.createElement('button');
+      rm.className = 'day-img-remove';
+      rm.textContent = '✕';
+      rm.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        pendingImages.splice(idx, 1);
+        renderDayImages();
+      });
+      wrap.appendChild(img);
+      wrap.appendChild(rm);
+      dayImagesWrap.appendChild(wrap);
+    });
+  }
+
+  function compressImage(file, maxDim, quality){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let w = img.width, h = img.height;
+          if(w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
+          else if(h >= w && h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleFiles(fileList){
+    const files = Array.from(fileList);
+    for(const file of files){
+      try{
+        const dataUrl = await compressImage(file, 900, 0.72);
+        pendingImages.push(dataUrl);
+      }catch(e){}
+    }
+    renderDayImages();
+  }
+  dayCameraInput.addEventListener('change', (ev) => { handleFiles(ev.target.files); ev.target.value = ''; });
+  dayGalleryInput.addEventListener('change', (ev) => { handleFiles(ev.target.files); ev.target.value = ''; });
+
+  daySaveBtn.addEventListener('click', () => {
+    if(!activeDayKey) return;
+    const journal = loadJournal();
+    const plRaw = dayPlInput.value;
+    const pl = plRaw === '' ? undefined : (parseFloat(String(plRaw).replace(',', '.')) || 0);
+    const note = dayNoteInput.value;
+
+    if((pl === undefined || pl === 0) && !note && pendingImages.length === 0){
+      delete journal[activeDayKey];
+    } else {
+      journal[activeDayKey] = { pl: pl === undefined ? 0 : pl, note, images: pendingImages };
+    }
+
+    const ok = saveJournal(journal);
+    if(!ok){
+      dayHint.textContent = 'Speicher voll — bitte weniger oder kleinere Bilder verwenden.';
+      dayHint.style.color = 'var(--danger)';
+      return;
+    }
+    closeDayModal();
+    renderCalendar();
+    renderDashboard();
+  });
+
+  dayDeleteBtn.addEventListener('click', () => {
+    if(!activeDayKey) return;
+    const journal = loadJournal();
+    delete journal[activeDayKey];
+    saveJournal(journal);
+    closeDayModal();
+    renderCalendar();
+    renderDashboard();
+  });
+
+  // Lightbox
+  const lightbox = document.getElementById('img-lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  function openLightbox(src){ lightboxImg.src = src; lightbox.classList.add('open'); }
+  document.getElementById('lightbox-close').addEventListener('click', () => lightbox.classList.remove('open'));
+  lightbox.addEventListener('click', (ev) => { if(ev.target === lightbox) lightbox.classList.remove('open'); });
+
+  // ===================== DASHBOARD =====================
+  const DASH_BALANCE_KEY = 'sparrechner_journal_start_balance_v1';
+  const startBalanceInput = document.getElementById('dash-start-balance');
+
+  function getAllEntries(){
+    const journal = loadJournal();
+    return Object.keys(journal)
+      .filter(k => typeof journal[k].pl === 'number')
+      .map(k => ({ key: k, pl: journal[k].pl, date: new Date(k) }))
+      .sort((a,b) => a.date - b.date);
+  }
+  function loadStartBalance(){
+    const v = parseFloat(localStorage.getItem(DASH_BALANCE_KEY));
+    return isNaN(v) ? 0 : v;
+  }
+  function saveStartBalance(v){ localStorage.setItem(DASH_BALANCE_KEY, String(v)); }
+
+  function renderDashStats(entries){
+    const netPL = entries.reduce((s,e) => s + e.pl, 0);
+    const grossProfit = entries.filter(e=>e.pl>0).reduce((s,e)=>s+e.pl,0);
+    const grossLoss = Math.abs(entries.filter(e=>e.pl<0).reduce((s,e)=>s+e.pl,0));
+    const startBalance = loadStartBalance();
+
+    const netEl = document.getElementById('dash-net-pl');
+    netEl.textContent = formatEUR(netPL);
+    netEl.className = 'dstat-value ' + (netPL>0?'pos':(netPL<0?'neg':'neutral'));
+    document.getElementById('dash-gross-profit').textContent = formatEUR(grossProfit);
+    document.getElementById('dash-gross-loss').textContent = formatEUR(-grossLoss);
+    document.getElementById('dash-balance').textContent = formatEUR(startBalance + netPL);
+  }
+
+  function renderWeekdayChart(entries){
+    const sums = [0,0,0,0,0,0,0]; // Mo..So
+    entries.forEach(e => {
+      const idx = (e.date.getDay() + 6) % 7;
+      sums[idx] += e.pl;
+    });
+    const labels = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+    const maxAbs = Math.max(1, ...sums.map(v => Math.abs(v)));
+    const chart = document.getElementById('weekday-chart');
+    chart.innerHTML = '';
+    sums.forEach((v, i) => {
+      const col = document.createElement('div');
+      col.className = 'bar-col';
+      const bar = document.createElement('div');
+      bar.className = 'bar ' + (v >= 0 ? 'pos' : 'neg');
+      const heightPct = Math.max(2, (Math.abs(v) / maxAbs) * 90);
+      bar.style.height = heightPct + '%';
+      const day = document.createElement('span');
+      day.className = 'bar-day';
+      day.textContent = labels[i];
+      col.appendChild(bar);
+      col.appendChild(day);
+      chart.appendChild(col);
+    });
+  }
+
+  function setDonut(winEl, lossEl, winRatio){
+    const circumference = 2 * Math.PI * 46; // ~289
+    const winLen = circumference * winRatio;
+    const lossLen = circumference - winLen;
+    winEl.setAttribute('stroke-dasharray', winLen + ' ' + circumference);
+    lossEl.setAttribute('stroke-dasharray', lossLen + ' ' + circumference);
+    lossEl.setAttribute('stroke-dashoffset', -winLen);
+  }
+
+  function renderRiskStats(entries){
+    const wins = entries.filter(e => e.pl > 0);
+    const losses = entries.filter(e => e.pl < 0);
+    const winCount = wins.length, lossCount = losses.length;
+    const grossProfit = wins.reduce((s,e)=>s+e.pl,0);
+    const grossLoss = Math.abs(losses.reduce((s,e)=>s+e.pl,0));
+    const avgWin = winCount>0 ? grossProfit/winCount : 0;
+    const avgLoss = lossCount>0 ? grossLoss/lossCount : 0;
+    const winRate = (winCount+lossCount)>0 ? (winCount/(winCount+lossCount))*100 : 0;
+    const profitFactor = grossLoss>0 ? grossProfit/grossLoss : (grossProfit>0 ? Infinity : 0);
+
+    const wlWinRatio = (winCount+lossCount)>0 ? winCount/(winCount+lossCount) : 0.5;
+    setDonut(document.getElementById('wlDonutWin'), document.getElementById('wlDonutLoss'), wlWinRatio);
+    document.getElementById('wl-ratio').textContent =
+      lossCount>0 ? (winCount/lossCount).toFixed(1) + ' : 1' : (winCount>0 ? winCount+' : 0' : '0 : 0');
+    document.getElementById('wl-win-count').textContent = winCount + ' Win';
+    document.getElementById('wl-loss-count').textContent = lossCount + ' Loss';
+
+    const plTotal = grossProfit + grossLoss;
+    const plWinRatio = plTotal>0 ? grossProfit/plTotal : 0.5;
+    setDonut(document.getElementById('plDonutWin'), document.getElementById('plDonutLoss'), plWinRatio);
+    document.getElementById('pl-ratio').textContent =
+      grossLoss>0 ? (grossProfit/grossLoss).toFixed(1) + ' : 1' : (grossProfit>0 ? '∞ : 0' : '0 : 0');
+    document.getElementById('pl-profit-amt').textContent = formatEUR(grossProfit);
+    document.getElementById('pl-loss-amt').textContent = '−' + formatEUR(grossLoss);
+
+    document.getElementById('rs-winrate').textContent = winRate.toFixed(1).replace('.', ',') + ' %';
+    document.getElementById('rs-pf').textContent = isFinite(profitFactor) ? profitFactor.toFixed(2).replace('.', ',') : '∞';
+    document.getElementById('rs-avgwin').textContent = formatEUR(avgWin);
+    document.getElementById('rs-avgloss').textContent = formatEUR(-avgLoss);
+  }
+
+  function renderEquityCurve(entries){
+    const svg = document.getElementById('equity-svg');
+    const empty = document.getElementById('equity-empty');
+    svg.innerHTML = '';
+    if(entries.length === 0){
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    let cum = 0;
+    const points = entries.map(e => { cum += e.pl; return cum; });
+    const startBalance = loadStartBalance();
+    const values = points.map(v => v + startBalance);
+
+    const W = 560, H = 160, padX = 6, padY = 14;
+    const minV = Math.min(startBalance, ...values);
+    const maxV = Math.max(startBalance, ...values);
+    const range = (maxV - minV) || 1;
+
+    const coords = values.map((v, i) => {
+      const x = padX + (i / Math.max(1, values.length - 1)) * (W - padX*2);
+      const y = H - padY - ((v - minV) / range) * (H - padY*2);
+      return [x, y];
+    });
+
+    const linePath = 'M ' + coords.map(c => c[0].toFixed(1) + ' ' + c[1].toFixed(1)).join(' L ');
+    const areaPath = linePath + ' L ' + coords[coords.length-1][0].toFixed(1) + ' ' + H + ' L ' + coords[0][0].toFixed(1) + ' ' + H + ' Z';
+
+    const positive = values[values.length-1] >= startBalance;
+    const lineColor = positive ? 'var(--sage)' : 'var(--danger)';
+    const fillColor = positive ? 'color-mix(in srgb, var(--sage) 12%, transparent)' : 'color-mix(in srgb, var(--danger) 12%, transparent)';
+
+    const ns = 'http://www.w3.org/2000/svg';
+    const area = document.createElementNS(ns, 'path');
+    area.setAttribute('d', areaPath);
+    area.style.fill = fillColor;
+    area.style.stroke = 'none';
+    svg.appendChild(area);
+
+    const line = document.createElementNS(ns, 'path');
+    line.setAttribute('d', linePath);
+    line.style.fill = 'none';
+    line.style.stroke = lineColor;
+    line.setAttribute('stroke-width', '2');
+    line.setAttribute('stroke-linejoin', 'round');
+    line.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(line);
+  }
+
+  function startOfWeek(d){
+    const date = new Date(d);
+    const day = (date.getDay() + 6) % 7; // Montag = 0
+    date.setDate(date.getDate() - day);
+    date.setHours(0,0,0,0);
+    return date;
+  }
+
+  function renderWeeklyPerformance(entries){
+    const now = new Date();
+    const thisStart = startOfWeek(now);
+    const lastStart = new Date(thisStart); lastStart.setDate(lastStart.getDate() - 7);
+    const lastEnd = new Date(thisStart); lastEnd.setDate(lastEnd.getDate() - 1);
+
+    let thisWeek = 0, lastWeek = 0;
+    entries.forEach(e => {
+      if(e.date >= thisStart) thisWeek += e.pl;
+      else if(e.date >= lastStart && e.date <= lastEnd) lastWeek += e.pl;
+    });
+
+    const maxAbs = Math.max(1, Math.abs(thisWeek), Math.abs(lastWeek));
+    const barThis = document.getElementById('wk-bar-this');
+    const barLast = document.getElementById('wk-bar-last');
+    const hThis = Math.max(4, (Math.abs(thisWeek)/maxAbs)*100);
+    const hLast = Math.max(4, (Math.abs(lastWeek)/maxAbs)*100);
+    barThis.style.height = hThis + '%';
+    barThis.style.background = thisWeek >= 0 ? 'var(--sage)' : 'var(--danger)';
+    barLast.style.height = hLast + '%';
+    barLast.style.background = lastWeek >= 0 ? 'var(--sage)' : 'var(--danger)';
+
+    const changeEl = document.getElementById('wk-change');
+    let changeText, changeCls;
+    if(lastWeek === 0){
+      changeText = thisWeek === 0 ? '0 %' : (thisWeek > 0 ? '+100 %' : '−100 %');
+    } else {
+      const pct = ((thisWeek - lastWeek) / Math.abs(lastWeek)) * 100;
+      changeText = (pct >= 0 ? '+' : '−') + Math.abs(pct).toFixed(0) + ' %';
+    }
+    changeCls = (thisWeek - lastWeek) >= 0 ? 'pos' : 'neg';
+    changeEl.textContent = changeText;
+    changeEl.className = 'wc-value ' + changeCls;
+  }
+
+  function renderDashboard(){
+    const entries = getAllEntries();
+    renderDashStats(entries);
+    renderWeekdayChart(entries);
+    renderRiskStats(entries);
+    renderEquityCurve(entries);
+    renderWeeklyPerformance(entries);
+  }
+
+  startBalanceInput.value = loadStartBalance() || '';
+  startBalanceInput.addEventListener('input', () => {
+    saveStartBalance(parseFloat(String(startBalanceInput.value).replace(',','.')) || 0);
+    renderDashboard();
+  });
+
+  initMonth();
+  renderCalendar();
+  renderDashboard();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+
+<p class="site-footer">Budget-Ledger &middot; erstellt von AndrewFXTD &middot; alle Daten bleiben lokal auf diesem Gerät</p>
+
+</body>
+</html>
