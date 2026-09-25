@@ -45,6 +45,8 @@ button{font:inherit;cursor:pointer;border:0;border-radius:9px;color:inherit}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
 .btn{background:rgba(255,255,255,.02);color:var(--ink);padding:11px 14px;font-weight:500;font-size:.82rem;border:1px solid var(--card-line);letter-spacing:.01em;transition:border-color .15s ease,background .15s ease}
 .btn:hover{border-color:var(--brass);background:rgba(74,113,224,.06)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn:disabled:hover{border-color:var(--card-line);background:rgba(255,255,255,.02)}
 .btn.primary{background:var(--brass-deep);color:var(--accent-ink);border-color:var(--brass-deep)}
 .btn.primary:hover{background:var(--brass)}
 .btn.armed{background:var(--danger);color:#fff;border-color:var(--danger)}
@@ -94,6 +96,17 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
 .pos{color:var(--sage)}.neg{color:var(--danger)}
 .copyrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .copyrow .btn{flex:1;min-width:140px}
+.gallery{background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--card-line);border-radius:4px;padding:16px;margin-top:16px}
+.gallery h4{margin:0 0 10px;font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.gallery-group{margin-bottom:14px}
+.gallery-group:last-child{margin-bottom:0}
+.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px}
+.gallery-item{position:relative;cursor:pointer;border:1px solid var(--card-line);border-radius:6px;overflow:hidden;background:rgba(255,255,255,.02)}
+.gallery-item img{width:100%;height:78px;object-fit:cover;display:block}
+.gallery-item span{position:absolute;left:0;bottom:0;right:0;background:rgba(4,6,12,.72);color:var(--ink);font-size:.66rem;text-align:center;padding:3px 2px;letter-spacing:.02em}
+.gallery-item:hover{border-color:var(--brass)}
+.gallery-item.copied span{background:var(--sage);color:#04150c}
+.gallery-empty{font-size:.78rem;color:var(--ink-soft)}
 .period{background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--card-line);border-radius:4px;padding:18px;margin-top:14px}
 .period p{margin:0 0 10px;font-size:.78rem;color:var(--ink-soft)}
 .period .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
@@ -129,9 +142,10 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
 /* sheet */
 .modal{position:fixed;inset:0;background:rgba(2,4,10,.82);display:none;align-items:flex-end;justify-content:center;z-index:10}
 .modal.open{display:flex}
-.sheet{background:#0a0f1e;border:1px solid var(--card-line);border-top:1px solid var(--card-line);width:100%;max-width:600px;border-radius:4px 4px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom,0px));max-height:92vh;overflow:auto;box-shadow:0 -20px 60px -20px rgba(0,0,0,.8)}
+.sheet{background:#0a0f1e;border:1px solid var(--card-line);border-top:1px solid var(--card-line);width:100%;max-width:600px;border-radius:4px 4px 0 0;padding:22px 18px 0;max-height:92vh;overflow:auto;box-shadow:0 -20px 60px -20px rgba(0,0,0,.8);display:flex;flex-direction:column}
 .sheet h3{font-family:'Fraunces',serif;font-weight:500;margin:0 0 16px;font-size:1.15rem}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:480px){ .grid{grid-template-columns:1fr} }
 .grid label{font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);display:flex;flex-direction:column;gap:6px;min-width:0}
 .grid .full{grid-column:1/-1}
 .grid input,.grid select{font:inherit;font-size:16px;color:var(--ink);background:rgba(255,255,255,.02);border:1px solid var(--card-line);border-radius:6px;padding:10px 11px;width:100%;min-width:0}
@@ -150,7 +164,7 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
 .fshots button{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:99px;background:var(--danger);color:#fff;font-weight:600;line-height:1}
 .preview{background:rgba(255,255,255,.02);border:1px solid var(--card-line);border-radius:6px;padding:12px 14px;font-size:.85rem;display:flex;gap:16px;flex-wrap:wrap}
 .preview b{font-family:'Fraunces',serif;font-weight:500}
-.row{display:flex;gap:8px;margin-top:16px}
+.row{display:flex;gap:8px;margin:16px -18px 0;padding:14px 18px calc(14px + env(safe-area-inset-bottom,0px));position:sticky;bottom:0;background:#0a0f1e;border-top:1px solid var(--card-line);z-index:2}
 .row .btn{flex:1;padding:13px}
 .imp table{min-width:560px}
 .imp td,.imp th{font-size:.78rem;padding:8px 9px}
@@ -193,7 +207,10 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
 <div class="wrap">
   <div class="top">
     <h1>NoWick <span>Journal</span></h1>
-    <select class="cur" id="cur" aria-label="Währung"><option>$</option><option>€</option></select>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input class="cur" id="balanceInput" type="number" inputmode="decimal" placeholder="Kontogröße" style="width:118px" aria-label="Kontogröße">
+      <select class="cur" id="cur" aria-label="Währung"><option>$</option><option>€</option></select>
+    </div>
   </div>
 
   <div id="app"><div class="loading">Journal wird geladen…</div></div>
@@ -220,9 +237,11 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
       <label>Exit (optional)<input id="fExit" inputmode="decimal" placeholder="leer = TP/SL"></label>
       <label>Risiko<input id="fRisk" inputmode="decimal" placeholder="z.B. 100"></label>
       <label>P&amp;L (optional)<input id="fPnl" inputmode="decimal" placeholder="auto"></label>
+      <label>Kommission (optional)<input id="fCommission" inputmode="decimal" placeholder="0"></label>
       <label class="full">Notiz<input id="fNotes" maxlength="200" placeholder="Setup, Fehler, Gedanken"></label>
       <div class="full">
-        <label class="drop" id="drop"><input type="file" id="fFile" accept="image/*" multiple>Screenshots hinzufügen: tippen, reinziehen oder einfügen</label>
+        <label class="drop" id="drop"><input type="file" id="fFile" accept="image/*" multiple>Screenshot tippen oder reinziehen<br><small style="opacity:.7">Entry/SL/TP/Paar/Datum/Uhrzeit werden versucht automatisch zu erkennen</small></label>
+        <button type="button" class="btn" id="pasteBtn" style="width:100%;margin-top:8px">📋 Bild aus Zwischenablage einfügen</button>
         <div class="fshots" id="fShots"></div>
       </div>
       <div class="full preview" id="preview"></div>
@@ -245,10 +264,13 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
 
 <script>
 const $ = id => document.getElementById(id);
-const S = { trades: [], sel: new Set(), edit: null, form: null, cur: "$", cy: new Date().getFullYear(), cm: new Date().getMonth() };
+const S = { trades: [], sel: new Set(), edit: null, form: null, cur: "$", cy: new Date().getFullYear(), cm: new Date().getMonth(), balance: "" };
 try { S.cur = localStorage.getItem("afx_cur") || "$"; } catch(e) {}
+try { S.balance = localStorage.getItem("afx_balance") || ""; } catch(e) {}
 $("cur").value = S.cur;
 $("cur").addEventListener("change", e => { S.cur = e.target.value; try{ localStorage.setItem("afx_cur", S.cur); }catch(_){} render(); });
+$("balanceInput").value = S.balance;
+$("balanceInput").addEventListener("input", e => { S.balance = e.target.value; try{ localStorage.setItem("afx_balance", S.balance); }catch(_){} render(); });
 
 /* ---------- helpers ---------- */
 const num = v => { if (v === null || v === undefined || v === "") return null; const n = parseFloat(String(v).replace(/\s/g,"").replace(",", ".")); return isFinite(n) ? n : null; };
@@ -305,8 +327,10 @@ function calc(t){
     else if (t.result === "be") pnl = 0;
     else if (rr !== null) pnl = risk * rr;
   }
+  const commission = num(t.commission);
+  if (pnl !== null && commission) pnl -= commission;
   if (rr === null && pnl !== null && risk) rr = pnl / risk;
-  return { dir, planRR: planRR!==null ? Math.round(planRR*100)/100 : null, rr: rr!==null ? Math.round(rr*100)/100 : null, pnl: pnl!==null ? Math.round(pnl*100)/100 : null, risk };
+  return { dir, planRR: planRR!==null ? Math.round(planRR*100)/100 : null, rr: rr!==null ? Math.round(rr*100)/100 : null, pnl: pnl!==null ? Math.round(pnl*100)/100 : null, risk, commission };
 }
 function stats(list){
   const w = list.filter(t=>t.result==="win"), l = list.filter(t=>t.result==="loss"), b = list.filter(t=>t.result==="be");
@@ -390,6 +414,7 @@ function tradeText(t){
   if (px.length) L.push(`📍 ${px.join(" | ")}`);
   const res = [];
   if (c.risk!==null) res.push(`⚖️ Risiko ${S.cur}${f(c.risk)}`);
+  if (c.commission) res.push(`💸 Kommission ${S.cur}${f(c.commission)}`);
   if (c.rr!==null) res.push(`📐 RRR ${rfmt(c.rr)}`);
   if (c.pnl!==null) res.push(`💰 ${money(c.pnl)}`);
   if (res.length) L.push(res.join("  |  "));
@@ -432,6 +457,7 @@ function tradeCard(t){
       <div><small>SL</small><b>${esc(t.sl||"–")}</b></div>
       <div><small>TP</small><b>${esc(t.tp||"–")}</b></div>
       <div><small>Exit</small><b>${esc(t.exit||"–")}</b></div>
+      ${c.commission?`<div><small>Kommission</small><b>${S.cur}${f(c.commission)}</b></div>`:""}
     </div>
     ${t.shots.length?`<div class="shots">${t.shots.map((s,i)=>`<img src="${esc(s.src)}" alt="Screenshot ${i+1}" data-act="view" data-i="${i}" loading="lazy">`).join("")}</div>`:""}
     ${t.notes?`<div class="note">${esc(t.notes)}</div>`:""}
@@ -490,6 +516,20 @@ function periodRange(kind, ref){
   if (kind==="month"){ const dim=new Date(y,m+1,0).getDate(); return { from: `${y}-${pad(m+1)}-01`, to: `${y}-${pad(m+1)}-${pad(dim)}`, label: `${MONTHS[m]} ${y}`, short: MONTHS[m] }; }
   return { from: `${y}-01-01`, to: `${y}-12-31`, label: `Jahr ${y}`, short: String(y) };
 }
+function galleryHtml(wins, losses, bes){
+  const groups = [["win","Wins","pos",wins],["loss","Losses","neg",losses],["be","Breakeven","",bes]];
+  const parts = groups.map(([key,label,cls,list])=>{
+    const shots = [];
+    list.forEach(t => t.shots.forEach((s,i) => shots.push({ src:s.src, tradeId:t.id, idx:i, sym:t.symbol||"Trade" })));
+    if (!shots.length) return "";
+    const items = shots.map((s,i)=>`<div class="gallery-item" data-gcopy data-src-idx="${i}" data-group="${key}"><img src="${esc(s.src)}" alt="${esc(s.sym)}" loading="lazy"><span>Bild ${i+1}</span></div>`).join("");
+    return `<div class="gallery-group"><h4><span class="${cls}">${label}</span> <small style="color:var(--ink-soft);text-transform:none;letter-spacing:0">${shots.length} Bild${shots.length===1?"":"er"}</small></h4><div class="gallery-grid">${items}</div></div>`;
+  }).filter(Boolean);
+  if (!parts.length) return "";
+  S._gallery = { win:[], loss:[], be:[] };
+  groups.forEach(([key,,,list])=>{ list.forEach(t => t.shots.forEach(s => S._gallery[key].push(s.src))); });
+  return `<div class="gallery"><h4>Bilder <small style="color:var(--ink-soft);text-transform:none;letter-spacing:0">antippen zum Kopieren</small></h4>${parts.join("")}</div>`;
+}
 function periodHtml(){
   const ref = refDate();
   const b = k => { const r=periodRange(k,ref), n=S.trades.filter(t=>t.date>=r.from&&t.date<=r.to).length;
@@ -523,6 +563,10 @@ function render(){
   const list = filtered(), s = stats(list);
   const wins = list.filter(t=>t.result==="win"), losses = list.filter(t=>t.result==="loss"), bes = list.filter(t=>t.result==="be");
   const ws = stats(wins), ls = stats(losses);
+  const totalPnl = stats(S.trades).pnl || 0;
+  const startBal = parseFloat(String(S.balance).replace(",",".")) || 0;
+  const balance = startBal + totalPnl;
+  const balanceRet = startBal ? (totalPnl / startBal * 100) : null;
   app.innerHTML = `
     ${calendarHtml()}
     <section class="stats" aria-label="Zusammenfassung">
@@ -534,6 +578,8 @@ function render(){
       <div class="stat"><small>Riskiert gesamt</small><b>${S.cur}${f(s.risk)}</b></div>
       <div class="stat"><small>Ø RRR Wins</small><b>${s.avgWinRR===null?"–":f(s.avgWinRR)+"R"}</b></div>
       <div class="stat"><small>Rendite auf Risiko</small><b>${s.pnl!==null&&s.risk?f(s.pnl/s.risk*100,1)+" %":"–"}</b></div>
+      ${startBal?`<div class="stat"><small>Kontostand</small><b>${S.cur}${f(balance)}</b></div>
+      <div class="stat"><small>Rendite gesamt</small><b class="${balanceRet>0?"pos":balanceRet<0?"neg":""}">${f(balanceRet,1)} %</b></div>`:""}
     </section>
     <div class="copyrow">
       <button class="btn primary" data-copy="all">Zusammenfassung kopieren</button>
@@ -542,6 +588,11 @@ function render(){
       <button class="btn" id="pdf">PDF exportieren</button>
       <button class="btn" id="impBtn">PDF importieren</button>
     </div>
+    <div class="copyrow">
+      <button class="btn" data-copyimg="win" ${wins.some(t=>t.shots.length)?"":"disabled"}>Bilder (Wins) kopieren</button>
+      <button class="btn" data-copyimg="loss" ${losses.some(t=>t.shots.length)?"":"disabled"}>Bilder (Losses) kopieren</button>
+    </div>
+    ${galleryHtml(wins, losses, bes)}
     ${periodHtml()}
     ${weeksHtml(list)}
     <h2><span class="pos">Wins</span> <small>${wins.length} · ${money(ws.pnl)} · ${rfmt(ws.R)}</small></h2>
@@ -578,6 +629,28 @@ if (window.claude && claude.use) claude.use("sample").then(x => { S.sample = x; 
   if (e.target.id === "impBtn") return $("impFile").click();
   const cp = e.target.closest("[data-copy]");
   if (cp){ const list = filtered(); if (!list.length) return toast("Keine Trades ausgewählt"); (await copyText(summaryText(list, cp.dataset.copy))) ? flash(cp,"Kopiert ✓") : toast("Kopieren nicht möglich"); return; }
+  const gitem = e.target.closest("[data-gcopy]");
+  if (gitem){
+    const src = S._gallery?.[gitem.dataset.group]?.[+gitem.dataset.srcIdx];
+    if (!src) return;
+    try{
+      const img = await loadImg(src);
+      const c = document.createElement("canvas"); c.width=img.naturalWidth; c.height=img.naturalHeight; c.getContext("2d").drawImage(img,0,0);
+      const blob = await new Promise(r => c.toBlob(r, "image/png"));
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      gitem.classList.add("copied"); const sp=gitem.querySelector("span"); const old=sp.textContent; sp.textContent="Kopiert ✓";
+      setTimeout(()=>{ gitem.classList.remove("copied"); sp.textContent=old; }, 1300);
+    }catch(e){ toast("Bild kopieren geht hier nicht – Bild antippen und lang drücken"); }
+    return;
+  }
+  const cimg = e.target.closest("[data-copyimg]");
+  if (cimg){
+    const list = filtered().filter(t => t.result === cimg.dataset.copyimg);
+    const shots = [];
+    list.forEach(t => t.shots.forEach(s => shots.push({ src: s.src, label: `${esc(t.symbol||"Trade")} · ${shortDate(t.date)}${t.time?" "+t.time:""}` })));
+    if (!shots.length) return toast("Keine Bilder in diesem Zeitraum");
+    return copyImagesCombined(shots, cimg);
+  }
   if (e.target.id === "reset") return armed(e.target, async () => { for (const t of [...S.trades]) await Store.del(t); toast("Alle Trades gelöscht"); });
   const el = e.target.closest("[data-act]"); if (!el) return;
   const t = S.trades.find(x => x.id === el.closest(".trade").dataset.id); if (!t) return;
@@ -596,6 +669,33 @@ async function copyImage(src, btn){
     const blob = await new Promise(r => c.toBlob(r, "image/png"));
     await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]); flash(btn, "Bild kopiert ✓");
   }catch(e){ toast("Bild kopieren geht hier nicht – Bild antippen und lang drücken"); }
+}
+async function copyImagesCombined(shots, btn){
+  const MAXW = 900, PAD = 18, LABELH = 30, GAP = 14;
+  try{
+    const imgs = await Promise.all(shots.map(s => loadImg(s.src)));
+    const rows = imgs.map((img, i) => {
+      const scale = Math.min(1, MAXW / img.naturalWidth);
+      return { img, label: shots[i].label, w: Math.round(img.naturalWidth * scale), h: Math.round(img.naturalHeight * scale) };
+    });
+    const width = MAXW + PAD * 2;
+    const height = PAD + rows.reduce((s, r) => s + LABELH + r.h + GAP, 0) + PAD;
+    const c = document.createElement("canvas"); c.width = width; c.height = height;
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#0a0f1e"; ctx.fillRect(0, 0, width, height);
+    let y = PAD;
+    ctx.font = "600 15px 'IBM Plex Mono', monospace"; ctx.fillStyle = "#f4f6fb";
+    rows.forEach(r => {
+      ctx.fillText(r.label, PAD, y + LABELH - 10);
+      y += LABELH;
+      ctx.drawImage(r.img, PAD, y, r.w, r.h);
+      y += r.h + GAP;
+    });
+    const blob = await new Promise(r => c.toBlob(r, "image/png"));
+    if (!blob) throw new Error("no-blob");
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+    flash(btn, "Bilder kopiert ✓");
+  }catch(e){ toast("Bilder kopieren geht hier nicht – einzelne Bilder antippen und lang drücken"); }
 }
 
 /* ---------- PDF ---------- */
@@ -649,7 +749,21 @@ async function makePdf(btn){
       y += 10;
       for (const t of dl){
         const c = calc(t), col = t.result==="win"?green:t.result==="loss"?red:grey;
-        need(20);
+        // Bilder vorab laden, damit die komplette Blockhöhe (Text + Bild) VOR dem Zeichnen feststeht
+        // -> Text und Bild werden nie durch einen Seitenumbruch getrennt.
+        const em = { ...t, shots: [] }; delete em._orig; embed.push(em);
+        let firstImg = null;
+        for (const sh of t.shots){
+          let im; try{ im = await toJpeg(sh.src); }catch(e){ continue; }
+          em.shots.push(im.data);
+          if (!firstImg) firstImg = im;
+        }
+        const FIXH = 52, maxW = CW-4; // feste Bildhöhe -> mind. 3 Trades pro Seite, gleichmäßiges Layout
+        let imgW = 0, imgH = 0;
+        if (firstImg){ imgH = FIXH; imgW = firstImg.w/firstImg.h*imgH; if (imgW > maxW){ imgW = maxW; imgH = firstImg.h/firstImg.w*imgW; } }
+        const notesLines = t.notes ? doc.splitTextToSize(P(t.notes), CW-6) : [];
+        const blockH = 5.5 + 5 + (notesLines.length ? notesLines.length*4.5 : 0) + (firstImg ? imgH+4 : 0) + 7;
+        need(blockH);
         doc.setFillColor(...col); doc.rect(M, y-4, 1.6, 12, "F");
         text(`${t.time||"--:--"}   ${t.symbol||"Trade"} ${c.dir?(c.dir==="long"?"Long":"Short"):""}`, M+4, 11, "bold");
         doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(...col);
@@ -657,22 +771,17 @@ async function makePdf(btn){
         y += 5.5;
         const px = [["Entry",t.entry],["SL",t.sl],["TP",t.tp],["Exit",t.exit]].filter(([,v])=>v!==""&&v!=null).map(([k,v])=>`${k} ${v}`);
         if (c.risk!==null) px.push(`Risiko ${S.cur}${f(c.risk)}`);
+        if (c.commission) px.push(`Kommission ${S.cur}${f(c.commission)}`);
         if (c.planRR!==null) px.push(`geplant 1:${f(c.planRR)}`);
         text(px.join("   |   ") || "-", M+4, 9, "normal", grey); y += 5;
-        if (t.notes){ const lines = doc.splitTextToSize(P(t.notes), CW-6); need(lines.length*4.5); doc.setFont("helvetica","italic"); doc.setFontSize(9); doc.setTextColor(60,70,85); doc.text(lines, M+4, y); y += lines.length*4.5; }
-        // screenshots
-        let x = M+4, rowH = 0; const maxH = 95, maxW = CW-4;
-        const em = { ...t, shots: [] }; delete em._orig; embed.push(em);
-        for (const sh of t.shots){
-          let im; try{ im = await toJpeg(sh.src); }catch(e){ continue; }
-          em.shots.push(im.data);
-          let h = maxH, w = im.w/im.h*h; if (w > maxW){ w = maxW; h = im.h/im.w*w; }
-          if (x + w > M+4+maxW){ x = M+4; y += rowH + 3; rowH = 0; }
-          if (y + h > H-M){ doc.addPage(); y = M; x = M+4; rowH = 0; }
-          doc.addImage(im.data, "JPEG", x, y, w, h); doc.setDrawColor(210); doc.rect(x, y, w, h);
-          x += w + 3; rowH = Math.max(rowH, h);
+        if (notesLines.length){ doc.setFont("helvetica","italic"); doc.setFontSize(9); doc.setTextColor(60,70,85); doc.text(notesLines, M+4, y); y += notesLines.length*4.5; }
+        // genau EIN Bild pro Trade, feste Größe -> sauberes, vorhersehbares Layout
+        if (firstImg){
+          doc.addImage(firstImg.data, "JPEG", M+4, y, imgW, imgH); doc.setDrawColor(210); doc.rect(M+4, y, imgW, imgH);
+          if (em.shots.length > 1){ doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...grey); doc.text(P(`+${em.shots.length-1} weitere${em.shots.length===2?"s":""} Screenshot${em.shots.length>2?"s":""}`), M+8+imgW, y+imgH-2); }
+          y += imgH + 4;
         }
-        y += rowH ? rowH + 7 : 4;
+        y += 7;
       }
       y += 3;
     }
@@ -692,6 +801,61 @@ async function makePdf(btn){
 
 /* ---------- IMPORT ---------- */
 function loadScript(src){ return new Promise((res,rej)=>{ const sc=document.createElement("script"); sc.src=src; sc.onload=res; sc.onerror=rej; document.head.appendChild(sc); }); }
+let _tesseractWorker = null;
+async function getTesseractWorker(){
+  if (_tesseractWorker) return _tesseractWorker;
+  if (!window.Tesseract) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js");
+  _tesseractWorker = await window.Tesseract.createWorker("eng");
+  return _tesseractWorker;
+}
+/* Best-effort Texterkennung: liest Entry/SL/TP/Paar/Datum/Uhrzeit aus einem Screenshot.
+   Funktioniert nur so gut wie das Bild lesbar ist (Kontrast, Schriftart, Layout je nach Broker/Tool) –
+   erkannte Werte füllen NUR leere Felder und werden dem Nutzer als "bitte prüfen" markiert. */
+function parseTradeFromText(raw){
+  const lines = String(raw||"").replace(/\r/g,"").split("\n").map(l=>l.trim()).filter(Boolean);
+  const joined = lines.join(" | ");
+  const findAfterLabel = labels => {
+    for (const line of lines){
+      for (const lab of labels){
+        const m = line.match(new RegExp(lab+"\\s*[:=]?\\s*(-?[\\d][\\d.,]*)","i"));
+        if (m) return m[1].replace(/,(?=\d{1,2}$)/,".").replace(/\.(?=\d{3}(\D|$))/g,"").replace(",", ".");
+      }
+    }
+    return null;
+  };
+  const entry = findAfterLabel(["entry\\s*price","entry","open\\s*price","open","einstieg"]);
+  const sl = findAfterLabel(["stop\\s*loss","s\\/l","sl","stop"]);
+  const tp = findAfterLabel(["take\\s*profit","t\\/p","tp","target","ziel"]);
+  const knownPairs = ["EURUSD","GBPUSD","USDJPY","USDCHF","AUDUSD","NZDUSD","USDCAD","EURGBP","EURJPY","GBPJPY",
+    "XAUUSD","XAGUSD","US100","US30","US500","NAS100","SPX500","GER40","DE40","UK100","BTCUSD","ETHUSD"];
+  let pair = null;
+  for (const p of knownPairs){ if (new RegExp(p,"i").test(joined.replace(/\s|\/|-/g,""))){ pair = p; break; } }
+  if (!pair){ const m = joined.match(/\b[A-Z]{6}\b/); if (m) pair = m[0]; }
+  let date = null;
+  let dm = joined.match(/\b(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})\b/);
+  if (dm) date = `${dm[1]}-${pad(+dm[2])}-${pad(+dm[3])}`;
+  else { dm = joined.match(/\b(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{4})\b/); if (dm) date = `${dm[3]}-${pad(+dm[2])}-${pad(+dm[1])}`; }
+  let time = null;
+  const tm = joined.match(/\b([01]?\d|2[0-3]):([0-5]\d)(?::\d{2})?\s*(AM|PM)?\b/i);
+  if (tm){ let h=parseInt(tm[1],10); if (tm[3]){ if(/PM/i.test(tm[3])&&h<12)h+=12; if(/AM/i.test(tm[3])&&h===12)h=0; } time = pad(h)+":"+tm[2]; }
+  return { entry, sl, tp, pair, date, time };
+}
+async function tryAutoFillFromImage(src){
+  if (!S.form) return;
+  try{
+    const worker = await getTesseractWorker();
+    const ret = await worker.recognize(src);
+    if (!S.form) return; // Formular wurde inzwischen geschlossen
+    const parsed = parseTradeFromText(ret.data.text);
+    const map = [["fEntry",parsed.entry,"Entry"],["fSl",parsed.sl,"SL"],["fTp",parsed.tp,"TP"],["fSym",parsed.pair,"Paar"]];
+    const filled = [];
+    for (const [id,val,label] of map){ if (val && !$(id).value){ $(id).value = val; filled.push(label); } }
+    // Datum/Uhrzeit: auch überschreiben, solange noch der automatische "jetzt"-Standardwert drinsteht
+    if (parsed.date && (!$("fDate").value || $("fDate").value === S.form._defaultDate)){ $("fDate").value = parsed.date; filled.push("Datum"); }
+    if (parsed.time && (!$("fTime").value || $("fTime").value === S.form._defaultTime)){ $("fTime").value = parsed.time; filled.push("Uhrzeit"); }
+    if (filled.length){ updatePreview(); toast("Aus Screenshot erkannt: " + filled.join(", ") + " – bitte prüfen"); }
+  }catch(e){ /* OCR ist ein Best-Effort-Zusatz, still fehlschlagen */ }
+}
 async function loadPdfJs(){
   if (window.pdfjsLib) return window.pdfjsLib;
   const base = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
@@ -850,7 +1014,7 @@ $("iGo").addEventListener("click", async () => {
 function segVal(id){ return $(id).querySelector("button.on")?.dataset.v || null; }
 function setSeg(id, v){ $(id).querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === v)); }
 ["fResult","fDir"].forEach(id => $(id).addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; setSeg(id, b.classList.contains("on") && id==="fDir" ? null : b.dataset.v); updatePreview(); }));
-const FIELDS = { fSym:"symbol", fDate:"date", fTime:"time", fEntry:"entry", fSl:"sl", fTp:"tp", fExit:"exit", fRisk:"risk", fPnl:"pnl", fNotes:"notes" };
+const FIELDS = { fSym:"symbol", fDate:"date", fTime:"time", fEntry:"entry", fSl:"sl", fTp:"tp", fExit:"exit", fRisk:"risk", fPnl:"pnl", fCommission:"commission", fNotes:"notes" };
 function readForm(){
   const t = { ...S.form, result: segVal("fResult"), direction: segVal("fDir") };
   for (const [id,k] of Object.entries(FIELDS)) t[k] = $(id).value.trim();
@@ -870,6 +1034,8 @@ function openForm(t, files){
   const lastRisk = S.trades.slice().sort((a,b)=>b.createdAt-a.createdAt)[0]?.risk || "";
   S.form = t ? { ...t, shots:[...t.shots] } : { id: uid(), createdAt: Date.now(), shots: [], date: todayIso(), time: nowTime(), risk: lastRisk };
   S.form._orig = (t?.shots||[]).map(s=>s.id).filter(Boolean);
+  S.form._defaultDate = t ? null : S.form.date;
+  S.form._defaultTime = t ? null : S.form.time;
   $("mTitle").textContent = t ? "Trade bearbeiten" : "Trade eintragen";
   for (const [id,k] of Object.entries(FIELDS)) $(id).value = S.form[k] ?? "";
   setSeg("fResult", S.form.result || null); setSeg("fDir", S.form.direction || null);
@@ -880,7 +1046,7 @@ function openForm(t, files){
 async function addFiles(files){
   const imgs = [...files].filter(x => /^image\//.test(x.type));
   for (const file of imgs){
-    try{ const blob = await compress(file); const s = await Store.addImage(blob); S.form.shots.push(s); renderShots(); }
+    try{ const blob = await compress(file); const s = await Store.addImage(blob); S.form.shots.push(s); renderShots(); tryAutoFillFromImage(s.src); }
     catch(e){ toast("Bild konnte nicht gespeichert werden"); }
   }
 }
@@ -898,6 +1064,25 @@ document.addEventListener("paste", e => {
   if (!files.length) return;
   e.preventDefault();
   if ($("modal").classList.contains("open")) addFiles(files); else openForm(null, files);
+});
+$("pasteBtn").addEventListener("click", async () => {
+  if (!navigator.clipboard || !navigator.clipboard.read){
+    return toast("Dieser Browser unterstützt das Einfügen per Button nicht – Strg+V/Cmd+V oder Kamera/Galerie nutzen");
+  }
+  try{
+    const items = await navigator.clipboard.read();
+    const files = [];
+    for (const item of items){
+      for (const type of item.types){
+        if (type.startsWith("image/")){
+          const blob = await item.getType(type);
+          files.push(new File([blob], "eingefuegt."+type.split("/")[1].replace("+xml",""), { type }));
+        }
+      }
+    }
+    if (!files.length) return toast("Kein Bild in der Zwischenablage gefunden");
+    addFiles(files);
+  }catch(e){ toast("Einfügen nicht möglich – bitte Zugriff auf die Zwischenablage erlauben"); }
 });
 $("mSave").addEventListener("click", async () => {
   const t = readForm();
