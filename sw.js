@@ -1,4 +1,4 @@
-const CACHE = "sparrechner-v46";
+const CACHE = "sparrechner-v48";
 const ASSETS = [
   "./start.html",
   "./index.html",

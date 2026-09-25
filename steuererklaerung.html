@@ -289,7 +289,7 @@
     <a href="index.html">Sparrechner<span class="sub-label">Übersicht &amp; Spartopf</span></a>
     <a href="steuererklaerung.html" class="active">Steuererklärung<span class="sub-label">Gewerbe &amp; Unterlagen</span></a>
     <a href="einkommensteuer.html">Einkommensteuer<span class="sub-label">Private Steuererklärung</span></a>
-    <a href="trading-journal.html">Trading Journal<span class="sub-label">Trades &amp; Kalender</span></a>
+    <a href="trading-journal.html">Trading Journal<span class="sub-label">NoWick Journal</span></a>
     <div class="theme-switcher">
       <span class="ts-label">Farbschema</span>
       <div class="ts-row">
@@ -1485,7 +1485,7 @@
     doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
     doc.text('Einkommensteuer vor §35-Anrechnung', marginX, y); doc.text(formatEUR(breakdown.estVorErmaessigung), marginX + 150, y, { align: 'right' }); y += 6;
     if(breakdown.ermaessigung35 > 0){
-      doc.text('§35 EStG Anrechnung (Gewerbesteuer auf ESt)', marginX, y); doc.text('− ' + formatEUR(breakdown.ermaessigung35), marginX + 150, y, { align: 'right' }); y += 6;
+      doc.text('§35 EStG Anrechnung (Gewerbesteuer auf ESt)', marginX, y); doc.text('- ' + formatEUR(breakdown.ermaessigung35), marginX + 150, y, { align: 'right' }); y += 6;
       doc.setFont('helvetica', 'bold');
       doc.text('Einkommensteuer nach Anrechnung', marginX, y); doc.text(formatEUR(breakdown.est), marginX + 150, y, { align: 'right' }); y += 6;
       doc.setFont('helvetica', 'normal');
@@ -2416,17 +2416,17 @@
     y += 6;
     if(s.sonderausgaben > 0){
       doc.text('abzgl. Sonderausgaben (Kranken-/Pflegeversicherung, Vorsorge)', marginX, y);
-      doc.text('− ' + formatEUR(s.sonderausgaben), marginX + 150, y, { align: 'right' });
+      doc.text('- ' + formatEUR(s.sonderausgaben), marginX + 150, y, { align: 'right' });
       y += 6;
     }
     if(s.verlustvortrag > 0){
       doc.text('abzgl. Verlustvortrag', marginX, y);
-      doc.text('− ' + formatEUR(s.verlustvortrag), marginX + 150, y, { align: 'right' });
+      doc.text('- ' + formatEUR(s.verlustvortrag), marginX + 150, y, { align: 'right' });
       y += 6;
     }
     if(s.kinderfreibetragGesamt > 0){
       doc.text('abzgl. Kinderfreibetrag', marginX, y);
-      doc.text('− ' + formatEUR(s.kinderfreibetragGesamt), marginX + 150, y, { align: 'right' });
+      doc.text('- ' + formatEUR(s.kinderfreibetragGesamt), marginX + 150, y, { align: 'right' });
       y += 6;
     }
     doc.setFont('helvetica', 'bold');
@@ -2455,7 +2455,7 @@
     y += 7;
     if(s.ermaessigung35 > 0){
       doc.text('§35 EStG Anrechnung (Gewerbesteuer auf ESt)', marginX, y);
-      doc.text('− ' + formatEUR(s.ermaessigung35), marginX + 150, y, { align: 'right' });
+      doc.text('- ' + formatEUR(s.ermaessigung35), marginX + 150, y, { align: 'right' });
       y += 7;
       doc.setFont('helvetica', 'bold');
       doc.text('Einkommensteuer nach Anrechnung', marginX, y);
@@ -2484,7 +2484,7 @@
     y += 8;
     doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
     doc.text('abzgl. bereits geleisteter Vorauszahlungen', marginX, y);
-    doc.text('− ' + formatEUR(s.vorauszahlungen), marginX + 150, y, { align: 'right' });
+    doc.text('- ' + formatEUR(s.vorauszahlungen), marginX + 150, y, { align: 'right' });
     y += 7;
     doc.setFont('helvetica', 'bold');
     doc.text('Verbleibende Zahllast (geschätzt)', marginX, y);

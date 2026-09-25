@@ -70,8 +70,8 @@ body{
   background:
     radial-gradient(circle at 15% -10%, var(--bg-tint-1) 0%, transparent 45%),
     radial-gradient(circle at 85% 0%, var(--bg-tint-2) 0%, transparent 40%),
-    radial-gradient(circle at 50% -10%, var(--bg-tint-3) 0%, var(--bg) 55%, var(--bg-vignette) 100%);
-  background-attachment: fixed;
+    radial-gradient(circle at 50% -10%, var(--bg-tint-3) 0%, var(--bg) 55%, var(--bg-vignette) 100%),
+    var(--bg);
   font-family: 'IBM Plex Mono', monospace;
   color: var(--ink);
   padding: 0 16px 56px;
