@@ -60,6 +60,27 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .chip.on{border-color:var(--brass);box-shadow:inset 0 0 0 1px var(--brass)}
 .chip small{color:var(--ink-soft)}
 
+/* accounts */
+.acct-bar{display:flex;gap:8px;overflow-x:auto;scrollbar-width:thin;padding-bottom:2px;margin-bottom:14px}
+.acct-chip{flex:none;background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--card-line);border-radius:11px;padding:9px 13px;font-size:.8rem;text-align:left;line-height:1.3;cursor:pointer;min-width:120px}
+.acct-chip b{display:flex;align-items:center;gap:5px;font-size:.88rem;font-family:'Fraunces',serif;font-weight:500;white-space:nowrap}
+.acct-chip small{color:var(--ink-soft);display:block;margin-top:2px}
+.acct-chip.on{border-color:var(--brass);box-shadow:inset 0 0 0 1.5px var(--brass)}
+.acct-chip.add{display:flex;align-items:center;justify-content:center;min-width:44px;font-size:1.1rem;color:var(--ink-soft)}
+.acct-gear{flex:none;background:var(--card);border:1px solid var(--card-line);border-radius:11px;width:40px;display:flex;align-items:center;justify-content:center;font-size:1rem;cursor:pointer}
+.acct-stats{background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--card-line);border-radius:4px;padding:16px 18px;margin-bottom:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.acct-stats .head{grid-column:1/-1;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px}
+.acct-stats .head h3{margin:0;font-family:'Fraunces',serif;font-weight:500;font-size:1.05rem;display:flex;align-items:center;gap:6px}
+.acct-stats .head small{color:var(--ink-soft);font-size:.72rem}
+.acct-stats .stat small{display:block;color:var(--ink-soft);font-size:.68rem;letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px}
+.acct-stats .stat b{font-family:'Fraunces',serif;font-size:1rem}
+.acct-stats .ddbar{grid-column:1/-1;height:8px;border-radius:99px;background:var(--be-soft);overflow:hidden;position:relative}
+.acct-stats .ddbar i{display:block;height:100%;background:var(--sage)}
+.acct-stats .ddbar.warn i{background:#e0a83f}
+.acct-stats .ddbar.danger i{background:var(--danger)}
+@media (max-width:480px){.acct-stats{grid-template-columns:1fr 1fr}}
+.crown{filter:none}
+
 /* calendar */
 .cal{background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--card-line);border-radius:4px;padding:20px;box-shadow:0 24px 60px -28px rgba(0,0,0,.7)}
 .calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
@@ -148,8 +169,9 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
 @media (max-width:480px){ .grid{grid-template-columns:1fr} }
 .grid label{font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);display:flex;flex-direction:column;gap:6px;min-width:0}
 .grid .full{grid-column:1/-1}
-.grid input,.grid select{font:inherit;font-size:16px;color:var(--ink);background:rgba(255,255,255,.02);border:1px solid var(--card-line);border-radius:6px;padding:10px 11px;width:100%;min-width:0}
-.grid input:focus,.grid select:focus{border-color:var(--brass);outline:none}
+.grid input,.grid select,.grid textarea{font:inherit;font-size:16px;color:var(--ink);background:rgba(255,255,255,.02);border:1px solid var(--card-line);border-radius:6px;padding:10px 11px;width:100%;min-width:0}
+.grid textarea{resize:vertical;font-family:'IBM Plex Mono',monospace}
+.grid input:focus,.grid select:focus,.grid textarea:focus{border-color:var(--brass);outline:none}
 .seg{display:flex;gap:6px}
 .seg button{flex:1;padding:11px;font-weight:500;font-size:.82rem;background:rgba(255,255,255,.02);border:1px solid var(--card-line)}
 .seg button.on[data-v="win"],.seg button.on[data-v="long"]{background:var(--sage);color:#04150c;border-color:var(--sage)}
@@ -207,13 +229,38 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
 <div class="wrap">
   <div class="top">
     <h1>NoWick <span>Journal</span></h1>
-    <div style="display:flex;gap:8px;align-items:center">
-      <input class="cur" id="balanceInput" type="number" inputmode="decimal" placeholder="Kontogröße" style="width:118px" aria-label="Kontogröße">
-      <select class="cur" id="cur" aria-label="Währung"><option>$</option><option>€</option></select>
-    </div>
+    <select class="cur" id="cur" aria-label="Währung"><option>$</option><option>€</option></select>
   </div>
 
+  <div class="acct-bar" id="acctBar"></div>
+  <div id="acctStatsWrap"></div>
+
   <div id="app"><div class="loading">Journal wird geladen…</div></div>
+</div>
+
+<div class="modal" id="acctModal">
+  <div class="sheet">
+    <h3 id="acctModalTitle">Konto verwalten</h3>
+    <div class="grid">
+      <label class="full">Name<input id="aName" placeholder="z. B. Eigenkapital, FundingPips 50k"></label>
+      <label>Firma (optional)<input id="aFirma" placeholder="z. B. FundingPips"></label>
+      <label>Phase<input id="aPhase" list="phaseList" placeholder="z. B. Step 1"></label>
+      <datalist id="phaseList"><option value="Eigenkapital"><option value="Step 1"><option value="Step 2"><option value="Master"></datalist>
+      <label>Kontogröße / Start<input id="aStart" inputmode="decimal" placeholder="z. B. 50000"></label>
+      <label>Drawdown-Typ
+        <select id="aDdType"><option value="static">Statisch (fix ab Start)</option><option value="trailing">Mitlaufend (vom Höchststand)</option></select>
+      </label>
+      <label>Max. Drawdown gesamt (%)<input id="aMaxDd" inputmode="decimal" placeholder="z. B. 10"></label>
+      <label>Max. Tages-Drawdown (%, optional)<input id="aDailyDd" inputmode="decimal" placeholder="z. B. 5"></label>
+      <label>Gewinnziel (%, optional)<input id="aTarget" inputmode="decimal" placeholder="z. B. 8"></label>
+      <label class="full">Regeln (frei editierbar)<textarea id="aRules" rows="4" placeholder="z. B. keine News-Trades, max. 2 Trades/Tag, kein Trade über Nacht..."></textarea></label>
+    </div>
+    <div class="row">
+      <button class="btn" id="aCancel">Abbrechen</button>
+      <button class="btn" id="aDelete" style="color:var(--danger)">Konto + alle Trades löschen</button>
+      <button class="btn primary" id="aSave">Speichern</button>
+    </div>
+  </div>
 </div>
 
 <button class="fab" id="fab">+ Trade eintragen</button>
@@ -240,8 +287,10 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
       <label>Kommission (optional)<input id="fCommission" inputmode="decimal" placeholder="0"></label>
       <label class="full">Notiz<input id="fNotes" maxlength="200" placeholder="Setup, Fehler, Gedanken"></label>
       <div class="full">
-        <label class="drop" id="drop"><input type="file" id="fFile" accept="image/*" multiple>Screenshot tippen oder reinziehen<br><small style="opacity:.7">Entry/SL/TP/Paar/Datum/Uhrzeit werden versucht automatisch zu erkennen</small></label>
+        <label class="drop" id="drop"><input type="file" id="fFile" accept="image/*" multiple>Screenshot tippen oder reinziehen<br><small style="opacity:.7">Entry/SL/TP/Paar/Datum/Uhrzeit/Ergebnis/Richtung/Risiko/Kommission werden versucht automatisch zu erkennen</small></label>
         <button type="button" class="btn" id="pasteBtn" style="width:100%;margin-top:8px">📋 Bild aus Zwischenablage einfügen</button>
+        <button type="button" class="btn" id="tvTemplateBtn" style="width:100%;margin-top:8px">📋 Vorlage für TradingView-Notiz kopieren</button>
+        <p style="font-size:.72rem;color:var(--ink-soft);margin:6px 2px 0">Vorlage in TradingView als Text-Notiz einfügen, Werte anpassen, dann Screenshot machen — wird beim Hochladen zuverlässig wiedererkannt.</p>
         <div class="fshots" id="fShots"></div>
       </div>
       <div class="full preview" id="preview"></div>
@@ -264,13 +313,135 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
 
 <script>
 const $ = id => document.getElementById(id);
-const S = { trades: [], sel: new Set(), edit: null, form: null, cur: "$", cy: new Date().getFullYear(), cm: new Date().getMonth(), balance: "" };
+const DEFAULT_ACCOUNT_ID = "default";
+const ACCOUNTS_KEY = "afx_accounts";
+const ACTIVE_ACCOUNT_KEY = "afx_active_account";
+function defaultAccount(){
+  let legacyBalance = "";
+  try{ legacyBalance = localStorage.getItem("afx_balance") || ""; }catch(e){}
+  return { id: DEFAULT_ACCOUNT_ID, name: "Eigenkapital", firma: "", phase: "Eigenkapital", startBalance: legacyBalance,
+    ddType: "static", maxDd: "", dailyDd: "", target: "", rules: "", createdAt: Date.now() };
+}
+function loadAccounts(){
+  try{
+    const raw = localStorage.getItem(ACCOUNTS_KEY);
+    if (raw){ const arr = JSON.parse(raw); if (Array.isArray(arr) && arr.length) return arr; }
+  }catch(e){}
+  return [defaultAccount()];
+}
+function saveAccounts(){ try{ localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(S.accounts)); }catch(e){} }
+function activeAccount(){ return S.accounts.find(a=>a.id===S.activeAccountId) || S.accounts[0]; }
+function activeTrades(){ return S.trades.filter(t => (t.accountId||DEFAULT_ACCOUNT_ID) === S.activeAccountId); }
+function isMaster(acc){ return /master/i.test(acc.phase||"") || /master/i.test(acc.name||""); }
+
+const S = { trades: [], sel: new Set(), edit: null, form: null, cur: "$", cy: new Date().getFullYear(), cm: new Date().getMonth(),
+  accounts: loadAccounts(), activeAccountId: null };
+try { S.activeAccountId = localStorage.getItem(ACTIVE_ACCOUNT_KEY) || S.accounts[0].id; } catch(e){ S.activeAccountId = S.accounts[0].id; }
+if (!S.accounts.find(a=>a.id===S.activeAccountId)) S.activeAccountId = S.accounts[0].id;
 try { S.cur = localStorage.getItem("afx_cur") || "$"; } catch(e) {}
-try { S.balance = localStorage.getItem("afx_balance") || ""; } catch(e) {}
 $("cur").value = S.cur;
 $("cur").addEventListener("change", e => { S.cur = e.target.value; try{ localStorage.setItem("afx_cur", S.cur); }catch(_){} render(); });
-$("balanceInput").value = S.balance;
-$("balanceInput").addEventListener("input", e => { S.balance = e.target.value; try{ localStorage.setItem("afx_balance", S.balance); }catch(_){} render(); });
+
+function setActiveAccount(id){ S.activeAccountId = id; try{ localStorage.setItem(ACTIVE_ACCOUNT_KEY, id); }catch(_){} render(); }
+
+function accountEquityStats(acc, trades){
+  const start = num(acc.startBalance) || 0;
+  const sorted = trades.slice().sort((a,b)=> (a.date+(a.time||"")).localeCompare(b.date+(b.time||"")) || a.createdAt-b.createdAt);
+  let equity = start, peak = start;
+  for (const t of sorted){ const c = calc(t); if (c.pnl !== null) equity += c.pnl; if (equity > peak) peak = equity; }
+  const pct = num(acc.maxDd);
+  let floor = null;
+  if (pct !== null){ const base = acc.ddType === "trailing" ? peak : start; floor = base * (1 - pct/100); }
+  const bufferAbs = floor !== null ? equity - floor : null;
+  const bufferPct = (floor !== null && equity) ? (equity - floor) / equity * 100 : null;
+  const riskVals = trades.map(t=>num(t.risk)).filter(v=>v!==null);
+  const avgRiskAbs = riskVals.length ? riskVals.reduce((s,v)=>s+v,0)/riskVals.length : null;
+  const avgRiskPct = (avgRiskAbs!==null && equity) ? avgRiskAbs/equity*100 : null;
+  const targetPct = num(acc.target);
+  let targetProgress = null;
+  if (targetPct !== null && start){ const targetEquity = start*(1+targetPct/100); targetProgress = Math.max(0, Math.min(100, (equity-start)/(targetEquity-start)*100)); }
+  return { start, equity, peak, floor, bufferAbs, bufferPct, avgRiskAbs, avgRiskPct, targetPct, targetProgress };
+}
+
+function renderAccounts(){
+  const bar = $("acctBar");
+  bar.innerHTML = S.accounts.map(a => {
+    const crown = isMaster(a) ? '<span class="crown">👑</span>' : "";
+    const sub = [a.firma, a.phase].filter(Boolean).join(" · ") || "—";
+    return `<div class="acct-chip${a.id===S.activeAccountId?" on":""}" data-acct="${a.id}"><b>${crown}${esc(a.name||"Konto")}</b><small>${esc(sub)}</small></div>`;
+  }).join("") + `<div class="acct-chip add" id="acctAdd" title="Konto hinzufügen">+</div><div class="acct-gear" id="acctGear" title="Konto bearbeiten">⚙️</div>`;
+
+  const acc = activeAccount();
+  const st = accountEquityStats(acc, activeTrades());
+  const crown = isMaster(acc) ? '<span class="crown">👑</span>' : "";
+  let ddBarClass = "", ddPct = st.bufferPct;
+  if (ddPct !== null){ if (ddPct < 25) ddBarClass = "danger"; else if (ddPct < 50) ddBarClass = "warn"; }
+  $("acctStatsWrap").innerHTML = `
+    <div class="acct-stats">
+      <div class="head"><h3>${crown}${esc(acc.name||"Konto")}</h3><small>${st.start?"" : "Kontogröße in ⚙️ eintragen für Drawdown-Berechnung"}</small></div>
+      <div class="stat"><small>Kontostand</small><b>${st.start?S.cur+f(st.equity):"–"}</b></div>
+      <div class="stat"><small>Höchststand</small><b>${st.start?S.cur+f(st.peak):"–"}</b></div>
+      <div class="stat"><small>Drawdown-Grenze</small><b>${st.floor!==null?S.cur+f(st.floor):"–"}</b></div>
+      <div class="stat"><small>Puffer bis Drawdown</small><b class="${st.bufferPct!==null&&st.bufferPct<25?"neg":""}">${st.bufferPct!==null?f(st.bufferPct,1)+" %":"–"}</b></div>
+      <div class="stat"><small>Ø Risiko / Trade</small><b>${st.avgRiskAbs!==null?S.cur+f(st.avgRiskAbs):"–"}</b></div>
+      <div class="stat"><small>Ø Risiko in %</small><b>${st.avgRiskPct!==null?f(st.avgRiskPct,2)+" %":"–"}</b></div>
+      ${st.floor!==null?`<div class="ddbar ${ddBarClass}"><i style="width:${Math.max(0,Math.min(100,st.bufferPct))}%"></i></div>`:""}
+      ${st.targetProgress!==null?`<div class="stat"><small>Gewinnziel (${f(st.targetPct)} %)</small><b>${f(st.targetProgress,0)} % erreicht</b></div>`:""}
+    </div>`;
+}
+$("acctBar").addEventListener("click", e => {
+  const add = e.target.closest("#acctAdd");
+  const gear = e.target.closest("#acctGear");
+  const chip = e.target.closest("[data-acct]");
+  if (add) return openAcctModal(null);
+  if (gear) return openAcctModal(activeAccount());
+  if (chip) setActiveAccount(chip.dataset.acct);
+});
+let acctEditId = null;
+function openAcctModal(acc){
+  acctEditId = acc ? acc.id : null;
+  $("acctModalTitle").textContent = acc ? "Konto bearbeiten" : "Neues Konto";
+  $("aName").value = acc?.name || "";
+  $("aFirma").value = acc?.firma || "";
+  $("aPhase").value = acc?.phase || "";
+  $("aStart").value = acc?.startBalance || "";
+  $("aDdType").value = acc?.ddType || "static";
+  $("aMaxDd").value = acc?.maxDd || "";
+  $("aDailyDd").value = acc?.dailyDd || "";
+  $("aTarget").value = acc?.target || "";
+  $("aRules").value = acc?.rules || "";
+  $("aDelete").style.display = (acc && S.accounts.length > 1) ? "block" : "none";
+  $("acctModal").classList.add("open");
+}
+function closeAcctModal(){ $("acctModal").classList.remove("open"); acctEditId = null; }
+$("aCancel").addEventListener("click", closeAcctModal);
+$("acctModal").addEventListener("click", e => { if (e.target.id === "acctModal") closeAcctModal(); });
+$("aSave").addEventListener("click", () => {
+  const data = {
+    name: $("aName").value.trim() || "Konto", firma: $("aFirma").value.trim(), phase: $("aPhase").value.trim(),
+    startBalance: $("aStart").value.trim(), ddType: $("aDdType").value, maxDd: $("aMaxDd").value.trim(),
+    dailyDd: $("aDailyDd").value.trim(), target: $("aTarget").value.trim(), rules: $("aRules").value.trim()
+  };
+  if (acctEditId){
+    const acc = S.accounts.find(a=>a.id===acctEditId); Object.assign(acc, data);
+  } else {
+    const acc = { id: uid(), createdAt: Date.now(), ...data };
+    S.accounts.push(acc); S.activeAccountId = acc.id;
+    try{ localStorage.setItem(ACTIVE_ACCOUNT_KEY, acc.id); }catch(_){}
+  }
+  saveAccounts(); closeAcctModal(); renderAccounts(); render();
+});
+$("aDelete").addEventListener("click", () => {
+  if (S.accounts.length <= 1) return;
+  if (!acctEditId) return;
+  armed($("aDelete"), async () => {
+    const toDelete = S.trades.filter(t => (t.accountId||DEFAULT_ACCOUNT_ID) === acctEditId);
+    for (const t of toDelete) { try{ await Store.del(t); }catch(e){} }
+    S.accounts = S.accounts.filter(a=>a.id!==acctEditId);
+    if (S.activeAccountId === acctEditId){ S.activeAccountId = S.accounts[0].id; try{ localStorage.setItem(ACTIVE_ACCOUNT_KEY, S.activeAccountId); }catch(_){} }
+    saveAccounts(); closeAcctModal(); renderAccounts(); render();
+  });
+});
 
 /* ---------- helpers ---------- */
 const num = v => { if (v === null || v === undefined || v === "") return null; const n = parseFloat(String(v).replace(/\s/g,"").replace(",", ".")); return isFinite(n) ? n : null; };
@@ -441,7 +612,7 @@ function summaryText(list, part){
 }
 
 /* ---------- render ---------- */
-function filtered(){ return S.trades.filter(t => !S.sel.size || S.sel.has(t.date)).sort((a,b)=> (b.date+(b.time||"")).localeCompare(a.date+(a.time||"")) || b.createdAt-a.createdAt); }
+function filtered(){ return activeTrades().filter(t => !S.sel.size || S.sel.has(t.date)).sort((a,b)=> (b.date+(b.time||"")).localeCompare(a.date+(a.time||"")) || b.createdAt-a.createdAt); }
 function tradeCard(t){
   const c = calc(t);
   return `<article class="trade ${t.result}" data-id="${t.id}">
@@ -476,7 +647,7 @@ function selLabel(){
 }
 function calendarHtml(){
   const y=S.cy, m=S.cm, first=new Date(y,m,1), off=(first.getDay()+6)%7, dim=new Date(y,m+1,0).getDate(), t=todayIso();
-  const by={}; for (const tr of S.trades) (by[tr.date] ||= []).push(tr);
+  const by={}; for (const tr of activeTrades()) (by[tr.date] ||= []).push(tr);
   let cells = ["Mo","Di","Mi","Do","Fr","Sa","So"].map(w=>`<div class="wd">${w}</div>`).join("") + "<div></div>".repeat(off);
   for (let d=1; d<=dim; d++){
     const iso=`${y}-${pad(m+1)}-${pad(d)}`, list=by[iso]||[];
@@ -532,13 +703,13 @@ function galleryHtml(wins, losses, bes){
 }
 function periodHtml(){
   const ref = refDate();
-  const b = k => { const r=periodRange(k,ref), n=S.trades.filter(t=>t.date>=r.from&&t.date<=r.to).length;
+  const b = k => { const r=periodRange(k,ref), n=activeTrades().filter(t=>t.date>=r.from&&t.date<=r.to).length;
     return `<button class="btn" data-period="${k}">${{day:"Tag",week:"Woche",month:"Monat",year:"Jahr"}[k]}<small>${esc(r.short)} · ${n}</small></button>`; };
   return `<div class="period"><p>Kompletten Zeitraum für Discord kopieren (bezogen auf ${deDate(ref)})</p><div class="grid4">${["day","week","month","year"].map(b).join("")}</div></div>`;
 }
 function periodText(kind){
   const r = periodRange(kind, refDate());
-  const list = S.trades.filter(t=>t.date>=r.from&&t.date<=r.to).sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
+  const list = activeTrades().filter(t=>t.date>=r.from&&t.date<=r.to).sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
   if (!list.length) return null;
   const s = stats(list);
   const L = [`📊 **NoWick Journal | ${r.label}**`,
@@ -558,15 +729,13 @@ function periodText(kind){
   return L.join("\n");
 }
 function render(){
+  renderAccounts();
   const app = $("app");
-  const days = [...new Set(S.trades.map(t=>t.date))].sort().reverse();
+  const acctTrades = activeTrades();
   const list = filtered(), s = stats(list);
   const wins = list.filter(t=>t.result==="win"), losses = list.filter(t=>t.result==="loss"), bes = list.filter(t=>t.result==="be");
   const ws = stats(wins), ls = stats(losses);
-  const totalPnl = stats(S.trades).pnl || 0;
-  const startBal = parseFloat(String(S.balance).replace(",",".")) || 0;
-  const balance = startBal + totalPnl;
-  const balanceRet = startBal ? (totalPnl / startBal * 100) : null;
+  const acc = activeAccount();
   app.innerHTML = `
     ${calendarHtml()}
     <section class="stats" aria-label="Zusammenfassung">
@@ -578,8 +747,6 @@ function render(){
       <div class="stat"><small>Riskiert gesamt</small><b>${S.cur}${f(s.risk)}</b></div>
       <div class="stat"><small>Ø RRR Wins</small><b>${s.avgWinRR===null?"–":f(s.avgWinRR)+"R"}</b></div>
       <div class="stat"><small>Rendite auf Risiko</small><b>${s.pnl!==null&&s.risk?f(s.pnl/s.risk*100,1)+" %":"–"}</b></div>
-      ${startBal?`<div class="stat"><small>Kontostand</small><b>${S.cur}${f(balance)}</b></div>
-      <div class="stat"><small>Rendite gesamt</small><b class="${balanceRet>0?"pos":balanceRet<0?"neg":""}">${f(balanceRet,1)} %</b></div>`:""}
     </section>
     <div class="copyrow">
       <button class="btn primary" data-copy="all">Zusammenfassung kopieren</button>
@@ -600,7 +767,8 @@ function render(){
     <h2><span class="neg">Losses</span> <small>${losses.length} · ${money(ls.pnl)} · ${rfmt(ls.R)}</small></h2>
     <div class="list">${losses.length?losses.map(tradeCard).join(""):`<div class="empty">Keine Losses im gewählten Zeitraum.</div>`}</div>
     ${bes.length?`<h2>Break-even <small>${bes.length}</small></h2><div class="list">${bes.map(tradeCard).join("")}</div>`:""}
-    <div class="copyrow" style="margin-top:28px"><button class="btn" id="reset">Alle Trades löschen</button></div>
+    <div class="copyrow" style="margin-top:28px"><button class="btn" id="reset">Alle Trades dieses Kontos löschen</button></div>
+    <p class="save-hint" style="text-align:center;color:var(--ink-soft);font-size:.76rem;margin-top:-4px">Betrifft nur „${esc(acc.name||"Konto")}" — andere Konten bleiben unberührt</p>
     ${Store.mode==="idb"?`<p class="empty" style="margin-top:14px">Gespeichert nur in diesem Browser auf diesem Gerät.</p>`:""}`;
 }
 
@@ -651,7 +819,7 @@ if (window.claude && claude.use) claude.use("sample").then(x => { S.sample = x; 
     if (!shots.length) return toast("Keine Bilder in diesem Zeitraum");
     return copyImagesCombined(shots, cimg);
   }
-  if (e.target.id === "reset") return armed(e.target, async () => { for (const t of [...S.trades]) await Store.del(t); toast("Alle Trades gelöscht"); });
+  if (e.target.id === "reset") return armed(e.target, async () => { for (const t of activeTrades()) await Store.del(t); toast("Trades dieses Kontos gelöscht"); });
   const el = e.target.closest("[data-act]"); if (!el) return;
   const t = S.trades.find(x => x.id === el.closest(".trade").dataset.id); if (!t) return;
   const a = el.dataset.act;
@@ -826,6 +994,8 @@ function parseTradeFromText(raw){
   const entry = findAfterLabel(["entry\\s*price","entry","open\\s*price","open","einstieg"]);
   const sl = findAfterLabel(["stop\\s*loss","s\\/l","sl","stop"]);
   const tp = findAfterLabel(["take\\s*profit","t\\/p","tp","target","ziel"]);
+  const risk = findAfterLabel(["risk","risiko"]);
+  const commission = findAfterLabel(["commission","kommission","comm\\.?","gebühr","gebuehr","fee"]);
   const knownPairs = ["EURUSD","GBPUSD","USDJPY","USDCHF","AUDUSD","NZDUSD","USDCAD","EURGBP","EURJPY","GBPJPY",
     "XAUUSD","XAGUSD","US100","US30","US500","NAS100","SPX500","GER40","DE40","UK100","BTCUSD","ETHUSD"];
   let pair = null;
@@ -836,9 +1006,21 @@ function parseTradeFromText(raw){
   if (dm) date = `${dm[1]}-${pad(+dm[2])}-${pad(+dm[3])}`;
   else { dm = joined.match(/\b(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{4})\b/); if (dm) date = `${dm[3]}-${pad(+dm[2])}-${pad(+dm[1])}`; }
   let time = null;
-  const tm = joined.match(/\b([01]?\d|2[0-3]):([0-5]\d)(?::\d{2})?\s*(AM|PM)?\b/i);
+  let tm = joined.match(/\b([01]?\d|2[0-3]):([0-5]\d)(?::\d{2})?\s*(AM|PM)?\b/i);
   if (tm){ let h=parseInt(tm[1],10); if (tm[3]){ if(/PM/i.test(tm[3])&&h<12)h+=12; if(/AM/i.test(tm[3])&&h===12)h=0; } time = pad(h)+":"+tm[2]; }
-  return { entry, sl, tp, pair, date, time };
+  else {
+    // Fallback: OCR liest den Doppelpunkt manchmal nicht (z.B. "2138" statt "21:38")
+    const tm2b = joined.match(/\b(uhrzeit|zeit|time)\s*[:=]?\s*([01]?\d|2[0-3])([0-5]\d)\b/i);
+    if (tm2b) time = pad(+tm2b[2])+":"+tm2b[3];
+  }
+  let result = null;
+  if (/\bwin\b|\bgewinn\b/i.test(joined)) result = "win";
+  else if (/\bloss\b|\blose\b|\blost\b|\bverlust\b/i.test(joined)) result = "loss";
+  else if (/\bBE\b|\bbreak\s*-?\s*even\b|\bbreakeven\b/i.test(joined)) result = "be";
+  let direction = null;
+  if (/\blong\b|\bbuy\b|\bkauf\b/i.test(joined)) direction = "long";
+  else if (/\bshort\b|\bsell\b|\bverkauf\b/i.test(joined)) direction = "short";
+  return { entry, sl, tp, risk, commission, pair, date, time, result, direction };
 }
 async function tryAutoFillFromImage(src){
   if (!S.form) return;
@@ -847,12 +1029,15 @@ async function tryAutoFillFromImage(src){
     const ret = await worker.recognize(src);
     if (!S.form) return; // Formular wurde inzwischen geschlossen
     const parsed = parseTradeFromText(ret.data.text);
-    const map = [["fEntry",parsed.entry,"Entry"],["fSl",parsed.sl,"SL"],["fTp",parsed.tp,"TP"],["fSym",parsed.pair,"Paar"]];
+    const map = [["fEntry",parsed.entry,"Entry"],["fSl",parsed.sl,"SL"],["fTp",parsed.tp,"TP"],["fSym",parsed.pair,"Paar"],["fRisk",parsed.risk,"Risiko"],["fCommission",parsed.commission,"Kommission"]];
     const filled = [];
     for (const [id,val,label] of map){ if (val && !$(id).value){ $(id).value = val; filled.push(label); } }
     // Datum/Uhrzeit: auch überschreiben, solange noch der automatische "jetzt"-Standardwert drinsteht
     if (parsed.date && (!$("fDate").value || $("fDate").value === S.form._defaultDate)){ $("fDate").value = parsed.date; filled.push("Datum"); }
     if (parsed.time && (!$("fTime").value || $("fTime").value === S.form._defaultTime)){ $("fTime").value = parsed.time; filled.push("Uhrzeit"); }
+    // Ergebnis/Richtung: nur setzen, wenn noch keine Auswahl getroffen wurde
+    if (parsed.result && !segVal("fResult")){ setSeg("fResult", parsed.result); filled.push("Ergebnis"); }
+    if (parsed.direction && !segVal("fDir")){ setSeg("fDir", parsed.direction); filled.push("Richtung"); }
     if (filled.length){ updatePreview(); toast("Aus Screenshot erkannt: " + filled.join(", ") + " – bitte prüfen"); }
   }catch(e){ /* OCR ist ein Best-Effort-Zusatz, still fehlschlagen */ }
 }
@@ -943,7 +1128,7 @@ function parseLines(lines){
 }
 const IMP = { rows: [], lines: [], name: "" };
 function dataUrlBlob(u){ const [h,b]=u.split(","); const mime=(h.match(/data:([^;]+)/)||[])[1]||"image/jpeg"; const bin=atob(b); const a=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i); return new Blob([a],{type:mime}); }
-function isDup(r){ return S.trades.some(t => t.date===r.date && (t.time||"")===(r.time||"") && (t.symbol||"")===(r.symbol||"") && String(t.entry||"")===String(r.entry||"")); }
+function isDup(r){ return activeTrades().some(t => t.date===r.date && (t.time||"")===(r.time||"") && (t.symbol||"")===(r.symbol||"") && String(t.entry||"")===String(r.entry||"")); }
 function showImport(rows, info){
   IMP.rows = rows.map(r => ({ ...r, _on: !isDup(r), _dup: isDup(r) }));
   $("iInfo").textContent = info;
@@ -997,7 +1182,7 @@ $("iGo").addEventListener("click", async () => {
   const dates = new Set(); let n = 0;
   for (const r of sel){
     const t = { ...r }; delete t._on; delete t._dup;
-    t.id = uid(); t.createdAt = Date.now() + n;
+    t.id = uid(); t.createdAt = Date.now() + n; t.accountId = S.activeAccountId;
     const shots = [];
     for (const src of r.shots){
       try{ const blob = dataUrlBlob(typeof src==="string"?src:src.src); shots.push(await Store.addImage(blob)); }catch(e){}
@@ -1031,8 +1216,8 @@ function renderShots(){
 }
 $("fShots").addEventListener("click", e => { const b=e.target.closest("[data-rm]"); if(!b) return; const [s]=S.form.shots.splice(+b.dataset.rm,1); if (s && s.id && !S.form._orig.includes(s.id) && Store.assets) Store.assets.delete(s.id).catch(()=>{}); renderShots(); });
 function openForm(t, files){
-  const lastRisk = S.trades.slice().sort((a,b)=>b.createdAt-a.createdAt)[0]?.risk || "";
-  S.form = t ? { ...t, shots:[...t.shots] } : { id: uid(), createdAt: Date.now(), shots: [], date: todayIso(), time: nowTime(), risk: lastRisk };
+  const lastRisk = activeTrades().slice().sort((a,b)=>b.createdAt-a.createdAt)[0]?.risk || "";
+  S.form = t ? { ...t, shots:[...t.shots] } : { id: uid(), createdAt: Date.now(), shots: [], date: todayIso(), time: nowTime(), risk: lastRisk, accountId: S.activeAccountId };
   S.form._orig = (t?.shots||[]).map(s=>s.id).filter(Boolean);
   S.form._defaultDate = t ? null : S.form.date;
   S.form._defaultTime = t ? null : S.form.time;
@@ -1083,6 +1268,22 @@ $("pasteBtn").addEventListener("click", async () => {
     if (!files.length) return toast("Kein Bild in der Zwischenablage gefunden");
     addFiles(files);
   }catch(e){ toast("Einfügen nicht möglich – bitte Zugriff auf die Zwischenablage erlauben"); }
+});
+$("tvTemplateBtn").addEventListener("click", async () => {
+  const t = readForm();
+  const lines = [
+    `Paar: ${t.symbol || ""}`,
+    `Richtung: ${t.direction ? (t.direction==="long"?"Long":"Short") : ""}`,
+    `Ergebnis: ${t.result ? label(t.result) : ""}`,
+    `Entry: ${t.entry || ""}`,
+    `SL: ${t.sl || ""}`,
+    `TP: ${t.tp || ""}`,
+    `Risiko: ${t.risk || ""}`,
+    `Kommission: ${t.commission || ""}`,
+    `Datum: ${t.date || todayIso()}`,
+    `Uhrzeit: ${t.time || nowTime()}`
+  ];
+  (await copyText(lines.join("\n"))) ? flash($("tvTemplateBtn"), "Kopiert ✓ — in TradingView einfügen") : toast("Kopieren nicht möglich");
 });
 $("mSave").addEventListener("click", async () => {
   const t = readForm();
