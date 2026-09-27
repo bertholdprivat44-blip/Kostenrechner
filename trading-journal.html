@@ -172,12 +172,12 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
 .grid input,.grid select,.grid textarea{font:inherit;font-size:16px;color:var(--ink);background:rgba(255,255,255,.02);border:1px solid var(--card-line);border-radius:6px;padding:10px 11px;width:100%;min-width:0}
 .grid textarea{resize:vertical;font-family:'IBM Plex Mono',monospace}
 .grid input:focus,.grid select:focus,.grid textarea:focus{border-color:var(--brass);outline:none}
-.seg{display:flex;gap:6px}
-.seg button{flex:1;padding:11px;font-weight:500;font-size:.82rem;background:rgba(255,255,255,.02);border:1px solid var(--card-line)}
+.seg{display:flex;gap:6px;min-width:0}
+.seg button{flex:1;min-width:0;padding:11px 4px;font-weight:500;font-size:.82rem;background:rgba(255,255,255,.02);border:1px solid var(--card-line)}
 .seg button.on[data-v="win"],.seg button.on[data-v="long"]{background:var(--sage);color:#04150c;border-color:var(--sage)}
 .seg button.on[data-v="loss"],.seg button.on[data-v="short"]{background:var(--danger);color:#1a0509;border-color:var(--danger)}
 .seg button.on[data-v="be"]{background:var(--be);color:#0a0f1a;border-color:var(--be)}
-.drop{border:1.5px dashed var(--card-line);border-radius:6px;padding:16px;text-align:center;font-size:.82rem;color:var(--ink-soft);display:block;cursor:pointer}
+.drop{border:1.5px dashed var(--card-line);border-radius:6px;padding:16px;text-align:center;font-size:.82rem;color:var(--ink-soft);display:block;cursor:pointer;overflow-wrap:anywhere;word-break:break-word;min-width:0}
 .drop.over{border-color:var(--brass);color:var(--brass)}
 .drop input{position:absolute;width:1px;height:1px;opacity:0}
 .fshots{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
@@ -287,7 +287,7 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
       <label>Kommission (optional)<input id="fCommission" inputmode="decimal" placeholder="0"></label>
       <label class="full">Notiz<input id="fNotes" maxlength="200" placeholder="Setup, Fehler, Gedanken"></label>
       <div class="full">
-        <label class="drop" id="drop"><input type="file" id="fFile" accept="image/*" multiple>Screenshot tippen oder reinziehen<br><small style="opacity:.7">Entry/SL/TP/Paar/Datum/Uhrzeit/Ergebnis/Richtung/Risiko/Kommission werden versucht automatisch zu erkennen</small></label>
+        <label class="drop" id="drop"><input type="file" id="fFile" accept="image/*" multiple>Screenshot tippen oder reinziehen<br><small style="opacity:.7">Entry / SL / TP / Paar / Datum / Uhrzeit / Ergebnis / Richtung / Risiko / Kommission werden versucht automatisch zu erkennen</small></label>
         <button type="button" class="btn" id="pasteBtn" style="width:100%;margin-top:8px">📋 Bild aus Zwischenablage einfügen</button>
         <button type="button" class="btn" id="tvTemplateBtn" style="width:100%;margin-top:8px">📋 Vorlage für TradingView-Notiz kopieren</button>
         <p style="font-size:.72rem;color:var(--ink-soft);margin:6px 2px 0">Vorlage in TradingView als Text-Notiz einfügen, Werte anpassen, dann Screenshot machen — wird beim Hochladen zuverlässig wiedererkannt.</p>
@@ -505,11 +505,11 @@ function calc(t){
 }
 function stats(list){
   const w = list.filter(t=>t.result==="win"), l = list.filter(t=>t.result==="loss"), b = list.filter(t=>t.result==="be");
-  let pnl=0, risk=0, R=0, rrN=0, hasPnl=false;
-  for (const t of list){ const c=calc(t); if (c.pnl!==null){ pnl+=c.pnl; hasPnl=true; } if (c.risk!==null) risk+=c.risk; if (c.rr!==null){ R+=c.rr; rrN++; } }
+  let pnl=0, risk=0, R=0, rrN=0, hasPnl=false, commission=0;
+  for (const t of list){ const c=calc(t); if (c.pnl!==null){ pnl+=c.pnl; hasPnl=true; } if (c.risk!==null) risk+=c.risk; if (c.rr!==null){ R+=c.rr; rrN++; } if (c.commission) commission+=c.commission; }
   const winRR = w.map(t=>calc(t).rr).filter(v=>v!==null);
   return { n:list.length, w:w.length, l:l.length, b:b.length, wr: w.length+l.length ? w.length/(w.length+l.length)*100 : null,
-    pnl: hasPnl ? pnl : null, risk, R: rrN ? R : null, avgWinRR: winRR.length ? winRR.reduce((a,c)=>a+c,0)/winRR.length : null };
+    pnl: hasPnl ? pnl : null, risk, R: rrN ? R : null, avgWinRR: winRR.length ? winRR.reduce((a,c)=>a+c,0)/winRR.length : null, commission };
 }
 
 /* ---------- storage: Claude db+assets, else IndexedDB ---------- */
@@ -574,7 +574,7 @@ async function compress(file){
 function tradeLine(t){
   const c = calc(t);
   const icon = t.result==="win" ? "🟢" : t.result==="loss" ? "🔴" : "⚪";
-  return `${icon} ${t.symbol||"Trade"} ${c.dir ? (c.dir==="long"?"Long":"Short") : ""} · ${shortDate(t.date)} ${t.time||""} · ${rfmt(c.rr)}${c.pnl!==null ? " · " + money(c.pnl) : ""}`.replace(/\s+/g," ").trim();
+  return `${icon} ${t.symbol||"Trade"} ${c.dir ? (c.dir==="long"?"Long":"Short") : ""} · ${shortDate(t.date)} ${t.time||""} · ${rfmt(c.rr)}${c.pnl!==null ? " · " + money(c.pnl) : ""}${c.commission ? " (Kommission " + S.cur + f(c.commission) + ")" : ""}`.replace(/\s+/g," ").trim();
 }
 function tradeText(t){
   const c = calc(t);
@@ -602,12 +602,12 @@ function summaryText(list, part){
   const L = [`📊 **NoWick Journal** | ${rangeLabel(list)}`,
     `Trades: ${s.n}  |  ✅ ${s.w}  |  ❌ ${s.l}  |  ➖ ${s.b}`,
     `🎯 Winrate: ${s.wr===null?"–":f(s.wr,1)+" %"}`,
-    `⚖️ Riskiert: ${S.cur}${f(s.risk)}  |  💰 P&L: ${money(s.pnl)}  |  📐 ${rfmt(s.R)}`];
+    `⚖️ Riskiert: ${S.cur}${f(s.risk)}  |  💰 P&L: ${money(s.pnl)}  |  📐 ${rfmt(s.R)}${s.commission?`  |  💸 Kommission: ${S.cur}${f(s.commission)}`:""}`];
   const wins = list.filter(t=>t.result==="win"), losses = list.filter(t=>t.result==="loss");
   if (part !== "loss" && wins.length){ L.push("", `**✅ Wins (${wins.length})**`, ...wins.map(tradeLine)); }
   if (part !== "win" && losses.length){ L.push("", `**❌ Losses (${losses.length})**`, ...losses.map(tradeLine)); }
-  if (part === "win") return [`**✅ Wins ${rangeLabel(wins)}** (${wins.length})`, ...wins.map(tradeLine), `Summe: ${money(stats(wins).pnl)} | ${rfmt(stats(wins).R)}`].join("\n");
-  if (part === "loss") return [`**❌ Losses ${rangeLabel(losses)}** (${losses.length})`, ...losses.map(tradeLine), `Summe: ${money(stats(losses).pnl)} | ${rfmt(stats(losses).R)}`].join("\n");
+  if (part === "win") return [`**✅ Wins ${rangeLabel(wins)}** (${wins.length})`, ...wins.map(tradeLine), `Summe: ${money(stats(wins).pnl)} | ${rfmt(stats(wins).R)}${stats(wins).commission?` | Kommission: ${S.cur}${f(stats(wins).commission)}`:""}`].join("\n");
+  if (part === "loss") return [`**❌ Losses ${rangeLabel(losses)}** (${losses.length})`, ...losses.map(tradeLine), `Summe: ${money(stats(losses).pnl)} | ${rfmt(stats(losses).R)}${stats(losses).commission?` | Kommission: ${S.cur}${f(stats(losses).commission)}`:""}`].join("\n");
   return L.join("\n");
 }
 
@@ -996,6 +996,10 @@ function parseTradeFromText(raw){
   const tp = findAfterLabel(["take\\s*profit","t\\/p","tp","target","ziel"]);
   const risk = findAfterLabel(["risk","risiko"]);
   const commission = findAfterLabel(["commission","kommission","comm\\.?","gebühr","gebuehr","fee"]);
+  let pnl = findAfterLabel(["profit\\s*\\/\\s*loss","(?<!take\\s)profit(?!\\s*target)","gewinn\\s*\\/\\s*verlust","gewinn","p\\s*&\\s*l","p\\/l","pnl"]);
+  // MT5 zeigt "Exit" oft als Pfeil: "20100.00 → 20125.00" oder "20100.00 -> 20125.00"
+  let exit = findAfterLabel(["exit\\s*price","close\\s*price","exit","close","schluss"]);
+  if (!exit){ const am = joined.match(/-?[\d.,]+\s*(?:→|->|➔|›|»)\s*(-?[\d][\d.,]*)/); if (am) exit = am[1].replace(",", "."); }
   const knownPairs = ["EURUSD","GBPUSD","USDJPY","USDCHF","AUDUSD","NZDUSD","USDCAD","EURGBP","EURJPY","GBPJPY",
     "XAUUSD","XAGUSD","US100","US30","US500","NAS100","SPX500","GER40","DE40","UK100","BTCUSD","ETHUSD"];
   let pair = null;
@@ -1014,13 +1018,22 @@ function parseTradeFromText(raw){
     if (tm2b) time = pad(+tm2b[2])+":"+tm2b[3];
   }
   let result = null;
-  if (/\bwin\b|\bgewinn\b/i.test(joined)) result = "win";
-  else if (/\bloss\b|\blose\b|\blost\b|\bverlust\b/i.test(joined)) result = "loss";
-  else if (/\bBE\b|\bbreak\s*-?\s*even\b|\bbreakeven\b/i.test(joined)) result = "be";
+  if (pnl !== null){
+    // MT5 & Co. schreiben nie "Win"/"Loss" hin, nur die Profit-Zahl selbst -> Vorzeichen entscheidet, hat Vorrang
+    const pnlNum = parseFloat(pnl);
+    if (!isNaN(pnlNum)) result = pnlNum > 0 ? "win" : pnlNum < 0 ? "loss" : "be";
+  }
+  if (result === null){
+    // "Stop Loss"/"S/L" enthält das Wort "Loss" -> erst rausfiltern, sonst falscher Treffer bei Gewinn-Trades
+    const safe = joined.replace(/stop[\s-]*loss/gi, "").replace(/s\s*\/\s*l\b/gi, "");
+    if (/\bwin\b|\bgewinn\b/i.test(safe)) result = "win";
+    else if (/\bloss\b|\blose\b|\blost\b|\bverlust\b/i.test(safe)) result = "loss";
+    else if (/\bBE\b|\bbreak\s*-?\s*even\b|\bbreakeven\b/i.test(safe)) result = "be";
+  }
   let direction = null;
   if (/\blong\b|\bbuy\b|\bkauf\b/i.test(joined)) direction = "long";
   else if (/\bshort\b|\bsell\b|\bverkauf\b/i.test(joined)) direction = "short";
-  return { entry, sl, tp, risk, commission, pair, date, time, result, direction };
+  return { entry, sl, tp, exit, risk, commission, pnl, pair, date, time, result, direction };
 }
 async function tryAutoFillFromImage(src){
   if (!S.form) return;
@@ -1029,7 +1042,7 @@ async function tryAutoFillFromImage(src){
     const ret = await worker.recognize(src);
     if (!S.form) return; // Formular wurde inzwischen geschlossen
     const parsed = parseTradeFromText(ret.data.text);
-    const map = [["fEntry",parsed.entry,"Entry"],["fSl",parsed.sl,"SL"],["fTp",parsed.tp,"TP"],["fSym",parsed.pair,"Paar"],["fRisk",parsed.risk,"Risiko"],["fCommission",parsed.commission,"Kommission"]];
+    const map = [["fEntry",parsed.entry,"Entry"],["fSl",parsed.sl,"SL"],["fTp",parsed.tp,"TP"],["fExit",parsed.exit,"Exit"],["fSym",parsed.pair,"Paar"],["fRisk",parsed.risk,"Risiko"],["fCommission",parsed.commission,"Kommission"],["fPnl",parsed.pnl,"P&L"]];
     const filled = [];
     for (const [id,val,label] of map){ if (val && !$(id).value){ $(id).value = val; filled.push(label); } }
     // Datum/Uhrzeit: auch überschreiben, solange noch der automatische "jetzt"-Standardwert drinsteht
