@@ -1,10 +1,11 @@
-const CACHE = "sparrechner-v58";
+const CACHE = "sparrechner-v62";
 const ASSETS = [
   "./start.html",
   "./index.html",
   "./steuererklaerung.html",
   "./einkommensteuer.html",
   "./trading-journal.html",
+  "./training.html",
   "./style.css",
   "./manifest.json",
   "./icon-192.png",

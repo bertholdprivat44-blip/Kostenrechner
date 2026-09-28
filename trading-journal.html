@@ -96,6 +96,13 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .ap-main small{color:var(--ink-soft);font-size:.74rem}
 .ap-side{display:flex;align-items:center;gap:10px;font-family:'Fraunces',serif;flex:none}
 .ap-edit{background:none;border:1px solid var(--card-line);width:40px;height:40px;border-radius:8px;font-size:1rem}
+.payout-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--card-line);font-size:.84rem}
+.payout-row .pr-date{color:var(--ink-soft);flex:none;font-size:.76rem}
+.payout-row .pr-amt{font-family:'Fraunces',serif;font-weight:500;flex:none}
+.payout-row .pr-note{color:var(--ink-soft);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.78rem}
+.payout-row .pr-del{background:none;border:none;color:var(--ink-soft);flex:none;font-size:.9rem;min-height:32px;min-width:32px}
+.payout-row .pr-del:hover{color:var(--danger)}
+.btn.full{grid-column:1/-1}
 
 /* calendar */
 .cal{background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--card-line);border-radius:4px;padding:20px;box-shadow:0 24px 60px -28px rgba(0,0,0,.7)}
@@ -230,6 +237,7 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
     <a href="steuererklaerung.html">Steuererklärung<span class="sub-label">Gewerbe &amp; Unterlagen</span></a>
     <a href="einkommensteuer.html">Einkommensteuer<span class="sub-label">Private Steuererklärung</span></a>
     <a href="trading-journal.html" class="active">Trading Journal<span class="sub-label">NoWick Journal</span></a>
+    <a href="training.html">Training<span class="sub-label">5-Tage-Trainingskalender</span></a>
     <div class="theme-switcher">
       <span class="ts-label">Farbschema</span>
       <div class="ts-row">
@@ -269,7 +277,19 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
       <label>Max. Drawdown gesamt (%)<input id="aMaxDd" inputmode="decimal" placeholder="z. B. 10"></label>
       <label>Max. Tages-Drawdown (%, optional)<input id="aDailyDd" inputmode="decimal" placeholder="z. B. 5"></label>
       <label>Gewinnziel (%, optional)<input id="aTarget" inputmode="decimal" placeholder="z. B. 8"></label>
+      <label>Profit Split – dein Anteil (%)<input id="aSplit" inputmode="decimal" placeholder="z. B. 80"><small class="hint">bei Auszahlungen wird dein Anteil automatisch vorgerechnet</small></label>
       <label class="full">Regeln (frei editierbar)<textarea id="aRules" rows="4" placeholder="z. B. keine News-Trades, max. 2 Trades/Tag, kein Trade über Nacht..."></textarea></label>
+    </div>
+    <div class="full" id="payoutWrap" style="margin-top:16px">
+      <label style="display:block;font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px">Auszahlungen</label>
+      <div id="payoutList"></div>
+      <div class="grid" style="grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
+        <input id="pDate" type="date">
+        <input id="pAmount" inputmode="decimal" placeholder="Betrag (brutto)">
+        <input id="pNote" placeholder="Notiz (optional)" class="full" style="grid-column:1/-1">
+        <p class="full" id="pSplitHint" style="grid-column:1/-1;font-size:.8rem;color:var(--ink-soft);margin:2px 0 6px"></p>
+        <button type="button" class="btn full" id="pAdd" style="grid-column:1/-1">+ Auszahlung hinzufügen</button>
+      </div>
     </div>
     <div class="row">
       <button class="btn" id="aCancel">Abbrechen</button>
@@ -392,21 +412,27 @@ function setActiveAccount(id){ S.activeAccountId = id; try{ localStorage.setItem
 
 function accountEquityStats(acc, trades){
   const start = num(acc.startBalance) || 0;
-  const sorted = trades.slice().sort((a,b)=> (a.date+(a.time||"")).localeCompare(b.date+(b.time||"")) || a.createdAt-b.createdAt);
-  let equity = start, peak = start;
-  for (const t of sorted){ const c = calc(t); if (c.pnl !== null) equity += c.pnl; if (equity > peak) peak = equity; }
+  // Trades UND Auszahlungen zeitlich zu einer einzigen Kontostand-Kurve zusammenführen -> Puffer bezieht
+  // sich immer auf das Geld, das nach Auszahlungen tatsächlich noch da ist, nicht auf die reine Handelsleistung.
+  const events = [];
+  trades.forEach(t => { const c = calc(t); if (c.pnl !== null) events.push({ key: t.date + (t.time||"") + "-t" + (t.createdAt||0), amount: c.pnl }); });
+  (acc.payouts||[]).forEach(p => { const amt = num(p.amount); if (amt) events.push({ key: p.date + "~payout-" + p.id, amount: -Math.abs(amt) }); });
+  events.sort((a,b) => a.key.localeCompare(b.key));
+  let balance = start, peak = start;
+  for (const ev of events){ balance += ev.amount; if (balance > peak) peak = balance; }
+  const totalPayouts = (acc.payouts||[]).reduce((s,p)=> s + (num(p.amount)||0), 0);
   const pct = num(acc.maxDd);
   let floor = null;
   if (pct !== null){ const base = acc.ddType === "trailing" ? peak : start; floor = base * (1 - pct/100); }
-  const bufferAbs = floor !== null ? equity - floor : null;
-  const bufferPct = (floor !== null && equity) ? (equity - floor) / equity * 100 : null;
+  const bufferAbs = floor !== null ? balance - floor : null;
+  const bufferPct = (floor !== null && balance) ? (balance - floor) / balance * 100 : null;
   const riskVals = trades.map(t=>num(t.risk)).filter(v=>v!==null);
   const avgRiskAbs = riskVals.length ? riskVals.reduce((s,v)=>s+v,0)/riskVals.length : null;
-  const avgRiskPct = (avgRiskAbs!==null && equity) ? avgRiskAbs/equity*100 : null;
+  const avgRiskPct = (avgRiskAbs!==null && balance) ? avgRiskAbs/balance*100 : null;
   const targetPct = num(acc.target);
   let targetProgress = null;
-  if (targetPct !== null && start){ const targetEquity = start*(1+targetPct/100); targetProgress = Math.max(0, Math.min(100, (equity-start)/(targetEquity-start)*100)); }
-  return { start, equity, peak, floor, bufferAbs, bufferPct, avgRiskAbs, avgRiskPct, targetPct, targetProgress };
+  if (targetPct !== null && start){ const targetEquity = start*(1+targetPct/100); targetProgress = Math.max(0, Math.min(100, (balance-start)/(targetEquity-start)*100)); }
+  return { start, peak, floor, bufferAbs, bufferPct, avgRiskAbs, avgRiskPct, targetPct, targetProgress, totalPayouts, balance };
 }
 
 function renderAccounts(){
@@ -424,13 +450,14 @@ function renderAccounts(){
   $("acctStatsWrap").innerHTML = `
     <div class="acct-stats">
       <div class="head"><h3>${crown}${esc(acc.name||"Konto")}</h3><small>${st.start?"" : "Kontogröße in ⚙️ eintragen für Drawdown-Berechnung"}</small></div>
-      <div class="stat"><small>Kontostand</small><b>${st.start?S.cur+f(st.equity):"–"}</b></div>
+      <div class="stat"><small>Kontostand</small><b>${st.start?S.cur+f(st.balance):"–"}</b></div>
       <div class="stat"><small>Höchststand</small><b>${st.start?S.cur+f(st.peak):"–"}</b></div>
+      ${st.totalPayouts?`<div class="stat"><small>Ausgezahlt gesamt</small><b>${S.cur}${f(st.totalPayouts)}</b></div>`:""}
       <div class="stat"><small>Drawdown-Grenze</small><b>${st.floor!==null?S.cur+f(st.floor):"–"}</b></div>
       <div class="stat"><small>Puffer bis Drawdown</small><b class="${st.bufferPct!==null&&st.bufferPct<25?"neg":""}">${st.bufferPct!==null?f(st.bufferPct,1)+" %":"–"}</b></div>
       <div class="stat"><small>Ø Risiko / Trade</small><b>${st.avgRiskAbs!==null?S.cur+f(st.avgRiskAbs):"–"}</b></div>
       <div class="stat"><small>Ø Risiko in %</small><b>${st.avgRiskPct!==null?f(st.avgRiskPct,2)+" %":"–"}</b></div>
-      ${st.floor!==null?`<div class="ddbar ${ddBarClass}"><i style="width:${Math.max(0,Math.min(100,st.bufferPct))}%"></i></div>`:""}
+      ${st.floor!==null?`<div class="ddbar ${ddBarClass}"><i style="width:${st.bufferPct<0?100:Math.max(0,Math.min(100,st.bufferPct))}%"></i></div>${st.bufferAbs<0?`<p style="grid-column:1/-1;color:var(--danger);font-size:.76rem;margin:2px 0 0">⚠️ Kontostand liegt bereits ${S.cur}${f(Math.abs(st.bufferAbs))} unter der Drawdown-Grenze</p>`:""}`:""}
       ${st.targetProgress!==null?`<div class="stat"><small>Gewinnziel (${f(st.targetPct)} %)</small><b>${f(st.targetProgress,0)} % erreicht</b></div>`:""}
     </div>`;
 }
@@ -444,7 +471,7 @@ function renderAcctPickList(){
   $("acctPickList").innerHTML = S.accounts.map(a => {
     const st = accountEquityStats(a, S.trades.filter(t => (t.accountId||DEFAULT_ACCOUNT_ID) === a.id));
     const sub = [a.firma, a.phase].filter(Boolean).join(" · ") || "—";
-    return `<div class="ap-item${a.id===S.activeAccountId?" on":""}" data-pick="${esc(a.id)}"><div class="ap-main"><b>${isMaster(a)?"👑 ":""}${esc(a.name||"Konto")}</b><small>${esc(sub)}</small></div><div class="ap-side"><span>${st.start?S.cur+f(st.equity):"–"}</span><button type="button" class="ap-edit" data-edit="${esc(a.id)}" aria-label="Bearbeiten">⚙️</button></div></div>`;
+    return `<div class="ap-item${a.id===S.activeAccountId?" on":""}" data-pick="${esc(a.id)}"><div class="ap-main"><b>${isMaster(a)?"👑 ":""}${esc(a.name||"Konto")}</b><small>${esc(sub)}</small></div><div class="ap-side"><span>${st.start?S.cur+f(st.balance):"–"}</span><button type="button" class="ap-edit" data-edit="${esc(a.id)}" aria-label="Bearbeiten">⚙️</button></div></div>`;
   }).join("");
 }
 $("acctPickList").addEventListener("click", e => {
@@ -468,10 +495,57 @@ function openAcctModal(acc){
   $("aMaxDd").value = acc?.maxDd || "";
   $("aDailyDd").value = acc?.dailyDd || "";
   $("aTarget").value = acc?.target || "";
+  $("aSplit").value = acc?.split || "";
   $("aRules").value = acc?.rules || "";
   $("aDelete").style.display = (acc && S.accounts.length > 1) ? "block" : "none";
+  $("payoutWrap").style.display = acc ? "" : "none";
+  $("pDate").value = todayIso(); $("pAmount").value = ""; $("pNote").value = ""; $("pSplitHint").textContent = "";
+  renderPayoutList();
   $("acctModal").classList.add("open");
 }
+function payoutNet(p){
+  const gross = num(p.amount)||0;
+  const sp = num(p.split);
+  return (sp!==null && sp>0 && sp<100) ? gross*sp/100 : null;
+}
+function renderPayoutList(){
+  const acc = S.accounts.find(a=>a.id===acctEditId);
+  const list = (acc?.payouts||[]).slice().sort((a,b)=>b.date.localeCompare(a.date));
+  $("payoutList").innerHTML = list.length ? list.map(p => {
+    const net = payoutNet(p);
+    const amtHtml = net!==null ? `${S.cur}${f(num(p.amount)||0)} <span style="color:var(--ink-soft);font-size:.72rem">→ ${S.cur}${f(net)} (${f(num(p.split))}%)</span>` : `${S.cur}${f(num(p.amount)||0)}`;
+    return `<div class="payout-row"><span class="pr-date">${shortDate(p.date)}</span><span class="pr-amt">${amtHtml}</span><span class="pr-note">${esc(p.note||"")}</span><button type="button" class="pr-del" data-payout="${esc(p.id)}" aria-label="Löschen">✕</button></div>`;
+  }).join("")
+    : `<p style="font-size:.8rem;color:var(--ink-soft);margin:0 0 8px">Noch keine Auszahlungen erfasst.</p>`;
+}
+$("payoutList").addEventListener("click", e => {
+  const el = e.target.closest("[data-payout]"); if (!el) return;
+  const acc = S.accounts.find(a=>a.id===acctEditId); if (!acc) return;
+  acc.payouts = (acc.payouts||[]).filter(p=>p.id!==el.dataset.payout);
+  saveAccounts(); renderPayoutList(); renderAccounts(); render();
+});
+function updateSplitHint(){
+  const acc = S.accounts.find(a=>a.id===acctEditId);
+  const amt = num($("pAmount").value); const sp = num(acc?.split);
+  if (amt===null || amt<=0){ $("pSplitHint").textContent = ""; return; }
+  if (sp!==null && sp>0 && sp<100){
+    $("pSplitHint").innerHTML = `Bei ${f(sp)}% Profit Split erhältst du <b style="color:var(--sage)">${S.cur}${f(amt*sp/100)}</b> von ${S.cur}${f(amt)}`;
+  } else {
+    $("pSplitHint").textContent = "";
+  }
+}
+$("pAmount").addEventListener("input", updateSplitHint);
+$("pAdd").addEventListener("click", () => {
+  const acc = S.accounts.find(a=>a.id===acctEditId); if (!acc) return toast("Bitte zuerst speichern");
+  const amount = $("pAmount").value.trim(); const date = $("pDate").value || todayIso();
+  if (!amount || !num(amount)) return toast("Bitte einen Betrag eingeben");
+  if (!acc.payouts) acc.payouts = [];
+  const sp = num(acc.split);
+  acc.payouts.push({ id: uid(), date, amount, note: $("pNote").value.trim(), split: (sp!==null && sp>0 && sp<100) ? String(sp) : "" });
+  saveAccounts(); $("pAmount").value = ""; $("pNote").value = ""; $("pSplitHint").textContent = "";
+  renderPayoutList(); renderAccounts(); render();
+  toast("Auszahlung gespeichert");
+});
 function closeAcctModal(){ $("acctModal").classList.remove("open"); acctEditId = null; }
 $("aCancel").addEventListener("click", closeAcctModal);
 $("acctModal").addEventListener("click", e => { if (e.target.id === "acctModal") closeAcctModal(); });
@@ -479,12 +553,12 @@ $("aSave").addEventListener("click", () => {
   const data = {
     name: $("aName").value.trim() || "Konto", firma: $("aFirma").value.trim(), phase: $("aPhase").value.trim(),
     startBalance: $("aStart").value.trim(), ddType: $("aDdType").value, maxDd: $("aMaxDd").value.trim(),
-    dailyDd: $("aDailyDd").value.trim(), target: $("aTarget").value.trim(), rules: $("aRules").value.trim()
+    dailyDd: $("aDailyDd").value.trim(), target: $("aTarget").value.trim(), split: $("aSplit").value.trim(), rules: $("aRules").value.trim()
   };
   if (acctEditId){
     const acc = S.accounts.find(a=>a.id===acctEditId); Object.assign(acc, data);
   } else {
-    const acc = { id: uid(), createdAt: Date.now(), ...data };
+    const acc = { id: uid(), createdAt: Date.now(), payouts: [], ...data };
     S.accounts.push(acc); S.activeAccountId = acc.id;
     try{ localStorage.setItem(ACTIVE_ACCOUNT_KEY, acc.id); }catch(_){}
   }
@@ -959,6 +1033,41 @@ async function makePdf(btn){
     const kv = [["Trades", tot.n], ["Win/Loss/BE", `${tot.w}/${tot.l}/${tot.b}`], ["Winrate", tot.wr===null?"-":f(tot.wr,1)+" %"], ["Riskiert", S.cur+f(tot.risk)], ["P&L", mon(tot.pnl)], ["Gesamt R", P(rfmt(tot.R))]];
     kv.forEach(([k,v],i)=>{ const x=M+4+i*(CW/6); text(k, x, 8, "normal", grey); y+=6; text(v, x, 11, "bold", k==="P&L"||k==="Gesamt R" ? (String(v).startsWith("-")?red:green) : [20,25,35]); y-=6; });
     y += 24;
+    // Auszahlungen im gewählten Zeitraum
+    const acctForPdf = activeAccount();
+    const payoutsInRange = (acctForPdf.payouts||[]).filter(pp => !S.sel.size || S.sel.has(pp.date)).sort((a,b)=>a.date.localeCompare(b.date));
+    if (payoutsInRange.length){
+      need(10 + payoutsInRange.length*6);
+      text("Auszahlungen", M, 13, "bold"); y+=7;
+      const totalPO = payoutsInRange.reduce((s,pp)=>s+(num(pp.amount)||0),0);
+      payoutsInRange.forEach(pp => {
+        const net = payoutNet(pp);
+        need(6);
+        text(deDate(pp.date), M, 9.5, "normal", grey);
+        text(P((pp.note||"") + (net!==null ? `  (Split ${f(num(pp.split))}%)` : "")), M+32, 9.5, "normal", grey);
+        doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.setTextColor(...red);
+        doc.text(P("- "+S.cur+f(num(pp.amount)||0)), W-M, y, { align:"right" });
+        y += 6;
+        if (net!==null){
+          need(5);
+          text(P(`davon erhalten: ${S.cur}${f(net)}`), M+32, 8.5, "italic", grey);
+          y += 5;
+        }
+      });
+      doc.setDrawColor(210); doc.line(M,y-2,W-M,y-2); y+=4;
+      text("Ausgezahlt gesamt", M, 10, "bold");
+      doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(...red);
+      doc.text(P("- "+S.cur+f(totalPO)), W-M, y, { align:"right" });
+      y += 6;
+      if (tot.pnl !== null){
+        const netAfterPO = tot.pnl - totalPO;
+        text("P&L nach Auszahlungen", M, 10, "bold");
+        doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(...(netAfterPO>=0?green:red));
+        doc.text(P(mon(netAfterPO)), W-M, y, { align:"right" });
+        y += 6;
+      }
+      y += 4;
+    }
     // weekly table
     text("Winrate pro Woche", M, 13, "bold"); y+=7;
     const cols=[["Woche",0],["Zeitraum",20],["Trades",62],["W/L/BE",80],["Winrate",104],["Riskiert",126],["P&L",150],["R",172]];

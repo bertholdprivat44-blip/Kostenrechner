@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<script>
+  (function(){
+    try{
+      var t = localStorage.getItem('sparrechner_theme_v1');
+      if(t && t !== 'midnight') document.documentElement.setAttribute('data-theme', t);
+    }catch(e){}
+  })();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budget-Ledger — Training</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#04060c">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sparrechner">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{ font-family:'IBM Plex Mono', monospace; }
+
+
+  .app-wrap{ max-width: 620px; margin: 8px auto 0; }
+  .card{
+    background: var(--card); border: 1px solid var(--card-line); backdrop-filter: blur(10px);
+    box-shadow: 0 24px 60px -22px rgba(0,0,0,0.75); margin-bottom: 26px; overflow:hidden; position:relative;
+  }
+  .card::before{ content:""; position:absolute; inset:8px; border:1px solid rgba(255,255,255,0.04); pointer-events:none; }
+
+  .head{ text-align:center; padding: 30px 26px 22px; border-bottom: 1px solid var(--card-line); }
+  .head .eyebrow{ font-size:10px; letter-spacing:0.28em; text-transform:uppercase; color: var(--brass); margin:0 0 12px; }
+  .head h1{ font-family:'Fraunces', serif; font-weight:500; font-size:26px; margin:0 0 8px; }
+  .head p{ font-size:11.5px; color: var(--ink-soft); margin:0; line-height:1.5; }
+
+  .legend{
+    display:flex; justify-content:center; gap:16px; flex-wrap:wrap;
+    padding: 14px 20px; border-bottom: 1px solid var(--card-line); font-size:10px; color: var(--ink-soft);
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:5px; }
+  .legend .dot{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .legend .dot.a{ background: var(--brass); }
+  .legend .dot.b{ background: var(--amber); }
+  .legend .dot.bonus{ background: #b06fe0; }
+  .legend .dot.rest{ background: rgba(255,255,255,0.15); }
+
+  .cal-nav{
+    display:flex; align-items:center; justify-content:center; gap:18px; padding: 20px 20px 6px;
+  }
+  .nav-arrow{
+    background:none; border: 1px solid var(--card-line); width:34px; height:34px;
+    font-size: 14px; color: var(--brass-deep); cursor:pointer; border-radius:4px;
+  }
+  .nav-arrow:hover{ border-color: var(--brass); background: rgba(74,113,224,0.08); }
+  .cal-month-label{ font-family:'Fraunces', serif; font-size:19px; min-width:170px; text-align:center; }
+
+  .cal-weekdays{
+    display:grid; grid-template-columns: repeat(7,1fr); padding: 10px 18px 2px;
+    font-size:9.5px; letter-spacing:0.08em; text-transform:uppercase; color: var(--ink-soft); text-align:center;
+  }
+  .cal-grid{
+    display:grid; grid-template-columns: repeat(7,1fr); gap:6px; padding: 8px 18px 22px;
+  }
+  .cal-cell{
+    aspect-ratio: 1/1; border: 1px solid var(--card-line); border-radius:6px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    cursor:pointer; position:relative; padding:4px; background: rgba(255,255,255,0.015);
+    transition: border-color 0.12s ease, transform 0.08s ease;
+  }
+  .cal-cell:hover{ border-color: var(--brass); transform: translateY(-1px); }
+  .cal-cell.empty{ border:none; background:none; cursor:default; }
+  .cal-cell.today{ box-shadow: inset 0 0 0 1.5px var(--brass); }
+  .cal-cell .day-num{ font-size:11px; color: var(--ink-soft); }
+  .cal-cell .type-dot{ width:6px; height:6px; border-radius:50%; margin-top:3px; }
+  .cal-cell .type-dot.a{ background: var(--brass); }
+  .cal-cell .type-dot.b{ background: var(--amber); }
+  .cal-cell .type-dot.bonus{ background: #b06fe0; }
+  .cal-cell .type-dot.rest{ background: rgba(255,255,255,0.15); }
+  .cal-cell .status-icon{ font-size:15px; margin-top:2px; line-height:1; }
+  .cal-cell .status-icon.done{ color: var(--sage); }
+  .cal-cell .status-icon.missed{ color: var(--danger); }
+  .cal-cell.rest-cell{ opacity:0.55; cursor:default; }
+  .cal-cell.rest-cell:hover{ border-color: var(--card-line); transform:none; }
+
+  .progress-row{
+    display:flex; justify-content:space-between; padding: 4px 26px 24px; font-size:11px; color: var(--ink-soft);
+  }
+  .progress-row strong{ color: var(--ink); font-family:'Fraunces', serif; font-size:14px; }
+
+  .day-overlay{
+    display:none; position:fixed; inset:0; background: rgba(2,4,10,0.82); z-index:50;
+    padding: 24px 16px; overflow-y:auto;
+  }
+  .day-overlay.open{ display:block; }
+  .day-modal{
+    max-width: 460px; margin:0 auto; background: var(--card); border:1px solid var(--card-line);
+    backdrop-filter: blur(12px); position:relative;
+  }
+  .day-modal-head{ padding: 26px 28px 16px; border-bottom:1px solid var(--card-line); position:relative; }
+  .day-close{ position:absolute; top:18px; right:18px; background:none; border:none; font-size:19px; color: var(--ink-soft); cursor:pointer; }
+  .day-close:hover{ color: var(--danger); }
+  .day-modal-head .eyebrow{ font-size:9.5px; letter-spacing:0.2em; text-transform:uppercase; color: var(--brass); margin:0 0 8px; }
+  .day-modal-head h2{ font-family:'Fraunces', serif; font-size:19px; margin:0 0 6px; }
+  .day-modal-head .type-label{ font-size:11px; color: var(--ink-soft); }
+
+  .rest-note{ padding: 30px 28px; text-align:center; color: var(--ink-soft); font-size:13px; line-height:1.6; }
+
+  .ex-list{ padding: 18px 28px 6px; }
+  .ex-item{
+    display:flex; align-items:flex-start; gap:12px; padding: 13px 0; border-bottom: 1px dashed var(--card-line);
+    cursor:pointer;
+  }
+  .ex-item:last-child{ border-bottom:none; }
+  .ex-check{
+    flex-shrink:0; width:22px; height:22px; border-radius:5px; border:1.5px solid var(--card-line);
+    display:flex; align-items:center; justify-content:center; font-size:13px; margin-top:1px;
+    transition: background 0.12s ease, border-color 0.12s ease;
+  }
+  .ex-item.checked .ex-check{ background: var(--sage); border-color: var(--sage); color:#04150c; }
+  .ex-text .ex-name{ font-size:13.5px; }
+  .ex-item.checked .ex-text .ex-name{ text-decoration: line-through; color: var(--ink-soft); }
+  .ex-text .ex-detail{ font-size:10.5px; color: var(--ink-soft); margin-top:2px; }
+
+  .day-actions{ padding: 18px 28px 28px; display:grid; gap:10px; }
+  .btn{
+    background: var(--brass-deep); color:#fff; border:none; padding:13px; font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px; letter-spacing:0.02em; cursor:pointer; text-align:center;
+  }
+  .btn:hover{ background: var(--brass); }
+  .btn.secondary{ background:none; border:1px solid var(--card-line); color: var(--ink-soft); }
+  .btn.secondary:hover{ border-color: var(--danger); color: var(--danger); }
+
+  .help-btn{
+    position: fixed; bottom: 26px; right: 26px; width: 46px; height: 46px; border-radius: 50%;
+    background: var(--brass-deep); color: var(--card); border: none; font-family:'Fraunces', serif;
+    font-size: 19px; cursor: pointer; box-shadow: 0 12px 26px -8px rgba(0,0,0,0.6); z-index: 30;
+  }
+  .help-btn:hover{ background: var(--brass); }
+
+  .help-overlay{
+    display:none; position:fixed; inset:0; background: rgba(2,4,10,0.82); z-index:60; padding: 24px 16px; overflow-y:auto;
+  }
+  .help-overlay.open{ display:block; }
+  .help-modal{ max-width: 520px; margin:0 auto; background: var(--card); border:1px solid var(--card-line); backdrop-filter: blur(12px); }
+  .help-head{ padding: 26px 28px 16px; border-bottom:1px solid var(--card-line); position:relative; }
+  .help-head h2{ font-family:'Fraunces', serif; font-size:18px; margin:0; }
+  .help-body{ padding: 18px 28px 28px; font-size:12.5px; line-height:1.7; color: var(--ink-soft); }
+  .help-body h3{ color: var(--ink); font-size:12.5px; margin: 18px 0 6px; }
+  .help-body h3:first-child{ margin-top:0; }
+
+  .foot{ text-align:center; padding: 18px 16px 4px; font-size:9.5px; letter-spacing:0.08em; text-transform:uppercase; color: var(--ink-soft); opacity:0.6; }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <span class="brand">Budget-Ledger</span>
+  <button class="menu-toggle" id="menu-toggle" type="button">☰ Menü</button>
+  <div class="menu-panel" id="menu-panel">
+    <a href="start.html">Start<span class="sub-label">Übersicht aller Bereiche</span></a>
+    <a href="index.html">Sparrechner<span class="sub-label">Übersicht &amp; Spartopf</span></a>
+    <a href="steuererklaerung.html">Steuererklärung<span class="sub-label">Gewerbe &amp; Unterlagen</span></a>
+    <a href="einkommensteuer.html">Einkommensteuer<span class="sub-label">Private Steuererklärung</span></a>
+    <a href="trading-journal.html">Trading Journal<span class="sub-label">NoWick Journal</span></a>
+    <a href="training.html" class="active">Training<span class="sub-label">5-Tage-Trainingskalender</span></a>
+    <div class="theme-switcher">
+      <span class="ts-label">Farbschema</span>
+      <div class="ts-row">
+        <button class="theme-swatch" data-swatch="midnight" title="Mitternacht (Standard)" type="button"></button>
+        <button class="theme-swatch" data-swatch="redblack" title="Rot-Schwarz" type="button"></button>
+        <button class="theme-swatch" data-swatch="emerald" title="Smaragd" type="button"></button>
+        <button class="theme-swatch" data-swatch="amber" title="Bernstein" type="button"></button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+
+
+
+<div class="app-wrap">
+  <div class="card">
+    <div class="head">
+      <p class="eyebrow">Ganzkörper · Rundum-Plan</p>
+      <h1>Trainingskalender</h1>
+      <p>Tag antippen, Übungen abhaken. Verpasste Trainingstage werden automatisch mit ✕ markiert.</p>
+    </div>
+
+    <div class="legend">
+      <span><span class="dot a"></span> Tag A</span>
+      <span><span class="dot b"></span> Tag B</span>
+      <span><span class="dot bonus"></span> Tag A + Bonus</span>
+      <span><span class="dot rest"></span> Ruhetag</span>
+    </div>
+
+    <div class="cal-nav">
+      <button class="nav-arrow" id="cal-prev" type="button">◀</button>
+      <span class="cal-month-label" id="cal-month-label">—</span>
+      <button class="nav-arrow" id="cal-next" type="button">▶</button>
+    </div>
+    <div class="cal-weekdays">
+      <span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+
+    <div class="progress-row">
+      <span>Diesen Monat erledigt: <strong id="progress-done">0</strong> / <span id="progress-total">0</span></span>
+      <span>Serie: <strong id="progress-streak">0</strong> Tage</span>
+    </div>
+  </div>
+</div>
+
+<div class="day-overlay" id="day-overlay">
+  <div class="day-modal">
+    <div class="day-modal-head">
+      <button class="day-close" id="day-close" type="button">✕</button>
+      <p class="eyebrow" id="day-eyebrow">Trainingstag</p>
+      <h2 id="day-title">—</h2>
+      <p class="type-label" id="day-type-label"></p>
+    </div>
+
+    <div id="day-rest-note" class="rest-note" style="display:none">
+      Heute ist Regenerationstag. 🌙<br>Kein Training nötig — Erholung ist Teil des Plans.
+    </div>
+
+    <div id="day-ex-wrap">
+      <div class="ex-list" id="ex-list"></div>
+      <div class="day-actions">
+        <button class="btn" id="day-mark-all" type="button">Alle Übungen abhaken</button>
+        <button class="btn secondary" id="day-reset" type="button">Zurücksetzen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="help-overlay" id="help-overlay">
+  <div class="help-modal">
+    <div class="help-head">
+      <button class="day-close" id="help-close" type="button" style="position:absolute; top:18px; right:18px;">✕</button>
+      <h2>Ausführungshinweise</h2>
+    </div>
+    <div class="help-body">
+      <h3>Aufteilung der 100 Wiederholungen</h3>
+      <p>Nicht am Stück machen — sinnvoll aufteilen: 4 Sätze à 25 Wdh. (60–90 Sek. Pause) oder 5 Sätze à 20 Wdh. (ideal für saubere Technik).</p>
+
+      <h3>Kurzhantel-Rudern (20 kg)</h3>
+      <p>Einarmig auf einer Bank abstützen. Rücken vollkommen gerade halten. Hantel kontrolliert aus dem Ellbogen in Richtung Hüfte ziehen.</p>
+
+      <h3>Rumänisches Kreuzheben (2× 20 kg)</h3>
+      <p>Hüftbreiter Stand, Knie minimal gebeugt. Hüfte weit nach hinten schieben, Oberkörper kippt gerade nach vorne. Kraft kommt aus Beinhochrückseite und Po.</p>
+
+      <h3>Planks</h3>
+      <p>Unterarmstütz halten. Bauch, Po und Beine fest anspannen. Kein Durchhängen im unteren Rücken — eine gerade Linie von Kopf bis Ferse.</p>
+
+      <h3>Seitheben vorgebeugt</h3>
+      <p>Mit geradem Oberkörper weit nach vorne beugen. Leichte Gewichte (z. B. Wasserflaschen) wie Flügel nach außen-oben führen, um die hintere Schulter zu treffen.</p>
+    </div>
+  </div>
+</div>
+
+<p class="foot">Alle Daten bleiben lokal auf diesem Gerät gespeichert</p>
+
+
+<button class="help-btn" id="help-toggle" type="button" title="Ausführungshinweise">?</button>
+
+<p class="site-footer">Budget-Ledger &middot; erstellt von AndrewFXTD &middot; alle Daten bleiben lokal auf diesem Gerät</p>
+
+<script>
+
+  const STORAGE_KEY = 'trainingsplan_v1';
+  const MONTH_NAMES = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+  const WEEKDAY_NAMES = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+
+  // Plan-Definition: 0=Montag ... 6=Sonntag (ISO-Wochentag, Montag-basiert)
+  const PLAN = {
+    0: { type: 'a', label: 'Tag A', exercises: [
+      { key: 'squats', name: '100 Squats', detail: 'z. B. 5 × 20 oder 4 × 25 Wdh.' },
+      { key: 'pushups', name: '100 Liegestütze', detail: 'z. B. 5 × 20 oder 4 × 25 Wdh.' },
+      { key: 'situps', name: '100 Sit-ups', detail: 'z. B. 5 × 20 oder 4 × 25 Wdh.' },
+      { key: 'rdl', name: 'Rumänisches Kreuzheben', detail: '4 Sätze × 10–12 Wdh., 2× 20 kg' },
+    ]},
+    1: { type: 'b', label: 'Tag B', exercises: [
+      { key: 'squats', name: '100 Squats', detail: 'z. B. 5 × 20 oder 4 × 25 Wdh.' },
+      { key: 'pushups', name: '100 Liegestütze', detail: 'z. B. 5 × 20 oder 4 × 25 Wdh.' },
+      { key: 'situps', name: '100 Sit-ups', detail: 'z. B. 5 × 20 oder 4 × 25 Wdh.' },
+      { key: 'row', name: 'KH-Rudern', detail: '4 Sätze × 8–12 Wdh., 20 kg pro Arm' },
+      { key: 'plank', name: 'Planks', detail: '3 Sätze, jeweils maximal halten' },
+    ]},
+    2: { type: 'a', label: 'Tag A', exercises: [
+      { key: 'squats', name: '100 Squats', detail: 'z. B. 5 × 20 oder 4 × 25 Wdh.' },
+      { key: 'pushups', name: '100 Liegestütze', detail: 'z. B. 5 × 20 oder 4 × 25 Wdh.' },
+      { key: 'situps', name: '100 Sit-ups', detail: 'z. B. 5 × 20 oder 4 × 25 Wdh.' },
+      { key: 'rdl', name: 'Rumänisches Kreuzheben', detail: '4 Sätze × 10–12 Wdh., 2× 20 kg' },
+    ]},
+    3: { type: 'b', label: 'Tag B', exercises: [
+      { key: 'squats', name: '100 Squats', detail: 'z. B. 5 × 20 oder 4 × 25 Wdh.' },
+      { key: 'pushups', name: '100 Liegestütze', detail: 'z. B. 5 × 20 oder 4 × 25 Wdh.' },
+      { key: 'situps', name: '100 Sit-ups', detail: 'z. B. 5 × 20 oder 4 × 25 Wdh.' },
+      { key: 'row', name: 'KH-Rudern', detail: '4 Sätze × 8–12 Wdh., 20 kg pro Arm' },
+      { key: 'plank', name: 'Planks', detail: '3 Sätze, jeweils maximal halten' },
+    ]},
+    4: { type: 'bonus', label: 'Tag A + Bonus', exercises: [
+      { key: 'squats', name: '100 Squats', detail: 'z. B. 5 × 20 oder 4 × 25 Wdh.' },
+      { key: 'pushups', name: '100 Liegestütze', detail: 'z. B. 5 × 20 oder 4 × 25 Wdh.' },
+      { key: 'situps', name: '100 Sit-ups', detail: 'z. B. 5 × 20 oder 4 × 25 Wdh.' },
+      { key: 'lateral', name: 'Seitheben vorgebeugt', detail: '3 Sätze × 12–15 Wdh., leichtes Gewicht' },
+    ]},
+    5: { type: 'rest', label: 'Ruhetag', exercises: [] },
+    6: { type: 'rest', label: 'Ruhetag', exercises: [] },
+  };
+
+  function pad2(n){ return String(n).padStart(2,'0'); }
+  function dateKey(y,m,d){ return y + '-' + pad2(m+1) + '-' + pad2(d); }
+  function isoWeekday(date){ return (date.getDay() + 6) % 7; } // 0=Montag
+  function todayKey(){ const d = new Date(); return dateKey(d.getFullYear(), d.getMonth(), d.getDate()); }
+
+  function loadData(){
+    try{ const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : {}; }
+    catch(e){ return {}; }
+  }
+  function saveData(obj){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); return true; }
+    catch(e){ return false; }
+  }
+
+  function dayStatus(key, planDay){
+    if(planDay.type === 'rest') return 'rest';
+    const data = loadData();
+    const entry = data[key];
+    const exercises = planDay.exercises;
+    const allChecked = exercises.length > 0 && exercises.every(ex => entry && entry[ex.key]);
+    if(allChecked) return 'done';
+    const todayD = new Date(); todayD.setHours(0,0,0,0);
+    const [y,m,d] = key.split('-').map(Number);
+    const cellD = new Date(y, m-1, d);
+    if(cellD < todayD) return 'missed';
+    return 'pending';
+  }
+
+  let viewYear, viewMonth;
+
+  function initMonth(){
+    const now = new Date();
+    viewYear = now.getFullYear();
+    viewMonth = now.getMonth();
+  }
+
+  function renderCalendar(){
+    document.getElementById('cal-month-label').textContent = MONTH_NAMES[viewMonth] + ' ' + viewYear;
+    const grid = document.getElementById('cal-grid');
+    grid.innerHTML = '';
+
+    const firstOfMonth = new Date(viewYear, viewMonth, 1);
+    const leadBlanks = isoWeekday(firstOfMonth);
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const tKey = todayKey();
+
+    for(let i = 0; i < leadBlanks; i++){
+      const empty = document.createElement('div');
+      empty.className = 'cal-cell empty';
+      grid.appendChild(empty);
+    }
+
+    let doneCount = 0, totalTrainingDays = 0;
+
+    for(let d = 1; d <= daysInMonth; d++){
+      const key = dateKey(viewYear, viewMonth, d);
+      const dObj = new Date(viewYear, viewMonth, d);
+      const wd = isoWeekday(dObj);
+      const planDay = PLAN[wd];
+      const status = dayStatus(key, planDay);
+
+      if(planDay.type !== 'rest'){
+        totalTrainingDays++;
+        if(status === 'done') doneCount++;
+      }
+
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell' + (key === tKey ? ' today' : '') + (planDay.type === 'rest' ? ' rest-cell' : '');
+
+      const num = document.createElement('span');
+      num.className = 'day-num';
+      num.textContent = d;
+      cell.appendChild(num);
+
+      const dot = document.createElement('span');
+      dot.className = 'type-dot ' + planDay.type;
+      cell.appendChild(dot);
+
+      if(status === 'done'){
+        const icon = document.createElement('span');
+        icon.className = 'status-icon done';
+        icon.textContent = '✓';
+        cell.appendChild(icon);
+      } else if(status === 'missed'){
+        const icon = document.createElement('span');
+        icon.className = 'status-icon missed';
+        icon.textContent = '✕';
+        cell.appendChild(icon);
+      }
+
+      cell.addEventListener('click', () => openDayModal(key, wd));
+      grid.appendChild(cell);
+    }
+
+    document.getElementById('progress-done').textContent = doneCount;
+    document.getElementById('progress-total').textContent = totalTrainingDays;
+    document.getElementById('progress-streak').textContent = computeStreak();
+  }
+
+  function computeStreak(){
+    let streak = 0;
+    let cursor = new Date();
+    cursor.setHours(0,0,0,0);
+    // Falls heute noch nicht erledigt und Trainingstag ist, bei gestern starten
+    while(true){
+      const key = dateKey(cursor.getFullYear(), cursor.getMonth(), cursor.getDate());
+      const wd = isoWeekday(cursor);
+      const planDay = PLAN[wd];
+      if(planDay.type === 'rest'){
+        cursor.setDate(cursor.getDate() - 1);
+        continue;
+      }
+      const status = dayStatus(key, planDay);
+      if(status === 'done'){
+        streak++;
+        cursor.setDate(cursor.getDate() - 1);
+      } else if(key === todayKey()){
+        cursor.setDate(cursor.getDate() - 1);
+      } else {
+        break;
+      }
+      if(streak > 400) break;
+    }
+    return streak;
+  }
+
+  document.getElementById('cal-prev').addEventListener('click', () => {
+    viewMonth--; if(viewMonth < 0){ viewMonth = 11; viewYear--; }
+    renderCalendar();
+  });
+  document.getElementById('cal-next').addEventListener('click', () => {
+    viewMonth++; if(viewMonth > 11){ viewMonth = 0; viewYear++; }
+    renderCalendar();
+  });
+
+  // --- Day modal ---
+  let activeDayKey = null;
+  let activePlanDay = null;
+  const dayOverlay = document.getElementById('day-overlay');
+
+  function formatDayTitle(key){
+    const [y,m,d] = key.split('-').map(Number);
+    const dt = new Date(y, m-1, d);
+    return WEEKDAY_NAMES[dt.getDay()] + ', ' + d + '. ' + MONTH_NAMES[m-1] + ' ' + y;
+  }
+
+  function openDayModal(key, wd){
+    activeDayKey = key;
+    activePlanDay = PLAN[wd];
+    document.getElementById('day-title').textContent = formatDayTitle(key);
+
+    if(activePlanDay.type === 'rest'){
+      document.getElementById('day-eyebrow').textContent = 'Ruhetag';
+      document.getElementById('day-type-label').textContent = '';
+      document.getElementById('day-rest-note').style.display = 'block';
+      document.getElementById('day-ex-wrap').style.display = 'none';
+    } else {
+      document.getElementById('day-eyebrow').textContent = 'Trainingstag';
+      document.getElementById('day-type-label').textContent = activePlanDay.label;
+      document.getElementById('day-rest-note').style.display = 'none';
+      document.getElementById('day-ex-wrap').style.display = 'block';
+      renderExerciseList();
+    }
+    dayOverlay.classList.add('open');
+  }
+  function closeDayModal(){
+    dayOverlay.classList.remove('open');
+    activeDayKey = null; activePlanDay = null;
+  }
+  document.getElementById('day-close').addEventListener('click', closeDayModal);
+  dayOverlay.addEventListener('click', (ev) => { if(ev.target === dayOverlay) closeDayModal(); });
+
+  function renderExerciseList(){
+    const data = loadData();
+    const entry = data[activeDayKey] || {};
+    const wrap = document.getElementById('ex-list');
+    wrap.innerHTML = '';
+    activePlanDay.exercises.forEach(ex => {
+      const checked = !!entry[ex.key];
+      const item = document.createElement('div');
+      item.className = 'ex-item' + (checked ? ' checked' : '');
+      item.innerHTML =
+        '<span class="ex-check">' + (checked ? '✓' : '') + '</span>' +
+        '<span class="ex-text"><span class="ex-name">' + ex.name + '</span>' +
+        '<div class="ex-detail">' + ex.detail + '</div></span>';
+      item.addEventListener('click', () => toggleExercise(ex.key));
+      wrap.appendChild(item);
+    });
+  }
+
+  function toggleExercise(exKey){
+    const data = loadData();
+    if(!data[activeDayKey]) data[activeDayKey] = {};
+    data[activeDayKey][exKey] = !data[activeDayKey][exKey];
+    saveData(data);
+    renderExerciseList();
+  }
+
+  document.getElementById('day-mark-all').addEventListener('click', () => {
+    const data = loadData();
+    const entry = {};
+    activePlanDay.exercises.forEach(ex => { entry[ex.key] = true; });
+    data[activeDayKey] = entry;
+    saveData(data);
+    renderExerciseList();
+    renderCalendar();
+  });
+
+  document.getElementById('day-reset').addEventListener('click', () => {
+    const data = loadData();
+    delete data[activeDayKey];
+    saveData(data);
+    renderExerciseList();
+    renderCalendar();
+  });
+
+  // --- Help modal ---
+  const helpOverlay = document.getElementById('help-overlay');
+  document.getElementById('help-toggle').addEventListener('click', () => helpOverlay.classList.add('open'));
+  document.getElementById('help-close').addEventListener('click', () => helpOverlay.classList.remove('open'));
+  helpOverlay.addEventListener('click', (ev) => { if(ev.target === helpOverlay) helpOverlay.classList.remove('open'); });
+
+  initMonth();
+  renderCalendar();
+
+
+/* ---------- nav & theme (shared app shell) ---------- */
+document.getElementById('menu-toggle').addEventListener('click', () => {
+  document.getElementById('menu-panel').classList.toggle('open');
+});
+document.addEventListener('click', (ev) => {
+  const panel = document.getElementById('menu-panel');
+  const toggle = document.getElementById('menu-toggle');
+  if(panel.classList.contains('open') && !panel.contains(ev.target) && !toggle.contains(ev.target)){
+    panel.classList.remove('open');
+  }
+});
+const THEME_KEY = 'sparrechner_theme_v1';
+function applyTheme(theme){
+  if(!theme || theme === 'midnight') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', theme);
+  document.querySelectorAll('.theme-swatch').forEach(btn => {
+    btn.classList.toggle('active', (btn.dataset.swatch || 'midnight') === (theme || 'midnight'));
+  });
+}
+document.querySelectorAll('.theme-swatch').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const theme = btn.dataset.swatch;
+    try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
+    applyTheme(theme);
+  });
+});
+applyTheme((function(){ try{ return localStorage.getItem(THEME_KEY) || 'midnight'; }catch(e){ return 'midnight'; } })());
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+
+</body>
+</html>
