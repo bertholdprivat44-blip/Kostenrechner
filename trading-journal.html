@@ -80,6 +80,22 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .acct-stats .ddbar.danger i{background:var(--danger)}
 @media (max-width:480px){.acct-stats{grid-template-columns:1fr 1fr}}
 .crown{filter:none}
+button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.btn,.seg button{min-height:44px}
+.grid label small.hint{text-transform:none;letter-spacing:0;font-size:.68rem;opacity:.7;line-height:1.35}
+.acct-select{flex:1;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--card-line);border-radius:11px;padding:10px 14px;min-height:52px;color:var(--ink);cursor:pointer}
+.acct-select .as-main{display:flex;flex-direction:column;min-width:0}
+.acct-select b{font-family:'Fraunces',serif;font-weight:500;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acct-select small{color:var(--ink-soft);font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acct-select .as-chev{color:var(--ink-soft);flex:none}
+.acct-gear{min-height:52px;width:52px;color:var(--ink)}
+.ap-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px;border:1px solid var(--card-line);border-radius:10px;margin-bottom:8px;cursor:pointer;background:rgba(255,255,255,.02)}
+.ap-item.on{border-color:var(--brass);box-shadow:inset 0 0 0 1.5px var(--brass)}
+.ap-main{display:flex;flex-direction:column;min-width:0}
+.ap-main b{font-family:'Fraunces',serif;font-weight:500}
+.ap-main small{color:var(--ink-soft);font-size:.74rem}
+.ap-side{display:flex;align-items:center;gap:10px;font-family:'Fraunces',serif;flex:none}
+.ap-edit{background:none;border:1px solid var(--card-line);width:40px;height:40px;border-radius:8px;font-size:1rem}
 
 /* calendar */
 .cal{background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--card-line);border-radius:4px;padding:20px;box-shadow:0 24px 60px -28px rgba(0,0,0,.7)}
@@ -265,6 +281,33 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
 
 <button class="fab" id="fab">+ Trade eintragen</button>
 
+<div class="modal" id="acctPickModal">
+  <div class="sheet">
+    <h3>Konto wählen</h3>
+    <div id="acctPickList"></div>
+    <div class="row">
+      <button class="btn" id="apClose" type="button">Schließen</button>
+      <button class="btn primary" id="apNew" type="button">+ Neues Konto</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="moveModal">
+  <div class="sheet">
+    <h3>Trade auf anderen Tag</h3>
+    <p class="impinfo" id="mvInfo"></p>
+    <div class="grid">
+      <label class="full">Zieldatum<input id="mvDate" type="date"></label>
+      <label class="full">Uhrzeit (optional ändern)<input id="mvTime" type="time"></label>
+    </div>
+    <div class="row">
+      <button class="btn" id="mvCancel" type="button">Abbrechen</button>
+      <button class="btn" id="mvMove" type="button">Verschieben</button>
+      <button class="btn primary" id="mvCopy" type="button">Kopieren</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
   <div class="sheet">
     <h3 id="mTitle">Trade eintragen</h3>
@@ -272,6 +315,11 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
       <label class="full">Ergebnis
         <div class="seg" id="fResult"><button type="button" data-v="win">Win</button><button type="button" data-v="loss">Loss</button><button type="button" data-v="be">BE</button></div>
       </label>
+      <label class="full" id="fAccountWrap">Konto
+        <select id="fAccount"></select>
+      </label>
+      <label>Gewinn / Verlust<input id="fPnl" inputmode="decimal" placeholder="z.B. 300"><small class="hint">Betrag ohne Vorzeichen – Win/Loss bestimmt + oder −</small></label>
+      <label>Kommission<input id="fCommission" inputmode="decimal" placeholder="0"><small class="hint">wird immer abgezogen</small></label>
       <label>Paar<input id="fSym" placeholder="US100" autocapitalize="characters"></label>
       <label>Richtung
         <div class="seg" id="fDir"><button type="button" data-v="long">Long</button><button type="button" data-v="short">Short</button></div>
@@ -282,12 +330,10 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
       <label>Stop Loss<input id="fSl" inputmode="decimal"></label>
       <label>Take Profit<input id="fTp" inputmode="decimal"></label>
       <label>Exit (optional)<input id="fExit" inputmode="decimal" placeholder="leer = TP/SL"></label>
-      <label>Risiko<input id="fRisk" inputmode="decimal" placeholder="z.B. 100"></label>
-      <label>P&amp;L (optional)<input id="fPnl" inputmode="decimal" placeholder="auto"></label>
-      <label>Kommission (optional)<input id="fCommission" inputmode="decimal" placeholder="0"></label>
+      <label class="full">Risiko (optional – nur für R-Wert)<input id="fRisk" inputmode="decimal" placeholder="z.B. 100"></label>
       <label class="full">Notiz<input id="fNotes" maxlength="200" placeholder="Setup, Fehler, Gedanken"></label>
       <div class="full">
-        <label class="drop" id="drop"><input type="file" id="fFile" accept="image/*" multiple>Screenshot tippen oder reinziehen<br><small style="opacity:.7">Entry / SL / TP / Paar / Datum / Uhrzeit / Ergebnis / Richtung / Risiko / Kommission werden versucht automatisch zu erkennen</small></label>
+        <label class="drop" id="drop"><input type="file" id="fFile" accept="image/*" multiple>Screenshot tippen oder reinziehen<br><small style="opacity:.7">Entry / SL / TP / Paar / Datum / Uhrzeit / Ergebnis / Richtung / Gewinn / Kommission werden versucht automatisch zu erkennen</small></label>
         <button type="button" class="btn" id="pasteBtn" style="width:100%;margin-top:8px">📋 Bild aus Zwischenablage einfügen</button>
         <button type="button" class="btn" id="tvTemplateBtn" style="width:100%;margin-top:8px">📋 Vorlage für TradingView-Notiz kopieren</button>
         <p style="font-size:.72rem;color:var(--ink-soft);margin:6px 2px 0">Vorlage in TradingView als Text-Notiz einfügen, Werte anpassen, dann Screenshot machen — wird beim Hochladen zuverlässig wiedererkannt.</p>
@@ -365,11 +411,10 @@ function accountEquityStats(acc, trades){
 
 function renderAccounts(){
   const bar = $("acctBar");
-  bar.innerHTML = S.accounts.map(a => {
-    const crown = isMaster(a) ? '<span class="crown">👑</span>' : "";
-    const sub = [a.firma, a.phase].filter(Boolean).join(" · ") || "—";
-    return `<div class="acct-chip${a.id===S.activeAccountId?" on":""}" data-acct="${a.id}"><b>${crown}${esc(a.name||"Konto")}</b><small>${esc(sub)}</small></div>`;
-  }).join("") + `<div class="acct-chip add" id="acctAdd" title="Konto hinzufügen">+</div><div class="acct-gear" id="acctGear" title="Konto bearbeiten">⚙️</div>`;
+  const acc0 = activeAccount();
+  const crown0 = isMaster(acc0) ? '<span class="crown">👑</span>' : "";
+  const sub0 = [acc0.firma, acc0.phase].filter(Boolean).join(" · ") || "Tippen zum Wählen / Hinzufügen";
+  bar.innerHTML = `<button type="button" class="acct-select" id="acctPick"><span class="as-main"><b>${crown0}${esc(acc0.name||"Konto")}</b><small>${esc(sub0)}${S.accounts.length>1?" · "+S.accounts.length+" Konten":""}</small></span><span class="as-chev">▾</span></button><button type="button" class="acct-gear" id="acctGear" title="Konto bearbeiten">⚙️</button>`;
 
   const acc = activeAccount();
   const st = accountEquityStats(acc, activeTrades());
@@ -390,13 +435,27 @@ function renderAccounts(){
     </div>`;
 }
 $("acctBar").addEventListener("click", e => {
-  const add = e.target.closest("#acctAdd");
-  const gear = e.target.closest("#acctGear");
-  const chip = e.target.closest("[data-acct]");
-  if (add) return openAcctModal(null);
-  if (gear) return openAcctModal(activeAccount());
-  if (chip) setActiveAccount(chip.dataset.acct);
+  if (e.target.closest("#acctGear")) return openAcctModal(activeAccount());
+  if (e.target.closest("#acctPick")) return openAcctPicker();
 });
+function openAcctPicker(){ renderAcctPickList(); $("acctPickModal").classList.add("open"); }
+function closeAcctPicker(){ $("acctPickModal").classList.remove("open"); }
+function renderAcctPickList(){
+  $("acctPickList").innerHTML = S.accounts.map(a => {
+    const st = accountEquityStats(a, S.trades.filter(t => (t.accountId||DEFAULT_ACCOUNT_ID) === a.id));
+    const sub = [a.firma, a.phase].filter(Boolean).join(" · ") || "—";
+    return `<div class="ap-item${a.id===S.activeAccountId?" on":""}" data-pick="${esc(a.id)}"><div class="ap-main"><b>${isMaster(a)?"👑 ":""}${esc(a.name||"Konto")}</b><small>${esc(sub)}</small></div><div class="ap-side"><span>${st.start?S.cur+f(st.equity):"–"}</span><button type="button" class="ap-edit" data-edit="${esc(a.id)}" aria-label="Bearbeiten">⚙️</button></div></div>`;
+  }).join("");
+}
+$("acctPickList").addEventListener("click", e => {
+  const ed = e.target.closest("[data-edit]");
+  if (ed){ const acc = S.accounts.find(a=>a.id===ed.dataset.edit); closeAcctPicker(); return openAcctModal(acc); }
+  const it = e.target.closest("[data-pick]");
+  if (it){ closeAcctPicker(); setActiveAccount(it.dataset.pick); }
+});
+$("apNew").addEventListener("click", () => { closeAcctPicker(); openAcctModal(null); });
+$("apClose").addEventListener("click", closeAcctPicker);
+$("acctPickModal").addEventListener("click", e => { if (e.target.id === "acctPickModal") closeAcctPicker(); });
 let acctEditId = null;
 function openAcctModal(acc){
   acctEditId = acc ? acc.id : null;
@@ -487,19 +546,22 @@ function calc(t){
   const dir = t.direction || (e!==null && sl!==null ? (sl < e ? "long" : "short") : null);
   const dist = e!==null && sl!==null && e!==sl ? Math.abs(e - sl) : null;
   const planRR = dist && tp!==null ? Math.abs(tp - e) / dist : null;
+  const manualPnl = num(t.pnl);
   let rr = null;
   if (dist && ex!==null) rr = (dir === "short" ? e - ex : ex - e) / dist;
+  else if (t.result === "be") rr = 0;
+  else if (manualPnl !== null && risk) rr = manualPnl / risk;   // eingegebener Gewinn/Verlust = exakt
   else if (t.result === "win") rr = planRR;
   else if (t.result === "loss") rr = dist ? -1 : null;
-  else if (t.result === "be") rr = 0;
-  let pnl = num(t.pnl);
+  let pnl = manualPnl;
   if (pnl === null && risk !== null) {
     if (t.result === "loss" && rr === null) pnl = -risk;
     else if (t.result === "be") pnl = 0;
     else if (rr !== null) pnl = risk * rr;
   }
-  const commission = num(t.commission);
-  if (pnl !== null && commission) pnl -= commission;
+  const commRaw = num(t.commission);
+  const commission = commRaw ? Math.abs(commRaw) : null;           // Kommission ist immer ein Kostenpunkt
+  if (commission) pnl = (pnl === null ? 0 : pnl) - commission;      // auch wenn nur Kommission eingetragen ist
   if (rr === null && pnl !== null && risk) rr = pnl / risk;
   return { dir, planRR: planRR!==null ? Math.round(planRR*100)/100 : null, rr: rr!==null ? Math.round(rr*100)/100 : null, pnl: pnl!==null ? Math.round(pnl*100)/100 : null, risk, commission };
 }
@@ -635,6 +697,7 @@ function tradeCard(t){
     <div class="actions">
       <button class="btn primary" data-act="copy">Für Discord kopieren</button>
       ${t.shots.length?`<button class="btn" data-act="img">Bild kopieren</button>`:""}
+      <button class="btn" data-act="move">Kopieren / Verschieben</button>
       <button class="btn" data-act="edit">Bearbeiten</button>
       <button class="btn" data-act="del">Löschen</button>
     </div></article>`;
@@ -825,6 +888,7 @@ if (window.claude && claude.use) claude.use("sample").then(x => { S.sample = x; 
   const a = el.dataset.act;
   if (a==="copy") (await copyText(tradeText(t))) ? flash(el,"Kopiert ✓") : toast("Kopieren nicht möglich");
   if (a==="edit") openForm(t);
+  if (a==="move") openMove(t);
   if (a==="del") armed(el, () => Store.del(t));
   if (a==="view"){ $("viewerImg").src = t.shots[+el.dataset.i].src; $("viewer").classList.add("open"); }
   if (a==="img") copyImage(t.shots[0].src, el);
@@ -1018,14 +1082,16 @@ function parseTradeFromText(raw){
     if (tm2b) time = pad(+tm2b[2])+":"+tm2b[3];
   }
   let result = null;
-  if (pnl !== null){
+  const em = joined.match(/ergebnis\s*[:=]\s*(win|loss|be|gewinn|verlust)\b/i);
+  if (em){ const v = em[1].toLowerCase(); result = (v==="win"||v==="gewinn") ? "win" : (v==="loss"||v==="verlust") ? "loss" : "be"; }
+  if (result === null && pnl !== null){
     // MT5 & Co. schreiben nie "Win"/"Loss" hin, nur die Profit-Zahl selbst -> Vorzeichen entscheidet, hat Vorrang
     const pnlNum = parseFloat(pnl);
     if (!isNaN(pnlNum)) result = pnlNum > 0 ? "win" : pnlNum < 0 ? "loss" : "be";
   }
   if (result === null){
     // "Stop Loss"/"S/L" enthält das Wort "Loss" -> erst rausfiltern, sonst falscher Treffer bei Gewinn-Trades
-    const safe = joined.replace(/stop[\s-]*loss/gi, "").replace(/s\s*\/\s*l\b/gi, "");
+    const safe = joined.replace(/stop[\s-]*loss/gi, "").replace(/s\s*\/\s*l\b/gi, "").replace(/gewinn\s*\/\s*verlust/gi, "").replace(/profit\s*\/\s*loss/gi, "");
     if (/\bwin\b|\bgewinn\b/i.test(safe)) result = "win";
     else if (/\bloss\b|\blose\b|\blost\b|\bverlust\b/i.test(safe)) result = "loss";
     else if (/\bBE\b|\bbreak\s*-?\s*even\b|\bbreakeven\b/i.test(safe)) result = "be";
@@ -1217,11 +1283,17 @@ function readForm(){
   const t = { ...S.form, result: segVal("fResult"), direction: segVal("fDir") };
   for (const [id,k] of Object.entries(FIELDS)) t[k] = $(id).value.trim();
   t.symbol = t.symbol.toUpperCase();
+  const acctSel = $("fAccount").value; if (acctSel) t.accountId = acctSel;
+  const amt = num(t.pnl);   // egal wie eingegeben: Win = +, Loss = −
+  if (amt !== null){
+    if (t.result === "win") t.pnl = String(Math.abs(amt));
+    else if (t.result === "loss") t.pnl = String(-Math.abs(amt));
+  }
   return t;
 }
 function updatePreview(){
   const t = readForm(); const c = calc({ ...t, result: t.result || "win" });
-  $("preview").innerHTML = `<span>Geplantes RRR <b>${c.planRR===null?"–":"1:"+f(c.planRR)}</b></span><span>Ergebnis <b class="${c.rr>0?"pos":c.rr<0?"neg":""}">${t.result?rfmt(c.rr):"–"}</b></span><span>P&amp;L <b class="${c.pnl>0?"pos":c.pnl<0?"neg":""}">${t.result?money(c.pnl):"–"}</b></span>`;
+  $("preview").innerHTML = `<span>Geplantes RRR <b>${c.planRR===null?"–":"1:"+f(c.planRR)}</b></span><span>Ergebnis <b class="${c.rr>0?"pos":c.rr<0?"neg":""}">${t.result?rfmt(c.rr):"–"}</b></span><span>P&amp;L (netto) <b class="${c.pnl>0?"pos":c.pnl<0?"neg":""}">${t.result?money(c.pnl):"–"}</b></span>`;
 }
 document.querySelectorAll("#modal input").forEach(i => i.addEventListener("input", updatePreview));
 function renderShots(){
@@ -1229,13 +1301,15 @@ function renderShots(){
 }
 $("fShots").addEventListener("click", e => { const b=e.target.closest("[data-rm]"); if(!b) return; const [s]=S.form.shots.splice(+b.dataset.rm,1); if (s && s.id && !S.form._orig.includes(s.id) && Store.assets) Store.assets.delete(s.id).catch(()=>{}); renderShots(); });
 function openForm(t, files){
-  const lastRisk = activeTrades().slice().sort((a,b)=>b.createdAt-a.createdAt)[0]?.risk || "";
-  S.form = t ? { ...t, shots:[...t.shots] } : { id: uid(), createdAt: Date.now(), shots: [], date: todayIso(), time: nowTime(), risk: lastRisk, accountId: S.activeAccountId };
+  S.form = t ? { ...t, shots:[...t.shots] } : { id: uid(), createdAt: Date.now(), shots: [], date: todayIso(), time: nowTime(), risk: "", accountId: S.activeAccountId };
   S.form._orig = (t?.shots||[]).map(s=>s.id).filter(Boolean);
   S.form._defaultDate = t ? null : S.form.date;
   S.form._defaultTime = t ? null : S.form.time;
   $("mTitle").textContent = t ? "Trade bearbeiten" : "Trade eintragen";
   for (const [id,k] of Object.entries(FIELDS)) $(id).value = S.form[k] ?? "";
+  $("fAccount").innerHTML = S.accounts.map(a => `<option value="${esc(a.id)}">${isMaster(a)?"👑 ":""}${esc(a.name||"Konto")}${a.phase?" · "+esc(a.phase):""}</option>`).join("");
+  $("fAccount").value = S.form.accountId || S.activeAccountId;
+  $("fAccountWrap").style.display = S.accounts.length > 1 ? "" : "none";
   setSeg("fResult", S.form.result || null); setSeg("fDir", S.form.direction || null);
   renderShots(); updatePreview();
   $("modal").classList.add("open");
@@ -1291,6 +1365,7 @@ $("tvTemplateBtn").addEventListener("click", async () => {
     `Entry: ${t.entry || ""}`,
     `SL: ${t.sl || ""}`,
     `TP: ${t.tp || ""}`,
+    `Gewinn/Verlust: ${t.pnl || ""}`,
     `Risiko: ${t.risk || ""}`,
     `Kommission: ${t.commission || ""}`,
     `Datum: ${t.date || todayIso()}`,
@@ -1304,10 +1379,49 @@ $("mSave").addEventListener("click", async () => {
   if (!t.date) return toast("Bitte ein Datum wählen");
   delete t._orig;
   const btn = $("mSave"); btn.disabled = true;
-  try{ await Store.put(t); if (S.sel.size && !S.sel.has(t.date)) S.sel.add(t.date); closeForm(); render(); toast("Gespeichert"); }
+  try{ await Store.put(t);
+    if (t.accountId && t.accountId !== S.activeAccountId){ S.activeAccountId = t.accountId; try{ localStorage.setItem(ACTIVE_ACCOUNT_KEY, t.accountId); }catch(_){} }
+    if (S.sel.size && !S.sel.has(t.date)) S.sel.add(t.date); closeForm(); render(); toast("Gespeichert"); }
   catch(e){ toast("Speichern fehlgeschlagen"); }
   finally{ btn.disabled = false; }
 });
+
+
+/* ---------- Trade auf anderen Tag kopieren / verschieben ---------- */
+let moveTrade = null;
+function openMove(t){
+  moveTrade = t;
+  $("mvInfo").textContent = `${t.symbol||"Trade"} · ${shortDate(t.date)} ${t.time||""}`.trim();
+  $("mvDate").value = todayIso();
+  $("mvTime").value = t.time || "";
+  $("moveModal").classList.add("open");
+}
+function closeMove(){ $("moveModal").classList.remove("open"); moveTrade = null; }
+async function finishMove(copy){
+  const t = moveTrade; if (!t) return;
+  const date = $("mvDate").value; if (!date) return toast("Bitte ein Zieldatum wählen");
+  const time = $("mvTime").value || t.time || "";
+  try{
+    if (copy){
+      const shots = [];
+      for (const s of t.shots || []){
+        try{ if (typeof s.src === "string" && s.src.startsWith("data:")) shots.push(await Store.addImage(dataUrlBlob(s.src))); else shots.push({ ...s }); }
+        catch(e){ shots.push({ ...s }); }
+      }
+      const n = { ...t, id: uid(), createdAt: Date.now(), date, time, shots };
+      delete n._orig;
+      await Store.put(n);
+    } else {
+      await Store.put({ ...t, date, time });
+    }
+    S.sel = new Set([date]); S.cy = +date.slice(0,4); S.cm = +date.slice(5,7)-1;
+    closeMove(); render(); toast((copy ? "Kopiert auf " : "Verschoben auf ") + shortDate(date));
+  }catch(e){ toast("Fehlgeschlagen"); }
+}
+$("mvCancel").addEventListener("click", closeMove);
+$("mvMove").addEventListener("click", () => finishMove(false));
+$("mvCopy").addEventListener("click", () => finishMove(true));
+$("moveModal").addEventListener("click", e => { if (e.target.id === "moveModal") closeMove(); });
 
 /* ---------- boot ---------- */
 S.sel.add(todayIso());
