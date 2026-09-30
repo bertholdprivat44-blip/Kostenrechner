@@ -1166,7 +1166,7 @@ function parseTradeFromText(raw){
   };
   let entry = findAfterLabel(["entry\\s*price","entry","open\\s*price","open","einstieg"]);
   const sl = findAfterLabel(["stop\\s*loss","s\\/l","sl","stop"]);
-  const tp = findAfterLabel(["take\\s*profit","t\\/p","tp","target","ziel"]);
+  let tp = findAfterLabel(["take\\s*profit","t\\/p","tp","target","ziel"]);
   const risk = findAfterLabel(["risk","risiko"]);
   const commission = findAfterLabel(["commission","kommission","comm\\.?","gebühr","gebuehr","fee"]);
   let pnl = findAfterLabel(["profit\\s*\\/\\s*loss","(?<!take\\s)profit(?!\\s*target)","gewinn\\s*\\/\\s*verlust","gewinn","p\\s*&\\s*l","p\\/l","pnl"]);
@@ -1174,6 +1174,8 @@ function parseTradeFromText(raw){
   // dahinter (durch Leerzeichen getrennt) steht oft der Gewinn/Verlust, nur blau/rot eingefärbt,
   // ganz ohne "Profit:"-Text davor. Zeitzeilen (mit ":") werden übersprungen, damit ein Datums-
   // Pfeil wie "13:39:37 → 2026.09.30" nicht versehentlich als Kurszeile erkannt wird.
+  // Der Wert HINTER dem Pfeil ist der Kurs, an dem tatsächlich ausgestiegen wurde - das zählt als
+  // "TP" (überschreibt einen separat gefundenen, ursprünglich geplanten TP-Kurs bewusst).
   let exit = findAfterLabel(["exit\\s*price","close\\s*price","exit","close","schluss"]);
   const priceArrowRe = /(-?[\d][\d.,]*)\s*(?:→|->|➔|›|»)\s*(-?[\d][\d.,]*)(?:\s+(-?[\d]+[.,]\d{2}))?\b/;
   for (const line of lines){
@@ -1181,7 +1183,9 @@ function parseTradeFromText(raw){
     const am = line.match(priceArrowRe);
     if (!am) continue;
     if (!entry) entry = am[1].replace(",", ".");
-    if (!exit) exit = am[2].replace(",", ".");
+    const exitVal = am[2].replace(",", ".");
+    if (!exit) exit = exitVal;
+    tp = exitVal;
     if (pnl === null && am[3]) pnl = am[3].replace(",", ".");
     break;
   }
