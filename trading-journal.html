@@ -1164,16 +1164,40 @@ function parseTradeFromText(raw){
     }
     return null;
   };
-  const entry = findAfterLabel(["entry\\s*price","entry","open\\s*price","open","einstieg"]);
+  let entry = findAfterLabel(["entry\\s*price","entry","open\\s*price","open","einstieg"]);
   const sl = findAfterLabel(["stop\\s*loss","s\\/l","sl","stop"]);
   const tp = findAfterLabel(["take\\s*profit","t\\/p","tp","target","ziel"]);
   const risk = findAfterLabel(["risk","risiko"]);
   const commission = findAfterLabel(["commission","kommission","comm\\.?","gebühr","gebuehr","fee"]);
   let pnl = findAfterLabel(["profit\\s*\\/\\s*loss","(?<!take\\s)profit(?!\\s*target)","gewinn\\s*\\/\\s*verlust","gewinn","p\\s*&\\s*l","p\\/l","pnl"]);
-  // MT5 zeigt "Exit" oft als Pfeil: "20100.00 → 20125.00" oder "20100.00 -> 20125.00"
+  // MT5 zeigt Entry/Exit oft NUR als Pfeil ganz ohne Label: "0.98860 → 0.98838" - und direkt
+  // dahinter (durch Leerzeichen getrennt) steht oft der Gewinn/Verlust, nur blau/rot eingefärbt,
+  // ganz ohne "Profit:"-Text davor. Zeitzeilen (mit ":") werden übersprungen, damit ein Datums-
+  // Pfeil wie "13:39:37 → 2026.09.30" nicht versehentlich als Kurszeile erkannt wird.
   let exit = findAfterLabel(["exit\\s*price","close\\s*price","exit","close","schluss"]);
-  if (!exit){ const am = joined.match(/-?[\d.,]+\s*(?:→|->|➔|›|»)\s*(-?[\d][\d.,]*)/); if (am) exit = am[1].replace(",", "."); }
-  const knownPairs = ["EURUSD","GBPUSD","USDJPY","USDCHF","AUDUSD","NZDUSD","USDCAD","EURGBP","EURJPY","GBPJPY",
+  const priceArrowRe = /(-?[\d][\d.,]*)\s*(?:→|->|➔|›|»)\s*(-?[\d][\d.,]*)(?:\s+(-?[\d]+[.,]\d{2}))?\b/;
+  for (const line of lines){
+    if (line.includes(":")) continue;
+    const am = line.match(priceArrowRe);
+    if (!am) continue;
+    if (!entry) entry = am[1].replace(",", ".");
+    if (!exit) exit = am[2].replace(",", ".");
+    if (pnl === null && am[3]) pnl = am[3].replace(",", ".");
+    break;
+  }
+  if (pnl === null){
+    // Fallback: letzte Zahl mit 2 Nachkommastellen am Ende einer "buy"/"sell"-Zeile (Listenansicht),
+    // ohne dabei die Lot-Größe direkt hinter buy/sell zu erwischen.
+    for (const line of lines){
+      if (!/\b(buy|sell)\b/i.test(line)) continue;
+      const afterSide = line.replace(/\b(buy|sell)\s+[\d.,]+/i, "");
+      const nums = afterSide.match(/-?\d+[.,]\d{2}\b/g);
+      if (nums && nums.length){ pnl = nums[nums.length-1].replace(",", "."); break; }
+    }
+  }
+  const knownPairs = ["EURUSD","GBPUSD","USDJPY","USDCHF","AUDUSD","NZDUSD","USDCAD","EURGBP","EURJPY","EURCHF",
+    "EURAUD","EURCAD","EURNZD","GBPJPY","GBPCHF","GBPAUD","GBPCAD","GBPNZD","AUDJPY","AUDCHF","AUDCAD","AUDNZD",
+    "NZDJPY","NZDCHF","NZDCAD","CADJPY","CADCHF","CHFJPY",
     "XAUUSD","XAGUSD","US100","US30","US500","NAS100","SPX500","GER40","DE40","UK100","BTCUSD","ETHUSD"];
   let pair = null;
   for (const p of knownPairs){ if (new RegExp(p,"i").test(joined.replace(/\s|\/|-/g,""))){ pair = p; break; } }
