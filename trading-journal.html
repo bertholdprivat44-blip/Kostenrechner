@@ -103,6 +103,13 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .payout-row .pr-del{background:none;border:none;color:var(--ink-soft);flex:none;font-size:.9rem;min-height:32px;min-width:32px}
 .payout-row .pr-del:hover{color:var(--danger)}
 .btn.full{grid-column:1/-1}
+.cand-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--card-line)}
+.grid .cand-row label{text-transform:none;letter-spacing:0;font-size:.86rem;flex-direction:row;align-items:center;gap:10px;color:var(--ink);flex:1;min-width:0}
+.grid .cand-row input[type=checkbox]{width:22px;height:22px;flex:none;accent-color:var(--brass);padding:0}
+.grid .cand-row input.cand-f{width:84px;flex:none}
+.cand-row small{display:block;color:var(--ink-soft);font-size:.7rem}
+.hint2{font-size:.72rem;color:var(--ink-soft);margin:8px 0 0;line-height:1.45}
+.mirror-tag{display:inline-block;font-size:.7rem;letter-spacing:.03em;color:var(--brass);border:1px solid var(--brass);border-radius:99px;padding:2px 10px;margin:0 0 10px}
 
 /* calendar */
 .cal{background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--card-line);border-radius:4px;padding:20px;box-shadow:0 24px 60px -28px rgba(0,0,0,.7)}
@@ -280,6 +287,33 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
       <label>Profit Split – dein Anteil (%)<input id="aSplit" inputmode="decimal" placeholder="z. B. 80"><small class="hint">bei Auszahlungen wird dein Anteil automatisch vorgerechnet</small></label>
       <label class="full">Regeln (frei editierbar)<textarea id="aRules" rows="4" placeholder="z. B. keine News-Trades, max. 2 Trades/Tag, kein Trade über Nacht..."></textarea></label>
     </div>
+    <div class="full" id="copyWrap" style="margin-top:16px">
+      <label style="display:block;font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px">Copy-Trading</label>
+      <div class="grid" style="gap:8px">
+        <label class="full">Rolle dieses Kontos
+          <select id="aCopyRole"><option value="none">Kein Copy-Trading</option><option value="lead">Lead-Konto (wird kopiert)</option><option value="copy">Copy-Konto (kopiert einen Lead)</option></select>
+        </label>
+        <label class="full" id="copyBaseWrap" style="display:none">Größe für den Faktor
+          <input id="aCopyBase" inputmode="decimal" placeholder="leer = Kontogröße / Start">
+          <small class="hint">z. B. 5.000 – auch wenn gerade 5.300 auf dem Konto sind. Aus dieser Zahl wird der Faktor berechnet, nicht aus dem aktuellen Kontostand.</small>
+        </label>
+        <div class="full" id="copyLeadBox" style="display:none">
+          <div id="copyCandList"></div>
+          <label class="full" style="margin-top:10px">Neue Copy-Konten kopieren ab<input id="aCopySinceNew" type="date"><small class="hint">Standard heute: frühere Trades des Leads werden nicht nachträglich aufs Konto gerechnet. Leer = rückwirkend alle.</small></label>
+          <p class="hint2">Haken setzen = Konto ist Copy-Konto dieses Leads. Faktor leer = automatisch aus den Größen. Screenshots gibt es nur beim Lead.</p>
+        </div>
+        <div class="full" id="copyFollowBox" style="display:none">
+          <div class="grid" style="gap:8px">
+            <label class="full">Kopiert die Trades von (Lead-Konto)<select id="aCopyOf"></select></label>
+            <label>Faktor<input id="aCopyFactor" inputmode="decimal" placeholder="auto"><small class="hint">leer = automatisch</small></label>
+            <label>Ab Datum<input id="aCopySince" type="date"><small class="hint">leer = alle Trades rückwirkend</small></label>
+            <p class="full hint2" id="copyFactorPreview" style="margin:0"></p>
+            <button type="button" class="btn full" id="copyTakeRules">Regeln &amp; Limits vom Lead übernehmen</button>
+          </div>
+        </div>
+        <p class="full hint2" style="margin:2px 0 0">Regeln, Drawdown-Limits, Gewinnziel, Profit-Split und Auszahlungen gelten pro Konto – stelle sie oben für dieses Konto separat ein.</p>
+      </div>
+    </div>
     <div class="full" id="payoutWrap" style="margin-top:16px">
       <label style="display:block;font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px">Auszahlungen</label>
       <div id="payoutList"></div>
@@ -350,7 +384,8 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
       <label>Stop Loss<input id="fSl" inputmode="decimal"></label>
       <label>Take Profit<input id="fTp" inputmode="decimal"></label>
       <label>Exit (optional)<input id="fExit" inputmode="decimal" placeholder="leer = TP/SL"></label>
-      <label class="full">Risiko (optional – nur für R-Wert)<input id="fRisk" inputmode="decimal" placeholder="z.B. 100"></label>
+      <label>Swap (optional)<input id="fSwap" inputmode="decimal" placeholder="0"><small class="hint">wie in MT5: Minus = Kosten, Plus = Gutschrift</small></label>
+      <label>Risiko (optional)<input id="fRisk" inputmode="decimal" placeholder="z.B. 100"><small class="hint">nur für den R-Wert</small></label>
       <label class="full">Notiz<input id="fNotes" maxlength="200" placeholder="Setup, Fehler, Gedanken"></label>
       <div class="full">
         <label class="drop" id="drop"><input type="file" id="fFile" accept="image/*" multiple>Screenshot tippen oder reinziehen<br><small style="opacity:.7">Entry / SL / TP / Paar / Datum / Uhrzeit / Ergebnis / Richtung / Gewinn / Kommission werden versucht automatisch zu erkennen</small></label>
@@ -358,6 +393,7 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
         <button type="button" class="btn" id="tvTemplateBtn" style="width:100%;margin-top:8px">📋 Vorlage für TradingView-Notiz kopieren</button>
         <p style="font-size:.72rem;color:var(--ink-soft);margin:6px 2px 0">Vorlage in TradingView als Text-Notiz einfügen, Werte anpassen, dann Screenshot machen — wird beim Hochladen zuverlässig wiedererkannt.</p>
         <div class="fshots" id="fShots"></div>
+        <details id="ocrRawWrap" style="display:none;margin-top:8px"><summary style="cursor:pointer;font-size:.74rem;color:var(--ink-soft)">Erkannten Rohtext anzeigen</summary><pre id="ocrRaw" style="white-space:pre-wrap;font-size:.7rem;color:var(--ink-soft);max-height:160px;overflow:auto;margin:6px 0 0"></pre></details>
       </div>
       <div class="full preview" id="preview"></div>
     </div>
@@ -397,7 +433,38 @@ function loadAccounts(){
 }
 function saveAccounts(){ try{ localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(S.accounts)); }catch(e){} }
 function activeAccount(){ return S.accounts.find(a=>a.id===S.activeAccountId) || S.accounts[0]; }
-function activeTrades(){ return S.trades.filter(t => (t.accountId||DEFAULT_ACCOUNT_ID) === S.activeAccountId); }
+function ownTrades(accId){ return S.trades.filter(t => (t.accountId||DEFAULT_ACCOUNT_ID) === accId); }
+/* ---------- Copy-Trading: Copy-Konten bekommen live die Trades ihres Lead-Kontos (mit Faktor umgerechnet) ---------- */
+function leadOf(acc){ return acc && acc.copyOf ? (S.accounts.find(a => a.id === acc.copyOf) || null) : null; }
+function followersOf(accId){ return S.accounts.filter(a => a.copyOf === accId); }
+function baseOf(a){ return (a && (num(a.copyBase) || num(a.startBalance))) || null; }   // Größe fürs Kopieren - NICHT der aktuelle Kontostand
+function fmtFactor(v){ return v === null || v === undefined ? "–" : f(v, v < 0.1 ? 3 : 2); }
+function copyFactorOf(acc){
+  const fx = num(acc.copyFactor); if (fx !== null && fx > 0) return fx;
+  const lead = leadOf(acc), a = baseOf(acc), b = lead ? baseOf(lead) : null;
+  return (a && b) ? a / b : 1;                 // leer = automatisch aus den eingegebenen Größen
+}
+function scaleTrade(t, k){
+  const o = { ...t };
+  ["pnl","commission","swap","risk"].forEach(key => { const v = num(t[key]); if (v !== null) o[key] = String(Math.round(v * k * 100) / 100); });
+  return o;
+}
+function mirrorTrade(t, acc, lead, k){
+  return { ...scaleTrade(t, k), id: "m|" + t.id + "|" + acc.id, accountId: acc.id, shots: t.shots || [], _mirror: true, _leadTradeId: t.id, _leadAccId: lead.id, _k: k };
+}
+function mirroredFor(acc){
+  const lead = leadOf(acc); if (!lead) return [];
+  const k = copyFactorOf(acc);
+  return ownTrades(lead.id).filter(t => !acc.copySince || t.date >= acc.copySince).map(t => mirrorTrade(t, acc, lead, k));
+}
+function accountTradesAll(acc){ return ownTrades(acc.id).concat(mirroredFor(acc)); }
+function activeTrades(){ return accountTradesAll(activeAccount()); }
+function findTradeAny(id){ return S.trades.find(x => x.id === id) || activeTrades().find(x => x.id === id) || null; }
+function copyGroupOf(acc){ const lead = leadOf(acc) || acc; const followers = followersOf(lead.id); return followers.length ? { lead, followers } : null; }
+function copyTag(a){
+  const l = leadOf(a); if (l) return "Copy von " + (l.name||"Lead") + " ×" + fmtFactor(copyFactorOf(a));
+  const n = followersOf(a.id).length; return n ? "Lead · " + n + " Copy-" + (n > 1 ? "Konten" : "Konto") : "";
+}
 function isMaster(acc){ return /master/i.test(acc.phase||"") || /master/i.test(acc.name||""); }
 
 const S = { trades: [], sel: new Set(), edit: null, form: null, cur: "$", cy: new Date().getFullYear(), cm: new Date().getMonth(),
@@ -439,7 +506,7 @@ function renderAccounts(){
   const bar = $("acctBar");
   const acc0 = activeAccount();
   const crown0 = isMaster(acc0) ? '<span class="crown">👑</span>' : "";
-  const sub0 = [acc0.firma, acc0.phase].filter(Boolean).join(" · ") || "Tippen zum Wählen / Hinzufügen";
+  const sub0 = [acc0.firma, acc0.phase, copyTag(acc0)].filter(Boolean).join(" · ") || "Tippen zum Wählen / Hinzufügen";
   bar.innerHTML = `<button type="button" class="acct-select" id="acctPick"><span class="as-main"><b>${crown0}${esc(acc0.name||"Konto")}</b><small>${esc(sub0)}${S.accounts.length>1?" · "+S.accounts.length+" Konten":""}</small></span><span class="as-chev">▾</span></button><button type="button" class="acct-gear" id="acctGear" title="Konto bearbeiten">⚙️</button>`;
 
   const acc = activeAccount();
@@ -449,7 +516,7 @@ function renderAccounts(){
   if (ddPct !== null){ if (ddPct < 25) ddBarClass = "danger"; else if (ddPct < 50) ddBarClass = "warn"; }
   $("acctStatsWrap").innerHTML = `
     <div class="acct-stats">
-      <div class="head"><h3>${crown}${esc(acc.name||"Konto")}</h3><small>${st.start?"" : "Kontogröße in ⚙️ eintragen für Drawdown-Berechnung"}</small></div>
+      <div class="head"><h3>${crown}${esc(acc.name||"Konto")}</h3><small>${esc(copyTag(acc))}${copyTag(acc) && !st.start ? " · " : ""}${st.start?"" : "Kontogröße in ⚙️ eintragen für Drawdown-Berechnung"}</small></div>
       <div class="stat"><small>Kontostand</small><b>${st.start?S.cur+f(st.balance):"–"}</b></div>
       <div class="stat"><small>Höchststand</small><b>${st.start?S.cur+f(st.peak):"–"}</b></div>
       ${st.totalPayouts?`<div class="stat"><small>Ausgezahlt gesamt</small><b>${S.cur}${f(st.totalPayouts)}</b></div>`:""}
@@ -469,8 +536,8 @@ function openAcctPicker(){ renderAcctPickList(); $("acctPickModal").classList.ad
 function closeAcctPicker(){ $("acctPickModal").classList.remove("open"); }
 function renderAcctPickList(){
   $("acctPickList").innerHTML = S.accounts.map(a => {
-    const st = accountEquityStats(a, S.trades.filter(t => (t.accountId||DEFAULT_ACCOUNT_ID) === a.id));
-    const sub = [a.firma, a.phase].filter(Boolean).join(" · ") || "—";
+    const st = accountEquityStats(a, accountTradesAll(a));
+    const sub = [a.firma, a.phase, copyTag(a)].filter(Boolean).join(" · ") || "—";
     return `<div class="ap-item${a.id===S.activeAccountId?" on":""}" data-pick="${esc(a.id)}"><div class="ap-main"><b>${isMaster(a)?"👑 ":""}${esc(a.name||"Konto")}</b><small>${esc(sub)}</small></div><div class="ap-side"><span>${st.start?S.cur+f(st.balance):"–"}</span><button type="button" class="ap-edit" data-edit="${esc(a.id)}" aria-label="Bearbeiten">⚙️</button></div></div>`;
   }).join("");
 }
@@ -501,8 +568,59 @@ function openAcctModal(acc){
   $("payoutWrap").style.display = acc ? "" : "none";
   $("pDate").value = todayIso(); $("pAmount").value = ""; $("pNote").value = ""; $("pSplitHint").textContent = "";
   renderPayoutList();
+  fillCopyUI(acc);
   $("acctModal").classList.add("open");
 }
+function formBase(){ return num($("aCopyBase").value) || num($("aStart").value) || null; }
+function applyCopyRoleVisibility(){
+  const r = $("aCopyRole").value;
+  $("copyLeadBox").style.display = r === "lead" ? "" : "none";
+  $("copyFollowBox").style.display = r === "copy" ? "" : "none";
+  $("copyBaseWrap").style.display = r === "none" ? "none" : "";
+}
+function updateCopyPreview(){
+  const exp = num($("aCopyFactor").value), mine = formBase(), lead = baseOf(S.accounts.find(a => a.id === $("aCopyOf").value));
+  $("copyFactorPreview").textContent = (exp !== null && exp > 0) ? "Fester Faktor ×" + fmtFactor(exp) + " – gilt für alle kopierten Trades."
+    : (mine && lead) ? "Automatisch ×" + fmtFactor(mine / lead) + "  (" + S.cur + f(mine) + " ÷ " + S.cur + f(lead) + ")"
+    : "Automatisch ×1 – trage bei beiden Konten die Größe ein (Kontogröße oder „Größe für den Faktor“).";
+}
+function updateCandPlaceholders(){
+  const lead = formBase();
+  document.querySelectorAll("#copyCandList .cand-f").forEach(inp => { const b = Number(inp.dataset.xbase) || null; inp.placeholder = (lead && b) ? "×" + fmtFactor(b / lead) : "auto"; });
+}
+function renderCandList(acc){
+  const rows = S.accounts.filter(x => (!acc || x.id !== acc.id) && followersOf(x.id).length === 0 && (!x.copyOf || (acc && x.copyOf === acc.id)));
+  const own = new Set(acc ? followersOf(acc.id).map(x => x.id) : []);
+  $("copyCandList").innerHTML = rows.length ? rows.map(x => `<div class="cand-row"><label><input type="checkbox" data-cand="${esc(x.id)}"${own.has(x.id) ? " checked" : ""}><span>${esc(x.name||"Konto")}<small>${baseOf(x) ? "Größe " + S.cur + f(baseOf(x)) : "Größe fehlt"}${own.has(x.id) && x.copySince ? " · ab " + deDate(x.copySince) : ""}</small></span></label><input class="cand-f" inputmode="decimal" placeholder="auto" data-candf="${esc(x.id)}" data-xbase="${baseOf(x) || ""}" value="${esc(own.has(x.id) ? (x.copyFactor || "") : "")}"></div>`).join("")
+    : '<p class="hint2">Lege zuerst weitere Konten an – sie lassen sich dann hier als Copy-Konten hinzufügen.</p>';
+  updateCandPlaceholders();
+}
+function fillCopyUI(acc){
+  const followers = acc ? followersOf(acc.id) : [];
+  $("aCopyRole").value = acc && acc.copyOf ? "copy" : (followers.length ? "lead" : "none");
+  const leads = S.accounts.filter(x => (!acc || x.id !== acc.id) && !x.copyOf);
+  $("aCopyOf").innerHTML = leads.map(x => `<option value="${esc(x.id)}">${esc(x.name||"Konto")}${x.phase ? " · " + esc(x.phase) : ""}</option>`).join("");
+  $("aCopyOf").value = (acc && acc.copyOf) || (leads[0] ? leads[0].id : "");
+  $("aCopyBase").value = (acc && acc.copyBase) || "";
+  $("aCopyFactor").value = (acc && acc.copyFactor) || ""; $("aCopySince").value = (acc && acc.copySince) || "";
+  $("aCopySinceNew").value = todayIso();
+  renderCandList(acc); applyCopyRoleVisibility(); updateCopyPreview();
+}
+$("aCopyRole").addEventListener("change", () => {
+  const acc = S.accounts.find(a => a.id === acctEditId) || null;
+  if ($("aCopyRole").value === "lead") renderCandList(acc);
+  if ($("aCopyRole").value === "copy" && !(acc && acc.copyOf) && !$("aCopySince").value) $("aCopySince").value = todayIso();   // neu verknüpft: ab heute
+  applyCopyRoleVisibility(); updateCopyPreview();
+});
+["aCopyBase","aStart"].forEach(id => $(id).addEventListener("input", () => { updateCopyPreview(); updateCandPlaceholders(); }));
+$("aCopyFactor").addEventListener("input", updateCopyPreview);
+$("aCopyOf").addEventListener("change", updateCopyPreview);
+$("copyTakeRules").addEventListener("click", () => {
+  const lead = S.accounts.find(a => a.id === $("aCopyOf").value); if (!lead) return toast("Bitte zuerst ein Lead-Konto wählen");
+  $("aDdType").value = lead.ddType || "static"; $("aMaxDd").value = lead.maxDd || ""; $("aDailyDd").value = lead.dailyDd || "";
+  $("aTarget").value = lead.target || ""; $("aSplit").value = lead.split || ""; $("aRules").value = lead.rules || "";
+  toast("Vom Lead übernommen – du kannst alles für dieses Konto anpassen (gilt nach „Speichern“)");
+});
 function payoutNet(p){
   const gross = num(p.amount)||0;
   const sp = num(p.split);
@@ -555,12 +673,34 @@ $("aSave").addEventListener("click", () => {
     startBalance: $("aStart").value.trim(), ddType: $("aDdType").value, maxDd: $("aMaxDd").value.trim(),
     dailyDd: $("aDailyDd").value.trim(), target: $("aTarget").value.trim(), split: $("aSplit").value.trim(), rules: $("aRules").value.trim()
   };
-  if (acctEditId){
-    const acc = S.accounts.find(a=>a.id===acctEditId); Object.assign(acc, data);
+  const role = $("aCopyRole").value, leadPick = $("aCopyOf").value;
+  if (role === "copy"){
+    if (!leadPick) return toast("Bitte ein Lead-Konto wählen");
+    if (acctEditId && followersOf(acctEditId).length) return toast("Dieses Konto ist selbst Lead – erst die Copy-Konten entfernen");
+  }
+  let target;
+  if (acctEditId){ target = S.accounts.find(a => a.id === acctEditId); Object.assign(target, data); }
+  else {
+    target = { id: uid(), createdAt: Date.now(), payouts: [], ...data };
+    S.accounts.push(target); S.activeAccountId = target.id;
+    try{ localStorage.setItem(ACTIVE_ACCOUNT_KEY, target.id); }catch(_){}
+  }
+  target.copyBase = role === "none" ? "" : $("aCopyBase").value.trim();
+  if (role === "copy"){
+    target.copyOf = leadPick; target.copyFactor = $("aCopyFactor").value.trim(); target.copySince = $("aCopySince").value || "";
   } else {
-    const acc = { id: uid(), createdAt: Date.now(), payouts: [], ...data };
-    S.accounts.push(acc); S.activeAccountId = acc.id;
-    try{ localStorage.setItem(ACTIVE_ACCOUNT_KEY, acc.id); }catch(_){}
+    target.copyOf = ""; target.copyFactor = ""; target.copySince = "";
+    const prev = new Set(followersOf(target.id).map(x => x.id));
+    followersOf(target.id).forEach(x => { x.copyOf = ""; });
+    if (role === "lead"){
+      document.querySelectorAll("#copyCandList [data-cand]").forEach(cb => {
+        if (!cb.checked) return;
+        const x = S.accounts.find(a => a.id === cb.dataset.cand); if (!x) return;
+        const fi = document.querySelector('#copyCandList [data-candf="' + cb.dataset.cand + '"]');
+        x.copyOf = target.id; x.copyFactor = fi ? fi.value.trim() : "";
+        if (!prev.has(x.id)) x.copySince = $("aCopySinceNew").value || "";      // neu dazugekommen: ab dem gewählten Datum (Standard heute)
+      });
+    }
   }
   saveAccounts(); closeAcctModal(); renderAccounts(); render();
 });
@@ -570,6 +710,7 @@ $("aDelete").addEventListener("click", () => {
   armed($("aDelete"), async () => {
     const toDelete = S.trades.filter(t => (t.accountId||DEFAULT_ACCOUNT_ID) === acctEditId);
     for (const t of toDelete) { try{ await Store.del(t); }catch(e){} }
+    S.accounts.forEach(a => { if (a.copyOf === acctEditId) a.copyOf = ""; });      // Copy-Konten dieses Leads lösen
     S.accounts = S.accounts.filter(a=>a.id!==acctEditId);
     if (S.activeAccountId === acctEditId){ S.activeAccountId = S.accounts[0].id; try{ localStorage.setItem(ACTIVE_ACCOUNT_KEY, S.activeAccountId); }catch(_){} }
     saveAccounts(); closeAcctModal(); renderAccounts(); render();
@@ -636,23 +777,27 @@ function calc(t){
   const commRaw = num(t.commission);
   const commission = commRaw ? Math.abs(commRaw) : null;           // Kommission ist immer ein Kostenpunkt
   if (commission) pnl = (pnl === null ? 0 : pnl) - commission;      // auch wenn nur Kommission eingetragen ist
+  const swapRaw = num(t.swap);
+  const swap = swapRaw ? swapRaw : null;                            // Swap kann Kosten (−) oder Gutschrift (+) sein, wie in MT5
+  if (swap) pnl = (pnl === null ? 0 : pnl) + swap;
   if (rr === null && pnl !== null && risk) rr = pnl / risk;
-  return { dir, planRR: planRR!==null ? Math.round(planRR*100)/100 : null, rr: rr!==null ? Math.round(rr*100)/100 : null, pnl: pnl!==null ? Math.round(pnl*100)/100 : null, risk, commission };
+  return { dir, planRR: planRR!==null ? Math.round(planRR*100)/100 : null, rr: rr!==null ? Math.round(rr*100)/100 : null, pnl: pnl!==null ? Math.round(pnl*100)/100 : null, risk, commission, swap };
 }
 function stats(list){
   const w = list.filter(t=>t.result==="win"), l = list.filter(t=>t.result==="loss"), b = list.filter(t=>t.result==="be");
-  let pnl=0, risk=0, R=0, rrN=0, hasPnl=false, commission=0;
-  for (const t of list){ const c=calc(t); if (c.pnl!==null){ pnl+=c.pnl; hasPnl=true; } if (c.risk!==null) risk+=c.risk; if (c.rr!==null){ R+=c.rr; rrN++; } if (c.commission) commission+=c.commission; }
+  let pnl=0, risk=0, R=0, rrN=0, hasPnl=false, commission=0, swap=0;
+  for (const t of list){ const c=calc(t); if (c.pnl!==null){ pnl+=c.pnl; hasPnl=true; } if (c.risk!==null) risk+=c.risk; if (c.rr!==null){ R+=c.rr; rrN++; } if (c.commission) commission+=c.commission; if (c.swap) swap+=c.swap; }
   const winRR = w.map(t=>calc(t).rr).filter(v=>v!==null);
   return { n:list.length, w:w.length, l:l.length, b:b.length, wr: w.length+l.length ? w.length/(w.length+l.length)*100 : null,
-    pnl: hasPnl ? pnl : null, risk, R: rrN ? R : null, avgWinRR: winRR.length ? winRR.reduce((a,c)=>a+c,0)/winRR.length : null, commission };
+    pnl: hasPnl ? pnl : null, risk, R: rrN ? R : null, avgWinRR: winRR.length ? winRR.reduce((a,c)=>a+c,0)/winRR.length : null, commission, swap };
 }
 
 /* ---------- storage: Claude db+assets, else IndexedDB ---------- */
+const USE_CLAUDE_DB = false;   // Daten bleiben lokal auf diesem Gerät - auch wenn die Seite in einer Claude-Ansicht läuft
 const Store = {
   mode: "idb", db: null, assets: null, idb: null,
   async init(onChange){
-    if (window.claude && claude.use){
+    if (USE_CLAUDE_DB && window.claude && claude.use){
       const db = await claude.use("db").catch(()=>null);
       if (db){
         this.mode = "db"; this.db = db;
@@ -662,12 +807,14 @@ const Store = {
       }
     }
     this.idb = await new Promise((res, rej) => { const r = indexedDB.open("afx-journal", 1); r.onupgradeneeded = () => r.result.createObjectStore("trades", { keyPath: "id" }); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }).catch(()=>null);
+    if (!this.idb){ this.mode = "mem"; this.memStore = new Map(); toast("Speichern im Browser blockiert – Einträge gelten nur für diese Sitzung"); }
     this.onChange = onChange; await this.reload();
   },
   tx(mode){ return this.idb.transaction("trades", mode).objectStore("trades"); },
-  async reload(){ if (!this.idb) return this.onChange([]); const all = await new Promise(r => { const q=this.tx("readonly").getAll(); q.onsuccess=()=>r(q.result); q.onerror=()=>r([]); }); this.onChange(all); },
+  async reload(){ if (this.mode === "mem") return this.onChange([...this.memStore.values()]); if (!this.idb) return this.onChange([]); const all = await new Promise(r => { const q=this.tx("readonly").getAll(); q.onsuccess=()=>r(q.result); q.onerror=()=>r([]); }); this.onChange(all); },
   async put(t){
     if (this.mode === "db") return this.db.collection("trades").doc(t.id).set(t);
+    if (this.mode === "mem"){ this.memStore.set(t.id, JSON.parse(JSON.stringify(t))); return this.reload(); }
     await new Promise((r,j) => { const q=this.tx("readwrite").put(t); q.onsuccess=r; q.onerror=()=>j(q.error); }); return this.reload();
   },
   async del(t){
@@ -675,6 +822,7 @@ const Store = {
       for (const s of t.shots||[]) if (s.id && this.assets) await this.assets.delete(s.id).catch(()=>{});
       return this.db.collection("trades").doc(t.id).delete();
     }
+    if (this.mode === "mem"){ this.memStore.delete(t.id); return this.reload(); }
     await new Promise(r => { const q=this.tx("readwrite").delete(t.id); q.onsuccess=r; q.onerror=r; }); return this.reload();
   },
   async addImage(blob){
@@ -695,22 +843,24 @@ function normalize(t){
 
 /* ---------- image compression ---------- */
 function loadImg(src){ return new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=src; }); }
+function fileToDataUrl(file){ return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(fr.error); fr.readAsDataURL(file); }); }
 async function compress(file){
-  const url = URL.createObjectURL(file);
   try{
-    const img = await loadImg(url);
+    const img = await loadImg(await fileToDataUrl(file));      // Data-URL statt Blob-URL: läuft auch in eingeschränkten Ansichten
     const max = 1600, sc = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
     const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth*sc); c.height = Math.round(img.naturalHeight*sc);
     const g = c.getContext("2d"); g.fillStyle="#fff"; g.fillRect(0,0,c.width,c.height); g.drawImage(img,0,0,c.width,c.height);
-    return await new Promise(r => c.toBlob(r, "image/jpeg", .82));
-  } finally { URL.revokeObjectURL(url); }
+    let blob = await new Promise(r => c.toBlob(r, "image/jpeg", .82));
+    if (!blob) blob = dataUrlBlob(c.toDataURL("image/jpeg", .82));
+    return blob;
+  }catch(e){ return file; }   // Notfall: Original unverändert speichern statt abzubrechen
 }
 
 /* ---------- Discord texts ---------- */
 function tradeLine(t){
   const c = calc(t);
   const icon = t.result==="win" ? "🟢" : t.result==="loss" ? "🔴" : "⚪";
-  return `${icon} ${t.symbol||"Trade"} ${c.dir ? (c.dir==="long"?"Long":"Short") : ""} · ${shortDate(t.date)} ${t.time||""} · ${rfmt(c.rr)}${c.pnl!==null ? " · " + money(c.pnl) : ""}${c.commission ? " (Kommission " + S.cur + f(c.commission) + ")" : ""}`.replace(/\s+/g," ").trim();
+  return `${icon} ${t.symbol||"Trade"} ${c.dir ? (c.dir==="long"?"Long":"Short") : ""} · ${shortDate(t.date)} ${t.time||""} · ${rfmt(c.rr)}${c.pnl!==null ? " · " + money(c.pnl) : ""}${c.commission ? " (Kommission " + S.cur + f(c.commission) + ")" : ""}${c.swap ? " (Swap " + money(c.swap) + ")" : ""}`.replace(/\s+/g," ").trim();
 }
 function tradeText(t){
   const c = calc(t);
@@ -722,6 +872,7 @@ function tradeText(t){
   const res = [];
   if (c.risk!==null) res.push(`⚖️ Risiko ${S.cur}${f(c.risk)}`);
   if (c.commission) res.push(`💸 Kommission ${S.cur}${f(c.commission)}`);
+  if (c.swap) res.push(`🔁 Swap ${money(c.swap)}`);
   if (c.rr!==null) res.push(`📐 RRR ${rfmt(c.rr)}`);
   if (c.pnl!==null) res.push(`💰 ${money(c.pnl)}`);
   if (res.length) L.push(res.join("  |  "));
@@ -738,7 +889,7 @@ function summaryText(list, part){
   const L = [`📊 **NoWick Journal** | ${rangeLabel(list)}`,
     `Trades: ${s.n}  |  ✅ ${s.w}  |  ❌ ${s.l}  |  ➖ ${s.b}`,
     `🎯 Winrate: ${s.wr===null?"–":f(s.wr,1)+" %"}`,
-    `⚖️ Riskiert: ${S.cur}${f(s.risk)}  |  💰 P&L: ${money(s.pnl)}  |  📐 ${rfmt(s.R)}${s.commission?`  |  💸 Kommission: ${S.cur}${f(s.commission)}`:""}`];
+    `⚖️ Riskiert: ${S.cur}${f(s.risk)}  |  💰 P&L: ${money(s.pnl)}  |  📐 ${rfmt(s.R)}${s.commission?`  |  💸 Kommission: ${S.cur}${f(s.commission)}`:""}${s.swap?`  |  🔁 Swap: ${money(s.swap)}`:""}`];
   const wins = list.filter(t=>t.result==="win"), losses = list.filter(t=>t.result==="loss");
   if (part !== "loss" && wins.length){ L.push("", `**✅ Wins (${wins.length})**`, ...wins.map(tradeLine)); }
   if (part !== "win" && losses.length){ L.push("", `**❌ Losses (${losses.length})**`, ...losses.map(tradeLine)); }
@@ -751,10 +902,12 @@ function summaryText(list, part){
 function filtered(){ return activeTrades().filter(t => !S.sel.size || S.sel.has(t.date)).sort((a,b)=> (b.date+(b.time||"")).localeCompare(a.date+(a.time||"")) || b.createdAt-a.createdAt); }
 function tradeCard(t){
   const c = calc(t);
+  const leadAcc = t._mirror ? S.accounts.find(a => a.id === t._leadAccId) : null;
   return `<article class="trade ${t.result}" data-id="${t.id}">
     <div class="thead"><span class="badge">${label(t.result)}</span>
       <div class="sym">${esc(t.symbol||"Trade")} ${c.dir?(c.dir==="long"?"Long":"Short"):""}</div>
       <div class="tp ${c.pnl>0?"pos":c.pnl<0?"neg":""}">${c.pnl!==null?money(c.pnl):""}</div></div>
+    ${t._mirror?`<div class="mirror-tag">Copy von ${esc(leadAcc?.name||"Lead")} · ×${fmtFactor(t._k)}</div>`:""}
     <div class="facts">
       <div><small>Datum</small><b>${wday(t.date)} ${shortDate(t.date)}</b></div>
       <div><small>Uhrzeit</small><b>${esc(t.time||"–")}</b></div>
@@ -765,15 +918,16 @@ function tradeCard(t){
       <div><small>TP</small><b>${esc(t.tp||"–")}</b></div>
       <div><small>Exit</small><b>${esc(t.exit||"–")}</b></div>
       ${c.commission?`<div><small>Kommission</small><b>${S.cur}${f(c.commission)}</b></div>`:""}
+      ${c.swap?`<div><small>Swap</small><b>${money(c.swap)}</b></div>`:""}
     </div>
     ${t.shots.length?`<div class="shots">${t.shots.map((s,i)=>`<img src="${esc(s.src)}" alt="Screenshot ${i+1}" data-act="view" data-i="${i}" loading="lazy">`).join("")}</div>`:""}
     ${t.notes?`<div class="note">${esc(t.notes)}</div>`:""}
     <div class="actions">
       <button class="btn primary" data-act="copy">Für Discord kopieren</button>
       ${t.shots.length?`<button class="btn" data-act="img">Bild kopieren</button>`:""}
-      <button class="btn" data-act="move">Kopieren / Verschieben</button>
+      ${t._mirror ? `<button class="btn" data-act="gotolead">Beim Lead bearbeiten</button>` : `<button class="btn" data-act="move">Kopieren / Verschieben</button>
       <button class="btn" data-act="edit">Bearbeiten</button>
-      <button class="btn" data-act="del">Löschen</button>
+      <button class="btn" data-act="del">Löschen</button>`}
     </div></article>`;
 }
 function selLabel(){
@@ -890,6 +1044,8 @@ function render(){
       <button class="btn" data-copy="win">Wins kopieren</button>
       <button class="btn" data-copy="loss">Losses kopieren</button>
       <button class="btn" id="pdf">PDF exportieren</button>
+      <button class="btn" id="pdfSum">Auswertung (PDF mit Bild-Links)</button>
+      ${copyGroupOf(acc) ? `<button class="btn" id="pdfGroup">Auswertung Copy-Gruppe (PDF)</button>` : ""}
       <button class="btn" id="impBtn">PDF importieren</button>
     </div>
     <div class="copyrow">
@@ -931,6 +1087,8 @@ if (window.claude && claude.use) claude.use("sample").then(x => { S.sample = x; 
       if (txt.length > 2000) toast("Länger als 2000 Zeichen – Discord macht daraus eine Datei"); }
     else toast("Kopieren nicht möglich"); return; }
   if (e.target.id === "pdf") return makePdf(e.target);
+  if (e.target.id === "pdfSum") return makeSummaryPdf(e.target);
+  if (e.target.id === "pdfGroup") return makeSummaryPdf(e.target, { group: true });
   if (e.target.id === "impBtn") return $("impFile").click();
   const cp = e.target.closest("[data-copy]");
   if (cp){ const list = filtered(); if (!list.length) return toast("Keine Trades ausgewählt"); (await copyText(summaryText(list, cp.dataset.copy))) ? flash(cp,"Kopiert ✓") : toast("Kopieren nicht möglich"); return; }
@@ -956,10 +1114,11 @@ if (window.claude && claude.use) claude.use("sample").then(x => { S.sample = x; 
     if (!shots.length) return toast("Keine Bilder in diesem Zeitraum");
     return copyImagesCombined(shots, cimg);
   }
-  if (e.target.id === "reset") return armed(e.target, async () => { for (const t of activeTrades()) await Store.del(t); toast("Trades dieses Kontos gelöscht"); });
+  if (e.target.id === "reset") return armed(e.target, async () => { for (const t of ownTrades(activeAccount().id)) await Store.del(t); toast("Trades dieses Kontos gelöscht"); });
   const el = e.target.closest("[data-act]"); if (!el) return;
-  const t = S.trades.find(x => x.id === el.closest(".trade").dataset.id); if (!t) return;
+  const t = findTradeAny(el.closest(".trade").dataset.id); if (!t) return;
   const a = el.dataset.act;
+  if (a==="gotolead"){ const orig = S.trades.find(x => x.id === t._leadTradeId); if (orig){ setActiveAccount(t._leadAccId); openForm(orig); } return; }
   if (a==="copy") (await copyText(tradeText(t))) ? flash(el,"Kopiert ✓") : toast("Kopieren nicht möglich");
   if (a==="edit") openForm(t);
   if (a==="move") openMove(t);
@@ -1012,6 +1171,259 @@ async function toJpeg(src){
   const g=c.getContext("2d"); g.fillStyle="#fff"; g.fillRect(0,0,c.width,c.height); g.drawImage(img,0,0,c.width,c.height);
   return { data: c.toDataURL("image/jpeg", .8), w: c.width, h: c.height };
 }
+/* ---------- Auswertung als PDF (Trade Summary) mit klickbaren Pfeilen zu den Screenshots ---------- */
+async function makeSummaryPdf(btn, opts = {}){
+  const grp = opts.group ? copyGroupOf(activeAccount()) : null;
+  if (opts.group && !grp) return toast("Für dieses Konto gibt es keine Copy-Gruppe");
+  let list;
+  if (grp){
+    // Gruppe: jeder Lead-Trade EINMAL (mit Lead-Screenshots), Ergebnis = Lead + alle Copy-Konten zusammengerechnet
+    const inSel = t => !S.sel.size || S.sel.has(t.date);
+    const ks = grp.followers.map(x => ({ acc: x, k: copyFactorOf(x) }));
+    list = [];
+    ownTrades(grp.lead.id).filter(inSel).forEach(t => {
+      const kSum = ks.filter(x => !x.acc.copySince || t.date >= x.acc.copySince).reduce((s, x) => s + x.k, 0);
+      const tot = scaleTrade(t, 1 + kSum); tot.shots = t.shots || [];
+      const lp = calc(t).pnl, tp = calc(tot).pnl;
+      tot._g = { leadPnl: lp, copyPnl: (tp !== null && lp !== null) ? tp - lp : null };
+      list.push(tot);
+    });
+    grp.followers.forEach(x => ownTrades(x.id).filter(inSel).forEach(t => {
+      const o = { ...t, notes: "[" + (x.name||"Konto") + "] " + (t.notes||"") }; o._g = { leadPnl: null, copyPnl: calc(t).pnl }; list.push(o);
+    }));
+    list.sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
+  } else list = filtered().slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
+  if (!list.length) return toast("Keine Trades im gewählten Zeitraum");
+  if (!window.jspdf) return toast("PDF-Modul konnte nicht geladen werden");
+  const old = btn.textContent; btn.textContent = "Auswertung wird erstellt…"; btn.disabled = true;
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit:"mm", format:"a4", orientation:"landscape" });
+    const W=297, H=210, M=14;
+    const P = v => String(v ?? "").replace(/−/g,"-").replace(/[^\x00-\xFF€–]/g,"");
+    const mon = n => P(money(n));
+    const ink=[20,25,35], grey=[100,110,125], green=[19,140,90], red=[200,50,65], blue=[63,97,201], zebra=[244,246,250];
+    const gF=[43,191,124], rF=[226,83,106], bF=[138,149,168];
+    let pageNo = 1;
+    const T = (t,x,yy,size=9,style="normal",color=ink,opt) => { doc.setFont("helvetica",style); doc.setFontSize(size); doc.setTextColor(...color); doc.text(P(t),x,yy,opt); };
+    const fit = (s,maxW,size,style="normal") => { s = P(s); doc.setFont("helvetica",style); doc.setFontSize(size); if (doc.getTextWidth(s) <= maxW) return s; while (s.length > 1 && doc.getTextWidth(s + "...") > maxW) s = s.slice(0,-1); return s + "..."; };
+    const sum = a => a.reduce((s,v)=>s+v,0);
+    const gcell = v => (v === null || v === undefined) ? "-" : mon(v);
+    const isoWk = iso => { const [Y,Mo,D]=iso.split("-").map(Number); const dt=new Date(Date.UTC(Y,Mo-1,D)); const dn=dt.getUTCDay()||7; dt.setUTCDate(dt.getUTCDate()+4-dn); const y0=new Date(Date.UTC(dt.getUTCFullYear(),0,1)); return { y: dt.getUTCFullYear(), w: Math.ceil(((dt-y0)/86400000+1)/7) }; };
+    const rows = list.map((t,i) => ({ i:i+1, t, c:calc(t), shots:(t.shots||[]) }));
+    const tot = stats(list);
+    const pn = rows.map(r=>r.c.pnl).filter(v=>v!==null);
+    const winsP = pn.filter(v=>v>0), lossP = pn.filter(v=>v<0);
+    const pf = lossP.length && sum(lossP)!==0 ? sum(winsP)/Math.abs(sum(lossP)) : null;
+    let curW=0,curL=0,maxW=0,maxL=0;
+    rows.forEach(r=>{ if (r.t.result==="win"){ curW++; curL=0; } else if (r.t.result==="loss"){ curL++; curW=0; } else { curW=0; curL=0; } maxW=Math.max(maxW,curW); maxL=Math.max(maxL,curL); });
+
+    /* --- Kopf --- */
+    T(grp ? "Trade Summary – Copy-Gruppe" : "Trade Summary", M, 20, 20, "bold");
+    T(grp ? `Lead: ${grp.lead.name||"Konto"}  ·  ${grp.followers.length} Copy-${grp.followers.length>1?"Konten":"Konto"}  ·  ${rangeLabel(list)}` : `${activeAccount().name||"Konto"}  ·  ${rangeLabel(list)}`, M, 27, 10, "normal", grey);
+    T(`Erstellt am ${deDate(todayIso())}`, W-M, 20, 9, "normal", grey, { align:"right" });
+    doc.setDrawColor(215); doc.setLineWidth(0.3); doc.line(M, 31, W-M, 31);
+
+    /* --- Kennzahlen --- */
+    const kpis = [
+      ["Trades gesamt", String(tot.n)],
+      ["Win / Loss / BE", `${tot.w} / ${tot.l} / ${tot.b}`],
+      ["Winrate", tot.wr===null ? "-" : f(tot.wr,1)+" %"],
+      ["Profit-Faktor", pf===null ? "-" : f(pf,2)],
+      ["Ø Gewinn", winsP.length ? mon(sum(winsP)/winsP.length) : "-"],
+      ["Ø Verlust", lossP.length ? mon(sum(lossP)/lossP.length) : "-"],
+      ["Bester Trade", pn.length ? mon(Math.max(...pn)) : "-"],
+      ["Schlechtester Trade", pn.length ? mon(Math.min(...pn)) : "-"],
+      ["Gesamt P&L (netto)", mon(tot.pnl), tot.pnl],
+      ["Gesamt R", P(rfmt(tot.R))],
+      ["Kommission / Swap", `${S.cur}${f(tot.commission||0)} / ${mon(tot.swap||0)}`],
+      ["Längste Serie W / L", `${maxW} / ${maxL}`]
+    ];
+    kpis.forEach(([k,v,sign],i)=>{
+      const yy = 39 + i*4.9;
+      T(k, M, yy, 8.5, "normal", grey);
+      T(v, M+72, yy, 9, "bold", sign===undefined ? ink : (sign<0 ? red : green), { align:"right" });
+      doc.setDrawColor(228); doc.setLineWidth(0.15); doc.line(M, yy+1.5, M+72, yy+1.5);
+    });
+
+    /* --- Donut: Win / Loss / BE --- */
+    const donut = (cx,cy,ro,ri,parts) => {
+      const total = sum(parts.map(p=>p.v)); let a0 = -Math.PI/2;
+      parts.forEach(p=>{
+        if (p.v<=0) return;
+        const sweep = p.v/total*2*Math.PI, n = Math.max(2, Math.ceil(sweep/(Math.PI/60)));
+        doc.setFillColor(...p.c); doc.setDrawColor(...p.c); doc.setLineWidth(0.1);
+        for (let k=0;k<n;k++){
+          const t0=a0+sweep*k/n, t1=a0+sweep*(k+1)/n;
+          const A=[cx+ro*Math.cos(t0),cy+ro*Math.sin(t0)], B=[cx+ro*Math.cos(t1),cy+ro*Math.sin(t1)], C=[cx+ri*Math.cos(t1),cy+ri*Math.sin(t1)], D=[cx+ri*Math.cos(t0),cy+ri*Math.sin(t0)];
+          doc.lines([[B[0]-A[0],B[1]-A[1]],[C[0]-B[0],C[1]-B[1]],[D[0]-C[0],D[1]-C[1]]], A[0], A[1], [1,1], "FD", true);
+        }
+        a0 += sweep;
+      });
+    };
+    T("WIN / LOSS", 100, 36, 8.5, "bold", grey);
+    donut(125, 64, 18, 11, [{v:tot.w,c:gF},{v:tot.l,c:rF},{v:tot.b,c:bF}]);
+    T(tot.wr===null ? "-" : f(tot.wr,0)+" %", 125, 65.5, 11, "bold", ink, { align:"center" });
+    [["Win",tot.w,gF],["Loss",tot.l,rF],["BE",tot.b,bF]].forEach(([n,v,c],i)=>{ const x=102+i*16; doc.setFillColor(...c); doc.rect(x, 86.3, 2.4, 2.4, "F"); T(`${n} ${v}`, x+3.6, 88.4, 7.5, "normal", grey); });
+
+    /* --- Kontoverlauf (kumuliertes P&L) --- */
+    T("KONTOVERLAUF (P&L KUMULIERT)", 158, 36, 8.5, "bold", grey);
+    { const cum=[0]; rows.forEach(r=>cum.push(cum[cum.length-1]+(r.c.pnl||0)));
+      const x0=158, px0=x0+12, px1=x0+67, py0=42, py1=80;
+      const vmax=Math.max(0,...cum), vmin=Math.min(0,...cum), span=(vmax-vmin)||1;
+      const X = i => px0 + (px1-px0)*(i/(cum.length-1||1)), Y = v => py0 + (vmax-v)/span*(py1-py0);
+      doc.setDrawColor(225); doc.setLineWidth(0.15); doc.rect(px0, py0, px1-px0, py1-py0);
+      doc.setLineDashPattern([1,1],0); doc.setDrawColor(150); doc.line(px0, Y(0), px1, Y(0)); doc.setLineDashPattern([],0);
+      doc.setDrawColor(...blue); doc.setLineWidth(0.6);
+      for (let i=1;i<cum.length;i++) doc.line(X(i-1),Y(cum[i-1]),X(i),Y(cum[i]));
+      doc.setFillColor(...blue); cum.forEach((v,i)=>{ if (cum.length<=30) doc.circle(X(i),Y(v),0.7,"F"); });
+      T(f(vmax,0), px0-1.5, py0+2, 6.5, "normal", grey, { align:"right" });
+      if (vmin<0) T(f(vmin,0), px0-1.5, py1, 6.5, "normal", grey, { align:"right" });
+      T(deDate(rows[0].t.date).slice(0,6), px0, 85, 6.5, "normal", grey);
+      T(deDate(rows[rows.length-1].t.date).slice(0,6), px1, 85, 6.5, "normal", grey, { align:"right" });
+      const last = cum[cum.length-1]; T(mon(last), px1, 88.4, 7.5, "bold", last<0?red:green, { align:"right" });
+    }
+
+    /* --- Balken: P&L pro Tag / Woche / Monat --- */
+    { const days=[...new Set(rows.map(r=>r.t.date))];
+      let key=d=>d, lab=d=>shortDate(d), title="P&L PRO TAG";
+      if (days.length>14){
+        const wk=new Set(days.map(d=>{ const o=isoWk(d); return o.y+"-"+o.w; }));
+        if (wk.size<=20){ key=d=>{ const o=isoWk(d); return o.y+"-"+String(o.w).padStart(2,"0"); }; lab=d=>"KW"+isoWk(d).w; title="P&L PRO WOCHE"; }
+        else { key=d=>d.slice(0,7); lab=d=>d.slice(5,7)+"/"+d.slice(2,4); title="P&L PRO MONAT"; }
+      }
+      const groups=[]; const idx={};
+      rows.forEach(r=>{ const k=key(r.t.date); if (!(k in idx)){ idx[k]=groups.length; groups.push({ k, label:lab(r.t.date), v:0 }); } groups[idx[k]].v += (r.c.pnl||0); });
+      T(title, 234, 36, 8.5, "bold", grey);
+      const px0=243, px1=283, py0=42, py1=80, n=groups.length;
+      const vmax=Math.max(0,...groups.map(g=>g.v)), vmin=Math.min(0,...groups.map(g=>g.v)), span=(vmax-vmin)||1;
+      const zeroY = py0 + vmax/span*(py1-py0), bw=(px1-px0)/n, w=bw*0.68;
+      doc.setDrawColor(225); doc.setLineWidth(0.15); doc.rect(px0, py0, px1-px0, py1-py0);
+      groups.forEach((g,i)=>{
+        const h=Math.abs(g.v)/span*(py1-py0), x=px0+i*bw+(bw-w)/2, yy=g.v>=0 ? zeroY-h : zeroY;
+        doc.setFillColor(...(g.v>=0?gF:rF)); if (h>0.05) doc.rect(x, yy, w, h, "F");
+        if (n<=8) T(f(g.v,0), x+w/2, g.v>=0 ? yy-1 : yy+h+2.5, 6.5, "normal", grey, { align:"center" });
+        if (i%Math.ceil(n/8)===0) T(g.label, x+w/2, 85, 6.5, "normal", grey, { align:"center" });
+      });
+      doc.setDrawColor(150); doc.setLineWidth(0.2); doc.line(px0, zeroY, px1, zeroY);
+      if (n>8){ T(f(vmax,0), px0-1.5, py0+2, 6.5, "normal", grey, { align:"right" }); if (vmin<0) T(f(vmin,0), px0-1.5, py1, 6.5, "normal", grey, { align:"right" }); }
+    }
+
+    /* --- Tabelle --- */
+    const cols = [["#",8,"c"],["Datum",19,"l"],["Zeit",12,"l"],["Paar",19,"l"],["Richtung",15,"l"],["Entry",19,"r"],["SL",19,"r"],["TP / Exit",19,"r"],[grp?"Lead P&L":"Komm.",grp?19:14,"r"],[grp?"Copy-Konten":"Swap",grp?19:13,"r"],[grp?"Gesamt P&L":"P&L netto",23,"r"],["R",13,"r"],["Ergebnis",16,"c"],["Bilder",19,"l"],["Notiz",0,"l"]];
+    const used = sum(cols.map(c=>c[1])); cols[cols.length-1][1] = (W-2*M) - used;
+    const xs=[]; { let x=M; cols.forEach(c=>{ xs.push(x); x+=c[1]; }); }
+    const ROWH=6.4; let y=106;
+    const header = () => {
+      doc.setFillColor(...blue); doc.rect(M, y-5, W-2*M, 7, "F");
+      cols.forEach((c,i)=>{ const x=xs[i], w=c[1]; const tx = c[2]==="r" ? x+w-1.5 : c[2]==="c" ? x+w/2 : x+1.5; T(c[0], tx, y-0.3, 8, "bold", [255,255,255], { align: c[2]==="r"?"right":c[2]==="c"?"center":"left" }); });
+      y += 7;
+    };
+    header();
+    const tableLinks=[]; 
+    rows.forEach((r,ri)=>{
+      if (y+ROWH > H-M-4){ doc.addPage(); pageNo++; y=M+5; header(); }
+      r.tablePage = pageNo;
+      const t=r.t, c=r.c, top=y-4.6;
+      if (ri%2===1){ doc.setFillColor(...zebra); doc.rect(M, top, W-2*M, ROWH, "F"); }
+      const cells = [String(r.i), deDate(t.date), t.time||"-", t.symbol||"-", c.dir ? (c.dir==="long"?"Long":"Short") : "-", t.entry||"-", t.sl||"-", t.exit||t.tp||"-",
+        ...(grp ? [gcell(t._g && t._g.leadPnl), gcell(t._g && t._g.copyPnl)] : [c.commission ? f(c.commission) : "-", c.swap ? f(c.swap) : "-"]), c.pnl!==null ? mon(c.pnl) : "-", P(rfmt(c.rr)), label(t.result), "", t.notes||""];
+      cells.forEach((txt,i)=>{
+        const x=xs[i], w=cols[i][1], al=cols[i][2];
+        if (i===10 && c.pnl!==null){   // P&L-Zelle farbig wie in der Vorlage
+          doc.setFillColor(...(c.pnl>0?gF:c.pnl<0?rF:bF)); doc.rect(x, top, w, ROWH, "F");
+          T(txt, x+w-1.5, y, 8, "bold", [255,255,255], { align:"right" }); return;
+        }
+        if (i===13) return;
+        const col = i===12 ? (t.result==="win"?green:t.result==="loss"?red:grey) : ink;
+        const style = (i===12||i===3) ? "bold" : "normal";
+        const s = fit(txt, w-3, 8, style);
+        T(s, al==="r" ? x+w-1.5 : al==="c" ? x+w/2 : x+1.5, y, 8, style, col, { align: al==="r"?"right":al==="c"?"center":"left" });
+      });
+      if (r.shots.length){   // klickbarer Pfeil zu den Screenshots
+        const x=xs[13]; doc.setFillColor(...blue);
+        doc.triangle(x+2, y-3.4, x+2, y-0.2, x+4.6, y-1.8, "F");
+        T(`${r.shots.length} Bild${r.shots.length>1?"er":""}`, x+6, y, 8, "bold", blue);
+        doc.setDrawColor(...blue); doc.setLineWidth(0.2); doc.line(x+6, y+0.7, x+6+doc.getTextWidth(P(`${r.shots.length} Bild${r.shots.length>1?"er":""}`)), y+0.7);
+        tableLinks.push({ page:pageNo, x:x, y:top, w:cols[13][1], h:ROWH, ri });
+      } else T("-", xs[13]+1.5, y, 8, "normal", grey);
+      doc.setDrawColor(232); doc.setLineWidth(0.1); doc.line(M, top+ROWH, W-M, top+ROWH);
+      y += ROWH;
+    });
+
+    /* --- Copy-Gruppe: Übersicht der Konten --- */
+    if (grp){
+      doc.addPage(); pageNo++;
+      T("Konten in der Copy-Gruppe", M, M+7, 15, "bold");
+      T("Gesamtergebnis = Lead + alle Copy-Konten (Faktor × Lead-Trades). Screenshots stammen nur vom Lead-Konto.", M, M+14, 9, "normal", grey);
+      const inSel = t => !S.sel.size || S.sel.has(t.date);
+      const accRows = [grp.lead, ...grp.followers].map(a => {
+        const isLead = a.id === grp.lead.id;
+        const all = ownTrades(a.id).filter(inSel).concat(isLead ? [] : mirroredFor(a).filter(inSel));
+        const eq = accountEquityStats(a, accountTradesAll(a));
+        return { a, role: isLead ? "Lead" : "Copy", k: isLead ? 1 : copyFactorOf(a), n: all.length, pnl: stats(all).pnl, bal: eq.start ? eq.balance : null };
+      });
+      const totalPnl = sum(accRows.map(r => r.pnl || 0));
+      const gc = [["Konto",84,"l"],["Rolle",24,"l"],["Faktor",24,"r"],["Trades",22,"r"],["P&L netto",40,"r"],["Kontostand",45,"r"],["Anteil",30,"r"]];
+      const gx = []; { let x = M; gc.forEach(c => { gx.push(x); x += c[1]; }); }
+      let gy = M + 27;
+      doc.setFillColor(...blue); doc.rect(M, gy-5, W-2*M, 7, "F");
+      gc.forEach((c,i) => T(c[0], c[2]==="r" ? gx[i]+c[1]-2 : gx[i]+2, gy-0.3, 8.5, "bold", [255,255,255], { align: c[2]==="r"?"right":"left" }));
+      gy += 7.5;
+      accRows.forEach((r,ri) => {
+        if (ri%2===1){ doc.setFillColor(...zebra); doc.rect(M, gy-5, W-2*M, 7.5, "F"); }
+        const vals = [fit(r.a.name||"Konto", 80, 9, "bold"), r.role, r.role==="Lead" ? "1" : "×"+fmtFactor(r.k), String(r.n), r.pnl===null ? "-" : mon(r.pnl), r.bal===null ? "-" : S.cur+f(r.bal), totalPnl ? f((r.pnl||0)/totalPnl*100,1)+" %" : "-"];
+        vals.forEach((v,i) => T(v, gc[i][2]==="r" ? gx[i]+gc[i][1]-2 : gx[i]+2, gy, 9, i===0?"bold":"normal", i===4 ? ((r.pnl||0)<0?red:green) : ink, { align: gc[i][2]==="r"?"right":"left" }));
+        gy += 7.5;
+      });
+      doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(M, gy-5, W-M, gy-5);
+      T("Gesamt", gx[0]+2, gy, 9.5, "bold"); T(String(sum(accRows.map(r=>r.n))), gx[3]+gc[3][1]-2, gy, 9.5, "bold", ink, { align:"right" });
+      T(mon(totalPnl), gx[4]+gc[4][1]-2, gy, 10, "bold", totalPnl<0?red:green, { align:"right" });
+    }
+
+    /* --- Screenshot-Seiten --- */
+    const backLinks=[];
+    for (const r of rows){
+      if (!r.shots.length) continue;
+      const imgs=[]; for (const s of r.shots){ try{ imgs.push(await toJpeg(s.src)); }catch(e){} }
+      if (!imgs.length) continue;
+      for (let k=0;k<imgs.length;k+=4){
+        const chunk=imgs.slice(k,k+4);
+        doc.addPage(); pageNo++; if (k===0) r.shotPage = pageNo;
+        const t=r.t, c=r.c;
+        T(`Screenshots  -  #${r.i}  ${t.symbol||"Trade"} ${c.dir ? (c.dir==="long"?"Long":"Short") : ""}`, M, M+7, 15, "bold");
+        T(`${deDate(t.date)} ${t.time||""}   |   ${label(t.result)}   ${c.pnl!==null ? mon(c.pnl) : ""}${imgs.length>4 ? `   |   Bilder ${k+1}-${k+chunk.length} von ${imgs.length}` : ""}`, M, M+14, 10, "normal", grey);
+        const bt = "< zurück zur Tabelle", bw = (doc.setFont("helvetica","bold"), doc.setFontSize(10), doc.getTextWidth(P(bt)));
+        T(bt, W-M, M+7, 10, "bold", blue, { align:"right" });
+        doc.setDrawColor(...blue); doc.setLineWidth(0.2); doc.line(W-M-bw, M+8, W-M, M+8);
+        backLinks.push({ page:pageNo, x:W-M-bw-1, y:M+1, w:bw+2, h:9, to:r.tablePage });
+        const GAP=6, availW=W-2*M, availH=H-M-(M+22)-10, yTop=M+22;
+        const cellW=(availW-GAP*(chunk.length-1))/chunk.length;     // jedes Bild in einer gleich breiten Spalte
+        chunk.forEach((im,i)=>{
+          const ar=im.w/im.h, w=Math.min(cellW, availH*ar), hh=w/ar, x=M+i*(cellW+GAP)+(cellW-w)/2;
+          doc.addImage(im.data,"JPEG",x,yTop,w,hh); doc.setDrawColor(200); doc.setLineWidth(0.2); doc.rect(x,yTop,w,hh);
+          T(`Bild ${k+i+1}`, x, yTop+hh+4, 7.5, "normal", grey);
+        });
+      }
+    }
+
+    /* --- Links setzen (erst jetzt sind alle Seitenzahlen bekannt) --- */
+    tableLinks.forEach(l=>{ const to=rows[l.ri].shotPage; if (to){ doc.setPage(l.page); doc.link(l.x, l.y, l.w, l.h, { pageNumber: to }); } });
+    backLinks.forEach(l=>{ doc.setPage(l.page); doc.link(l.x, l.y, l.w, l.h, { pageNumber: l.to }); });
+
+    const pages = doc.getNumberOfPages();
+    for (let i=1;i<=pages;i++){ doc.setPage(i); T(`NoWick Journal  |  Trade Summary  |  Seite ${i}/${pages}`, W/2, H-6, 8, "normal", grey, { align:"center" }); }
+    doc.setProperties({ title:"Trade Summary", creator:"NoWick Journal" });
+    const ds=[...new Set(list.map(t=>t.date))].sort();
+    const name=`Trade_Summary_${grp?"CopyGruppe_":""}${deDate(ds[0])}${ds.length>1?"_bis_"+deDate(ds[ds.length-1]):""}.pdf`;
+    const blob=doc.output("blob");
+    const dl = window.claude && claude.use ? await claude.use("downloads").catch(()=>null) : null;
+    if (dl){ try{ await dl.save({ filename: name, data: blob }); } catch(e){ if (e.code!=="declined") toast("PDF speichern nicht möglich"); } }
+    else { const u=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u), 4000); }
+  }catch(e){ toast("Auswertung konnte nicht erstellt werden" + (e && e.message ? " (" + e.message + ")" : "")); }
+  finally{ btn.textContent = old; btn.disabled = false; }
+}
+
 async function makePdf(btn){
   const list = filtered().slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
   if (!list.length) return toast("Keine Trades im gewählten Zeitraum");
@@ -1092,7 +1504,7 @@ async function makePdf(btn){
         const c = calc(t), col = t.result==="win"?green:t.result==="loss"?red:grey;
         // Bilder vorab laden, damit die komplette Blockhöhe (Text + Bild) VOR dem Zeichnen feststeht
         // -> Text und Bild werden nie durch einen Seitenumbruch getrennt.
-        const em = { ...t, shots: [] }; delete em._orig; embed.push(em);
+        const em = { ...t, shots: [] }; delete em._orig; if (!t._mirror) embed.push(em);
         let firstImg = null;
         for (const sh of t.shots){
           let im; try{ im = await toJpeg(sh.src); }catch(e){ continue; }
@@ -1113,6 +1525,7 @@ async function makePdf(btn){
         const px = [["Entry",t.entry],["SL",t.sl],["TP",t.tp],["Exit",t.exit]].filter(([,v])=>v!==""&&v!=null).map(([k,v])=>`${k} ${v}`);
         if (c.risk!==null) px.push(`Risiko ${S.cur}${f(c.risk)}`);
         if (c.commission) px.push(`Kommission ${S.cur}${f(c.commission)}`);
+        if (c.swap) px.push(`Swap ${mon(c.swap)}`);
         if (c.planRR!==null) px.push(`geplant 1:${f(c.planRR)}`);
         text(px.join("   |   ") || "-", M+4, 9, "normal", grey); y += 5;
         if (notesLines.length){ doc.setFont("helvetica","italic"); doc.setFontSize(9); doc.setTextColor(60,70,85); doc.text(notesLines, M+4, y); y += notesLines.length*4.5; }
@@ -1153,7 +1566,28 @@ async function getTesseractWorker(){
    Funktioniert nur so gut wie das Bild lesbar ist (Kontrast, Schriftart, Layout je nach Broker/Tool) –
    erkannte Werte füllen NUR leere Felder und werden dem Nutzer als "bitte prüfen" markiert. */
 function parseTradeFromText(raw){
-  const lines = String(raw||"").replace(/\r/g,"").split("\n").map(l=>l.trim()).filter(Boolean);
+  const allLines = String(raw||"").replace(/\r/g,"").split("\n").map(l=>l.trim()).filter(Boolean);
+  // Kurs-Pfeil-Zeilen finden (Zeitzeilen mit ":" ausschließen, sonst wird ein Datums-Pfeil wie
+  // "13:39:37 → 2026.09.30" fälschlich als Kurszeile gelesen).
+  // Echte Texterkennung liest den Pfeil "→" häufig fälschlich als Gedankenstrich "—"/"–" -
+  // das muss mit abgedeckt sein, sonst wird die Kurszeile überhaupt nicht erkannt.
+  const priceArrowRe = /(-?[\d][\d.,]*)\s*(?:→|->|➔|›|»|—|–)\s*(-?[\d][\d.,]*)(?:\s+(-?[\d]+[.,]\d{2}))?\b/;
+  const arrowIdxs = [];
+  allLines.forEach((line, i) => { if (!line.includes(":") && priceArrowRe.test(line)) arrowIdxs.push(i); });
+  // Den geöffneten Trade wählen: nur DIE Detailansicht zeigt S/L, T/P, Kommission oder Swap in der
+  // Nähe - eine Liste im Hintergrund (mehrere Trades auf einem Screenshot) hat das nicht. So wird
+  // gezielt der tatsächlich aufgerufene Trade erkannt statt irgendein Trade aus der Liste dahinter.
+  const detailLabelRe = /\b(s\s*\/\s*l|stop\s*loss|t\s*\/\s*p|take\s*profit|kommission|commission|swap)\b/i;
+  let anchorIdx = arrowIdxs.find(i => allLines.slice(i, i+8).some(l => detailLabelRe.test(l)));
+  if (anchorIdx === undefined) anchorIdx = arrowIdxs.length ? arrowIdxs[0] : undefined;
+  // Fokus-Fenster: ein paar Zeilen vor dem Kurs-Pfeil (Symbol/Richtung) bis einige Zeilen danach
+  // (S/L, T/P, Kommission, Datum) - blendet den Rest einer Liste im Hintergrund gezielt aus.
+  let startIdx = anchorIdx !== undefined ? Math.max(0, anchorIdx - 2) : 0;
+  if (anchorIdx !== undefined){
+    // Kopfzeile des geöffneten Trades ("AUDCAD sell 0.83 #...") - alles darüber gehört zur Liste dahinter
+    for (let k = anchorIdx - 1; k >= Math.max(0, anchorIdx - 4); k--){ if (/\b(buy|sell)\b/i.test(allLines[k])){ startIdx = k; break; } }
+  }
+  const lines = anchorIdx !== undefined ? allLines.slice(startIdx, anchorIdx + 8) : allLines;
   const joined = lines.join(" | ");
   const findAfterLabel = labels => {
     for (const line of lines){
@@ -1169,15 +1603,15 @@ function parseTradeFromText(raw){
   let tp = findAfterLabel(["take\\s*profit","t\\/p","tp","target","ziel"]);
   const risk = findAfterLabel(["risk","risiko"]);
   const commission = findAfterLabel(["commission","kommission","comm\\.?","gebühr","gebuehr","fee"]);
+  let swap = findAfterLabel(["swap"]);
+  if (swap !== null && !parseFloat(swap)) swap = null;
   let pnl = findAfterLabel(["profit\\s*\\/\\s*loss","(?<!take\\s)profit(?!\\s*target)","gewinn\\s*\\/\\s*verlust","gewinn","p\\s*&\\s*l","p\\/l","pnl"]);
   // MT5 zeigt Entry/Exit oft NUR als Pfeil ganz ohne Label: "0.98860 → 0.98838" - und direkt
   // dahinter (durch Leerzeichen getrennt) steht oft der Gewinn/Verlust, nur blau/rot eingefärbt,
-  // ganz ohne "Profit:"-Text davor. Zeitzeilen (mit ":") werden übersprungen, damit ein Datums-
-  // Pfeil wie "13:39:37 → 2026.09.30" nicht versehentlich als Kurszeile erkannt wird.
-  // Der Wert HINTER dem Pfeil ist der Kurs, an dem tatsächlich ausgestiegen wurde - das zählt als
-  // "TP" (überschreibt einen separat gefundenen, ursprünglich geplanten TP-Kurs bewusst).
+  // ganz ohne "Profit:"-Text davor. Der Wert HINTER dem Pfeil ist der Kurs, an dem tatsächlich
+  // ausgestiegen wurde - das zählt als "TP" (überschreibt einen separat gefundenen, ursprünglich
+  // geplanten TP-Kurs bewusst).
   let exit = findAfterLabel(["exit\\s*price","close\\s*price","exit","close","schluss"]);
-  const priceArrowRe = /(-?[\d][\d.,]*)\s*(?:→|->|➔|›|»)\s*(-?[\d][\d.,]*)(?:\s+(-?[\d]+[.,]\d{2}))?\b/;
   for (const line of lines){
     if (line.includes(":")) continue;
     const am = line.match(priceArrowRe);
@@ -1236,16 +1670,74 @@ function parseTradeFromText(raw){
   let direction = null;
   if (/\blong\b|\bbuy\b|\bkauf\b/i.test(joined)) direction = "long";
   else if (/\bshort\b|\bsell\b|\bverkauf\b/i.test(joined)) direction = "short";
-  return { entry, sl, tp, exit, risk, commission, pnl, pair, date, time, result, direction };
+  return { entry, sl, tp, exit, risk, commission, swap, pnl, pair, date, time, result, direction };
+}
+function ocrWords(data){
+  if (Array.isArray(data.words) && data.words.length) return data.words.map(w => ({ t: w.text, b: w.bbox }));
+  const out = [];
+  (data.blocks || []).forEach(bl => (bl.paragraphs || []).forEach(p => (p.lines || []).forEach(l => (l.words || []).forEach(w => out.push({ t: w.text, b: w.bbox })))));
+  return out;
+}
+/* Farbe der Gewinn-/Verlust-Zahl: blau/grün = Win, rot = Loss. MT5 lässt bei Gewinnen das Plus weg und die
+   Texterkennung verschluckt bei Verlusten manchmal das Minus - die Farbe ist deshalb verlässlicher als das Zeichen. */
+function colorVerdictFromBox(ctx, b){
+  const x0 = Math.max(0, Math.floor(b.x0) - 2), y0 = Math.max(0, Math.floor(b.y0) - 2);
+  const w = Math.min(ctx.canvas.width - x0, Math.ceil(b.x1 - b.x0) + 4), h = Math.min(ctx.canvas.height - y0, Math.ceil(b.y1 - b.y0) + 4);
+  if (w < 4 || h < 4) return null;
+  const d = ctx.getImageData(x0, y0, w, h).data;
+  let red = 0, cool = 0;
+  for (let i = 0; i < d.length; i += 4){
+    const r = d[i], g = d[i+1], bl = d[i+2], max = Math.max(r, g, bl), min = Math.min(r, g, bl), dlt = max - min;
+    if (max < 80 || dlt / max < 0.35) continue;
+    let hue;
+    if (max === r) hue = 60 * (((g - bl) / dlt) % 6);
+    else if (max === g) hue = 60 * ((bl - r) / dlt + 2);
+    else hue = 60 * ((r - g) / dlt + 4);
+    if (hue < 0) hue += 360;
+    if (hue < 28 || hue >= 335) red++;
+    else if (hue >= 80 && hue < 270) cool++;
+  }
+  if (red + cool < 6) return null;
+  if (red > cool * 1.5) return "loss";
+  if (cool > red * 1.5) return "win";
+  return null;
+}
+async function colorVerdictForPnl(src, words, pnlStr){
+  if (pnlStr === null || pnlStr === undefined) return null;
+  const abs = String(pnlStr).replace("-", "");
+  const norm = t => String(t).replace(/[^\d.,]/g, "").replace(",", ".");
+  const cands = words.filter(w => norm(w.t) === abs);
+  if (!cands.length) return null;
+  const img = await loadImg(src);
+  const c = document.createElement("canvas"); c.width = img.naturalWidth; c.height = img.naturalHeight;
+  const ctx = c.getContext("2d", { willReadFrequently: true }); ctx.drawImage(img, 0, 0);
+  return colorVerdictFromBox(ctx, cands[cands.length - 1].b);
 }
 async function tryAutoFillFromImage(src){
   if (!S.form) return;
+  toast("Screenshot wird gelesen …");
   try{
     const worker = await getTesseractWorker();
-    const ret = await worker.recognize(src);
+    let ret;
+    try{ ret = await worker.recognize(src, {}, { text: true, blocks: true }); }catch(e){ ret = null; }
+    if (!ret || !ret.data || typeof ret.data.text !== "string") ret = await worker.recognize(src);
     if (!S.form) return; // Formular wurde inzwischen geschlossen
-    const parsed = parseTradeFromText(ret.data.text);
-    const map = [["fEntry",parsed.entry,"Entry"],["fSl",parsed.sl,"SL"],["fTp",parsed.tp,"TP"],["fExit",parsed.exit,"Exit"],["fSym",parsed.pair,"Paar"],["fRisk",parsed.risk,"Risiko"],["fCommission",parsed.commission,"Kommission"],["fPnl",parsed.pnl,"P&L"]];
+    const text = ret.data.text || "";
+    $("ocrRaw").textContent = text; $("ocrRawWrap").style.display = "";
+    const parsed = parseTradeFromText(text);
+    // Farbe der Gewinn-Zahl entscheidet über Win/Loss (außer im Bild steht ausdrücklich "Ergebnis: …")
+    if (parsed.pnl !== null && !/ergebnis\s*[:=]/i.test(text)){
+      try{
+        const verdict = await colorVerdictForPnl(src, ocrWords(ret.data), parsed.pnl);
+        if (verdict){
+          const n = parseFloat(parsed.pnl);
+          if (verdict === "loss" && n > 0) parsed.pnl = "-" + parsed.pnl;
+          if (verdict === "win" && n < 0) parsed.pnl = String(parsed.pnl).replace("-", "");
+          parsed.result = verdict;
+        }
+      }catch(e){}
+    }
+    const map = [["fEntry",parsed.entry,"Entry"],["fSl",parsed.sl,"SL"],["fTp",parsed.tp,"TP"],["fExit",parsed.exit,"Exit"],["fSym",parsed.pair,"Paar"],["fRisk",parsed.risk,"Risiko"],["fCommission",parsed.commission,"Kommission"],["fSwap",parsed.swap,"Swap"],["fPnl",parsed.pnl,"P&L"]];
     const filled = [];
     for (const [id,val,label] of map){ if (val && !$(id).value){ $(id).value = val; filled.push(label); } }
     // Datum/Uhrzeit: auch überschreiben, solange noch der automatische "jetzt"-Standardwert drinsteht
@@ -1255,7 +1747,8 @@ async function tryAutoFillFromImage(src){
     if (parsed.result && !segVal("fResult")){ setSeg("fResult", parsed.result); filled.push("Ergebnis"); }
     if (parsed.direction && !segVal("fDir")){ setSeg("fDir", parsed.direction); filled.push("Richtung"); }
     if (filled.length){ updatePreview(); toast("Aus Screenshot erkannt: " + filled.join(", ") + " – bitte prüfen"); }
-  }catch(e){ /* OCR ist ein Best-Effort-Zusatz, still fehlschlagen */ }
+    else toast("Im Screenshot wurde nichts erkannt – bitte manuell eintragen");
+  }catch(e){ toast("Texterkennung hat nicht geklappt (Internet nötig) – bitte manuell eintragen"); }
 }
 async function loadPdfJs(){
   if (window.pdfjsLib) return window.pdfjsLib;
@@ -1415,7 +1908,7 @@ $("iGo").addEventListener("click", async () => {
 function segVal(id){ return $(id).querySelector("button.on")?.dataset.v || null; }
 function setSeg(id, v){ $(id).querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === v)); }
 ["fResult","fDir"].forEach(id => $(id).addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; setSeg(id, b.classList.contains("on") && id==="fDir" ? null : b.dataset.v); updatePreview(); }));
-const FIELDS = { fSym:"symbol", fDate:"date", fTime:"time", fEntry:"entry", fSl:"sl", fTp:"tp", fExit:"exit", fRisk:"risk", fPnl:"pnl", fCommission:"commission", fNotes:"notes" };
+const FIELDS = { fSym:"symbol", fDate:"date", fTime:"time", fEntry:"entry", fSl:"sl", fTp:"tp", fExit:"exit", fRisk:"risk", fPnl:"pnl", fCommission:"commission", fSwap:"swap", fNotes:"notes" };
 function readForm(){
   const t = { ...S.form, result: segVal("fResult"), direction: segVal("fDir") };
   for (const [id,k] of Object.entries(FIELDS)) t[k] = $(id).value.trim();
@@ -1442,6 +1935,7 @@ function openForm(t, files){
   S.form._orig = (t?.shots||[]).map(s=>s.id).filter(Boolean);
   S.form._defaultDate = t ? null : S.form.date;
   S.form._defaultTime = t ? null : S.form.time;
+  $("ocrRawWrap").style.display = "none"; $("ocrRaw").textContent = "";
   $("mTitle").textContent = t ? "Trade bearbeiten" : "Trade eintragen";
   for (const [id,k] of Object.entries(FIELDS)) $(id).value = S.form[k] ?? "";
   $("fAccount").innerHTML = S.accounts.map(a => `<option value="${esc(a.id)}">${isMaster(a)?"👑 ":""}${esc(a.name||"Konto")}${a.phase?" · "+esc(a.phase):""}</option>`).join("");
@@ -1456,7 +1950,7 @@ async function addFiles(files){
   const imgs = [...files].filter(x => /^image\//.test(x.type));
   for (const file of imgs){
     try{ const blob = await compress(file); const s = await Store.addImage(blob); S.form.shots.push(s); renderShots(); tryAutoFillFromImage(s.src); }
-    catch(e){ toast("Bild konnte nicht gespeichert werden"); }
+    catch(e){ toast("Bild konnte nicht gespeichert werden" + (e && e.message ? " (" + e.message + ")" : "")); }
   }
 }
 function closeForm(){ $("modal").classList.remove("open"); S.form = null; }
@@ -1505,6 +1999,7 @@ $("tvTemplateBtn").addEventListener("click", async () => {
     `Gewinn/Verlust: ${t.pnl || ""}`,
     `Risiko: ${t.risk || ""}`,
     `Kommission: ${t.commission || ""}`,
+    `Swap: ${t.swap || ""}`,
     `Datum: ${t.date || todayIso()}`,
     `Uhrzeit: ${t.time || nowTime()}`
   ];
