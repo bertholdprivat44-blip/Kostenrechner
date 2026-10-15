@@ -447,7 +447,7 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
     <div class="row"><button class="btn" id="iCancel">Abbrechen</button><button class="btn primary" id="iGo">Übernehmen</button></div>
   </div>
 </div>
-<input type="file" id="impFile" accept=".pdf,.csv,.htm,.html,.txt,application/pdf" hidden>
+<input type="file" id="impFile" accept=".pdf,.json,.csv,.htm,.html,.txt,application/pdf,application/json" hidden>
 <div class="viewer" id="viewer"><img id="viewerImg" alt="Screenshot"></div>
 <div class="toast" id="toast" role="status"></div>
 
@@ -1178,10 +1178,10 @@ function render(){
       <button class="btn primary" data-copy="all">Zusammenfassung kopieren</button>
       <button class="btn" data-copy="win">Wins kopieren</button>
       <button class="btn" data-copy="loss">Losses kopieren</button>
-      <button class="btn" id="pdf">PDF exportieren</button>
-      <button class="btn" id="pdfSum">Auswertung (PDF mit Bild-Links)</button>
-      ${copyGroupOf(acc) ? `<button class="btn" id="pdfGroup">Auswertung Copy-Gruppe (PDF)</button>` : ""}
-      <button class="btn" id="impBtn">PDF importieren</button>
+      <button class="btn" id="pdfSum">PDF exportieren <small style="opacity:.7">(Auswertung mit Bild-Links)</small></button>
+      ${copyGroupOf(acc) ? `<button class="btn" id="pdfGroup">PDF Copy-Gruppe exportieren</button>` : ""}
+      <button class="btn" id="jsonExp">Daten exportieren (JSON)</button>
+      <button class="btn" id="impBtn">Importieren <small style="opacity:.7">(PDF, JSON, CSV, HTML)</small></button>
     </div>
     <div class="copyrow">
       <button class="btn" data-copyimg="win" ${wins.some(t=>t.shots.length)?"":"disabled"}>Bilder (Wins) kopieren</button>
@@ -1221,10 +1221,10 @@ if (window.claude && claude.use) claude.use("sample").then(x => { S.sample = x; 
     if (await copyText(txt)){ const sm=pb.querySelector("small").innerHTML; pb.classList.add("done"); pb.querySelector("small").textContent="Kopiert ✓"; setTimeout(()=>{ pb.classList.remove("done"); pb.querySelector("small").innerHTML=sm; },1300);
       if (txt.length > 2000) toast("Länger als 2000 Zeichen – Discord macht daraus eine Datei"); }
     else toast("Kopieren nicht möglich"); return; }
-  if (e.target.id === "pdf") return makePdf(e.target);
-  if (e.target.id === "pdfSum") return makeSummaryPdf(e.target);
-  if (e.target.id === "pdfGroup") return makeSummaryPdf(e.target, { group: true });
-  if (e.target.id === "impBtn") return $("impFile").click();
+  if (e.target.closest("#jsonExp")) return exportJson(e.target.closest("#jsonExp"));
+  if (e.target.closest("#pdfSum")) return makeSummaryPdf(e.target.closest("#pdfSum"));
+  if (e.target.closest("#pdfGroup")) return makeSummaryPdf(e.target.closest("#pdfGroup"), { group: true });
+  if (e.target.closest("#impBtn")) return $("impFile").click();
   const cp = e.target.closest("[data-copy]");
   if (cp){ const list = filtered(); if (!list.length) return toast("Keine Trades ausgewählt"); (await copyText(summaryText(list, cp.dataset.copy))) ? flash(cp,"Kopiert ✓") : toast("Kopieren nicht möglich"); return; }
   const gitem = e.target.closest("[data-gcopy]");
@@ -1521,6 +1521,7 @@ async function makeSummaryPdf(btn, opts = {}){
     for (const r of rows){
       if (!r.shots.length) continue;
       const imgs=[]; for (const s of r.shots){ try{ imgs.push(await toJpeg(s.src)); }catch(e){} }
+      r.embShots = imgs.map(i=>i.data);
       if (!imgs.length) continue;
       for (let k=0;k<imgs.length;k+=4){
         const chunk=imgs.slice(k,k+4);
@@ -1548,7 +1549,23 @@ async function makeSummaryPdf(btn, opts = {}){
 
     const pages = doc.getNumberOfPages();
     for (let i=1;i<=pages;i++){ doc.setPage(i); T(`NoWick Journal  |  Trade Summary  |  Seite ${i}/${pages}`, W/2, H-6, 8, "normal", grey, { align:"center" }); }
-    doc.setProperties({ title:"Trade Summary", creator:"NoWick Journal" });
+    /* Importierbare Daten einbetten: echte Trades (nicht die umgerechneten Spiegel-Trades), Gruppe = Trades des Leads */
+    let subject = "";
+    try{
+      let src;
+      if (grp){ const inSel = t => !S.sel.size || S.sel.has(t.date); src = ownTrades(grp.lead.id).filter(inSel).sort((x,y)=>(x.date+(x.time||"")).localeCompare(y.date+(y.time||""))); }
+      else src = rows.map(r => r.t).filter(t => !t._mirror);
+      const embed = [];
+      for (const t of src){
+        const em = { ...t, shots: [] }; delete em._orig;
+        const row = rows.find(r => r.t === t);
+        if (row && row.embShots) em.shots = row.embShots;
+        else for (const sh of (t.shots||[])){ try{ em.shots.push((await toJpeg(sh.src)).data); }catch(e){} }
+        embed.push(em);
+      }
+      subject = "AFXJ1:" + btoa(unescape(encodeURIComponent(JSON.stringify({ v:1, cur:S.cur, trades: embed }))));
+    }catch(e){}
+    doc.setProperties({ title:"Trade Summary", subject, creator:"NoWick Journal" });
     const ds=[...new Set(list.map(t=>t.date))].sort();
     const name=`Trade_Summary_${grp?"CopyGruppe_":""}${deDate(ds[0])}${ds.length>1?"_bis_"+deDate(ds[ds.length-1]):""}.pdf`;
     const blob=doc.output("blob");
@@ -1559,132 +1576,24 @@ async function makeSummaryPdf(btn, opts = {}){
   finally{ btn.textContent = old; btn.disabled = false; }
 }
 
-async function makePdf(btn){
+/* ---------- JSON-Export (Daten inkl. Screenshots) ---------- */
+async function exportJson(btn){
   const list = filtered().slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
-  if (!list.length) return toast("Keine Trades im gewählten Zeitraum");
-  if (!window.jspdf) return toast("PDF-Modul konnte nicht geladen werden");
-  const old = btn.textContent; btn.textContent = "PDF wird erstellt…"; btn.disabled = true;
+  const own = list.filter(t => !t._mirror);
+  if (!own.length) return toast("Keine eigenen Trades im gewählten Zeitraum");
+  const old = btn.textContent; btn.textContent = "Wird erstellt…"; btn.disabled = true;
   try{
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit:"mm", format:"a4" });
-    const W=210, H=297, M=14, CW=W-2*M; let y=M;
-    const P = v => String(v ?? "").replace(/−/g,"-").replace(/[^\x00-\xFF€–]/g,"");
-    const mon = n => P(money(n));
-    const need = h => { if (y+h > H-M){ doc.addPage(); y=M; } };
-    const text = (t, x, size=10, style="normal", color=[20,25,35]) => { doc.setFont("helvetica", style); doc.setFontSize(size); doc.setTextColor(...color); doc.text(P(t), x, y); };
-    const green=[19,140,90], red=[200,50,65], grey=[100,110,125];
-    const tot = stats(list);
-    text("NoWick Journal", M, 18, "bold"); y+=8;
-    text(rangeLabel(list), M, 11, "normal", grey); y+=9;
-    doc.setDrawColor(210); doc.setFillColor(244,246,250); doc.roundedRect(M, y-5, CW, 24, 2, 2, "F");
-    const kv = [["Trades", tot.n], ["Win/Loss/BE", `${tot.w}/${tot.l}/${tot.b}`], ["Winrate", tot.wr===null?"-":f(tot.wr,1)+" %"], ["Riskiert", S.cur+f(tot.risk)], ["P&L", mon(tot.pnl)], ["Gesamt R", P(rfmt(tot.R))]];
-    kv.forEach(([k,v],i)=>{ const x=M+4+i*(CW/6); text(k, x, 8, "normal", grey); y+=6; text(v, x, 11, "bold", k==="P&L"||k==="Gesamt R" ? (String(v).startsWith("-")?red:green) : [20,25,35]); y-=6; });
-    y += 24;
-    // Auszahlungen im gewählten Zeitraum
-    const acctForPdf = activeAccount();
-    const payoutsInRange = (acctForPdf.payouts||[]).filter(pp => !S.sel.size || S.sel.has(pp.date)).sort((a,b)=>a.date.localeCompare(b.date));
-    if (payoutsInRange.length){
-      need(10 + payoutsInRange.length*6);
-      text("Auszahlungen", M, 13, "bold"); y+=7;
-      const totalPO = payoutsInRange.reduce((s,pp)=>s+(num(pp.amount)||0),0);
-      payoutsInRange.forEach(pp => {
-        const net = payoutNet(pp);
-        need(6);
-        text(deDate(pp.date), M, 9.5, "normal", grey);
-        text(P((pp.note||"") + (net!==null ? `  (Split ${f(num(pp.split))}%)` : "")), M+32, 9.5, "normal", grey);
-        doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.setTextColor(...red);
-        doc.text(P("- "+S.cur+f(num(pp.amount)||0)), W-M, y, { align:"right" });
-        y += 6;
-        if (net!==null){
-          need(5);
-          text(P(`davon erhalten: ${S.cur}${f(net)}`), M+32, 8.5, "italic", grey);
-          y += 5;
-        }
-      });
-      doc.setDrawColor(210); doc.line(M,y-2,W-M,y-2); y+=4;
-      text("Ausgezahlt gesamt", M, 10, "bold");
-      doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(...red);
-      doc.text(P("- "+S.cur+f(totalPO)), W-M, y, { align:"right" });
-      y += 6;
-      if (tot.pnl !== null){
-        const netAfterPO = tot.pnl - totalPO;
-        text("P&L nach Auszahlungen", M, 10, "bold");
-        doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(...(netAfterPO>=0?green:red));
-        doc.text(P(mon(netAfterPO)), W-M, y, { align:"right" });
-        y += 6;
-      }
-      y += 4;
+    const trades = [];
+    for (const t of own){
+      const em = { ...t, shots: [] }; delete em._orig;
+      for (const sh of (t.shots||[])){ try{ em.shots.push((await toJpeg(sh.src)).data); }catch(e){} }
+      trades.push(em);
     }
-    // weekly table
-    text("Winrate pro Woche", M, 13, "bold"); y+=7;
-    const cols=[["Woche",0],["Zeitraum",20],["Trades",62],["W/L/BE",80],["Winrate",104],["Riskiert",126],["P&L",150],["R",172]];
-    cols.forEach(([c,x])=>text(c, M+x, 8, "bold", grey)); y+=2; doc.setDrawColor(200); doc.line(M,y,W-M,y); y+=5;
-    const wrow = (a,b,st,bold) => { need(7); const vals=[a,b,st.n,`${st.w}/${st.l}/${st.b}`,st.wr===null?"-":f(st.wr,1)+" %",S.cur+f(st.risk),mon(st.pnl),P(rfmt(st.R))];
-      vals.forEach((v,i)=>text(v, M+cols[i][1], 9, bold?"bold":"normal", i>=6 ? ((i===6?st.pnl:st.R)>0?green:(i===6?st.pnl:st.R)<0?red:[20,25,35]) : [20,25,35])); y+=6; };
-    weekRows(list).forEach(r=>wrow(`KW ${r.week}`, `${shortDate(r.from)} - ${shortDate(r.to)}`, r.s));
-    doc.line(M,y-4,W-M,y-4); wrow("Gesamt","",tot,true); y+=4;
-    // days
-    const embed = [];
-    const days = [...new Set(list.map(t=>t.date))];
-    for (const d of days){
-      const dl = list.filter(t=>t.date===d), ds = stats(dl);
-      need(22);
-      doc.setFillColor(58,111,240); doc.rect(M, y-5, CW, 9, "F");
-      text(`${wday(d)} ${deDate(d)}`, M+3, 11, "bold", [255,255,255]);
-      doc.setFont("helvetica","normal"); doc.setFontSize(9);
-      const info = P(`${ds.n} Trades  |  ${ds.w}W / ${ds.l}L / ${ds.b}BE  |  Winrate ${ds.wr===null?"-":f(ds.wr,1)+" %"}  |  ${mon(ds.pnl)}  |  ${rfmt(ds.R)}`);
-      doc.setTextColor(255,255,255); doc.text(info, W-M-3, y, { align:"right" });
-      y += 10;
-      for (const t of dl){
-        const c = calc(t), col = t.result==="win"?green:t.result==="loss"?red:grey;
-        // Bilder vorab laden, damit die komplette Blockhöhe (Text + Bild) VOR dem Zeichnen feststeht
-        // -> Text und Bild werden nie durch einen Seitenumbruch getrennt.
-        const em = { ...t, shots: [] }; delete em._orig; if (!t._mirror) embed.push(em);
-        let firstImg = null;
-        for (const sh of t.shots){
-          let im; try{ im = await toJpeg(sh.src); }catch(e){ continue; }
-          em.shots.push(im.data);
-          if (!firstImg) firstImg = im;
-        }
-        const FIXH = 52, maxW = CW-4; // feste Bildhöhe -> mind. 3 Trades pro Seite, gleichmäßiges Layout
-        let imgW = 0, imgH = 0;
-        if (firstImg){ imgH = FIXH; imgW = firstImg.w/firstImg.h*imgH; if (imgW > maxW){ imgW = maxW; imgH = firstImg.h/firstImg.w*imgW; } }
-        const notesLines = t.notes ? doc.splitTextToSize(P(t.notes), CW-6) : [];
-        const blockH = 5.5 + 5 + (notesLines.length ? notesLines.length*4.5 : 0) + (firstImg ? imgH+4 : 0) + 7;
-        need(blockH);
-        doc.setFillColor(...col); doc.rect(M, y-4, 1.6, 12, "F");
-        text(`${t.time||"--:--"}   ${t.symbol||"Trade"} ${c.dir?(c.dir==="long"?"Long":"Short"):""}`, M+4, 11, "bold");
-        doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(...col);
-        doc.text(P(`${label(t.result)}   ${rfmt(c.rr)}   ${c.pnl!==null?mon(c.pnl):""}`), W-M, y, { align:"right" });
-        y += 5.5;
-        const px = [["Entry",t.entry],["SL",t.sl],["TP",t.tp],["Exit",t.exit]].filter(([,v])=>v!==""&&v!=null).map(([k,v])=>`${k} ${v}`);
-        if (c.risk!==null) px.push(`Risiko ${S.cur}${f(c.risk)}`);
-        if (c.commission) px.push(`Kommission ${S.cur}${f(c.commission)}`);
-        if (c.swap) px.push(`Swap ${mon(c.swap)}`);
-        if (c.planRR!==null) px.push(`geplant 1:${f(c.planRR)}`);
-        text(px.join("   |   ") || "-", M+4, 9, "normal", grey); y += 5;
-        if (notesLines.length){ doc.setFont("helvetica","italic"); doc.setFontSize(9); doc.setTextColor(60,70,85); doc.text(notesLines, M+4, y); y += notesLines.length*4.5; }
-        // genau EIN Bild pro Trade, feste Größe -> sauberes, vorhersehbares Layout
-        if (firstImg){
-          doc.addImage(firstImg.data, "JPEG", M+4, y, imgW, imgH); doc.setDrawColor(210); doc.rect(M+4, y, imgW, imgH);
-          if (em.shots.length > 1){ doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...grey); doc.text(P(`+${em.shots.length-1} weitere${em.shots.length===2?"s":""} Screenshot${em.shots.length>2?"s":""}`), M+8+imgW, y+imgH-2); }
-          y += imgH + 4;
-        }
-        y += 7;
-      }
-      y += 3;
-    }
-    const pages = doc.getNumberOfPages();
-    for (let i=1;i<=pages;i++){ doc.setPage(i); doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...grey); doc.text(`NoWick Journal  |  Seite ${i}/${pages}`, W/2, H-7, { align:"center" }); }
-    const ds = [...new Set(list.map(t=>t.date))].sort();
-    const name = `NoWick_Journal_${deDate(ds[0])}${ds.length>1?"_bis_"+deDate(ds[ds.length-1]):""}.pdf`;
-    try{ const json = JSON.stringify({ v:1, cur:S.cur, trades: embed }); const b64 = btoa(unescape(encodeURIComponent(json)));
-      doc.setProperties({ title: "NoWick Journal", subject: "AFXJ1:" + b64, creator: "NoWick Journal" }); }catch(e){}
-    const blob = doc.output("blob");
-    const dl = window.claude && claude.use ? await claude.use("downloads").catch(()=>null) : null;
-    if (dl){ try{ await dl.save({ filename: name, data: blob }); } catch(e){ if (e.code!=="declined") toast("PDF speichern nicht möglich"); } }
-    else { const u=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u), 4000); }
-  } catch(e){ toast("PDF konnte nicht erstellt werden"); }
+    const blob = new Blob([JSON.stringify({ app:"NoWick Journal", v:1, cur:S.cur, account: activeAccount().name||"", trades })], { type:"application/json" });
+    const ds = [...new Set(own.map(t=>t.date))].sort();
+    const name = `NoWick_Journal_${deDate(ds[0])}${ds.length>1?"_bis_"+deDate(ds[ds.length-1]):""}.json`;
+    const u = URL.createObjectURL(blob); const a = document.createElement("a"); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u), 4000);
+  }catch(e){ toast("Export fehlgeschlagen"); }
   finally{ btn.textContent = old; btn.disabled = false; }
 }
 
@@ -1989,6 +1898,13 @@ $("impFile").addEventListener("change", async e => {
   const file = e.target.files[0]; e.target.value = ""; if (!file) return;
   toast("Datei wird gelesen…");
   try{
+    if (/\.json$/i.test(file.name) || file.type === "application/json"){
+      const data = JSON.parse(await file.text());
+      const arr = Array.isArray(data) ? data : (data.trades || []);
+      IMP.lines = []; IMP.name = file.name;
+      const rows = arr.filter(t => t && t.date).map(t => ({ ...t, symbol: t.symbol || "", direction: t.direction || null, result: t.result || "be", shots: t.shots || [] }));
+      return showImport(rows, rows.length ? `JSON erkannt: ${rows.length} Trades${rows.some(r=>r.shots.length)?" mit Screenshots":""}. Bereits vorhandene Trades sind abgewählt.` : "In der JSON-Datei wurden keine Trades gefunden.");
+    }
     const { subject, lines } = await fileLines(file);
     IMP.lines = lines; IMP.name = file.name;
     if (subject.startsWith("AFXJ1:")){
