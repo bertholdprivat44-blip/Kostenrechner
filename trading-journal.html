@@ -60,6 +60,43 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .chip.on{border-color:var(--brass);box-shadow:inset 0 0 0 1px var(--brass)}
 .chip small{color:var(--ink-soft)}
 
+
+/* copy trading panel */
+.cp{margin-bottom:14px}
+.cp-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--card-line);border-radius:11px;padding:10px 14px;min-height:48px;color:var(--ink);cursor:pointer}
+.cp-toggle b{font-family:'Fraunces',serif;font-weight:500;font-size:.95rem}
+.cp-toggle small{display:block;color:var(--ink-soft);font-size:.72rem;margin-top:1px}
+.cp-toggle .cp-chev{color:var(--ink-soft);transition:transform .15s ease}
+.cp.open .cp-toggle .cp-chev{transform:rotate(180deg)}
+.cp-menu{display:flex;gap:8px;overflow-x:auto;scrollbar-width:thin;padding:8px 0 2px}
+.cp-tab{flex:none;background:rgba(255,255,255,.02);border:1px solid var(--card-line);border-radius:99px;padding:7px 14px;font-size:.8rem;color:var(--ink);cursor:pointer;white-space:nowrap;min-height:38px}
+.cp-tab small{color:var(--ink-soft);margin-left:4px}
+.cp-tab.lead{border-color:color-mix(in srgb, var(--brass) 55%, var(--card-line))}
+.cp-tab.on{border-color:var(--brass);box-shadow:inset 0 0 0 1.5px var(--brass)}
+.cp-body{display:none;background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--card-line);border-radius:11px;padding:16px;margin-top:8px}
+.cp.open .cp-body{display:block}
+.cp-tag{display:block;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
+.cp-lead{max-width:420px;margin:0 auto}
+.cp-box{border:2px solid var(--ink);border-radius:6px;padding:10px 12px;background:rgba(255,255,255,.02);cursor:pointer;min-width:0;position:relative}
+.cp-box.on{border-color:var(--brass);box-shadow:inset 0 0 0 1.5px var(--brass)}
+.cp-box b{display:block;font-family:'Fraunces',serif;font-weight:500;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp-box small{display:block;color:var(--ink-soft);font-size:.72rem;margin-top:2px}
+.cp-box .cp-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.cp-box .cp-mini{flex:1 1 auto;min-width:0;padding:0 8px;background:none;border:1px solid var(--card-line);border-radius:7px;color:var(--ink-soft);font-size:.75rem;min-height:34px;cursor:pointer}
+.cp-box .cp-mini:hover{border-color:var(--brass);color:var(--ink)}
+.cp-box .cp-mini.armed{background:var(--danger);color:#fff;border-color:var(--danger)}
+.cp-select{width:100%;margin-top:8px;background:rgba(255,255,255,.02);border:1px solid var(--card-line);border-radius:9px;padding:10px;font:inherit;font-size:.84rem;color:var(--ink);min-height:44px}
+.cp-line{width:2px;height:18px;background:var(--card-line);margin:0 auto}
+.cp-rail{height:2px;background:var(--card-line);margin:0 12%}
+.cp-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:12px}
+.cp-add{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:12px;border:2px dashed var(--card-line);border-radius:6px;background:none;color:var(--ink-soft);font-size:1rem;min-height:48px;cursor:pointer}
+.cp-add:hover:not(:disabled){border-color:var(--brass);color:var(--ink)}
+.cp-add:disabled{opacity:.4;cursor:not-allowed}
+.cp-addbox{margin-top:10px;padding:12px;border:1px solid var(--card-line);border-radius:9px}
+.cp-addbox .row{display:flex;gap:8px;margin-top:10px}
+.cp-addbox .row .btn{flex:1}
+.cp-empty{font-size:.78rem;color:var(--ink-soft);text-align:center;margin:12px 0 0;line-height:1.45}
+
 /* accounts */
 .acct-bar{display:flex;gap:8px;overflow-x:auto;scrollbar-width:thin;padding-bottom:2px;margin-bottom:14px}
 .acct-chip{flex:none;background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--card-line);border-radius:11px;padding:9px 13px;font-size:.8rem;text-align:left;line-height:1.3;cursor:pointer;min-width:120px}
@@ -264,6 +301,7 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
   </div>
 
   <div class="acct-bar" id="acctBar"></div>
+  <div class="cp" id="copyPanel"></div>
   <div id="acctStatsWrap"></div>
 
   <div id="app"><div class="loading">Journal wird geladen…</div></div>
@@ -467,6 +505,102 @@ function copyTag(a){
 }
 function isMaster(acc){ return /master/i.test(acc.phase||"") || /master/i.test(acc.name||""); }
 
+/* ---------- Copy-Trading-Feld: Lead oben, darunter beliebig viele Copy-Konten (+), alle per Klick aufrufbar ---------- */
+const CP_OPEN_KEY = "afx_cp_open", CP_LEAD_KEY = "afx_cp_lead";
+const CP = { open: false, adding: false, leadPref: "" };
+try { CP.open = localStorage.getItem(CP_OPEN_KEY) === "1"; CP.leadPref = localStorage.getItem(CP_LEAD_KEY) || ""; } catch(e){}
+function cpSave(){ try{ localStorage.setItem(CP_OPEN_KEY, CP.open ? "1" : "0"); localStorage.setItem(CP_LEAD_KEY, CP.leadPref || ""); }catch(_){} }
+function cpLead(){
+  const act = activeAccount();
+  const l = leadOf(act) || (followersOf(act.id).length ? act : null);   // gehört das aktive Konto zu einer Gruppe, wird diese gezeigt
+  if (l) return l;
+  const pref = S.accounts.find(a => a.id === CP.leadPref && !a.copyOf);
+  if (pref) return pref;
+  return S.accounts.find(a => !a.copyOf && followersOf(a.id).length) || null;
+}
+function cpCandidates(lead){   // Konten, die als Copy-Konto dazukommen können
+  return S.accounts.filter(a => a.id !== lead.id && !a.copyOf && followersOf(a.id).length === 0);
+}
+function cpUnlink(acc){ acc.copyOf = ""; acc.copyFactor = ""; acc.copySince = ""; }
+function cpSetLead(newId){
+  const old = cpLead(), n = S.accounts.find(a => a.id === newId);
+  if (!n) return;
+  if (old && old.id !== n.id){
+    const fol = followersOf(old.id);
+    if (n.copyOf === old.id){ cpUnlink(n); old.copyOf = n.id; old.copySince = todayIso(); old.copyFactor = ""; }   // Tausch: bisheriger Lead wird Copy-Konto
+    fol.forEach(x => { if (x.id !== n.id) x.copyOf = n.id; });
+  } else if (n.copyOf){ cpUnlink(n); }
+  CP.leadPref = n.id; cpSave(); saveAccounts(); render();
+}
+function cpAddFollower(leadId, accId){
+  const a = S.accounts.find(x => x.id === accId); if (!a) return;
+  a.copyOf = leadId; a.copyFactor = ""; a.copySince = todayIso();   // wie im Konto-Dialog: neue Copy-Konten kopieren ab heute
+  CP.leadPref = leadId; CP.adding = false; cpSave(); saveAccounts(); render(); toast("Copy-Konto hinzugefügt");
+}
+function renderCopyPanel(){
+  const host = $("copyPanel"); if (!host) return;
+  const lead = cpLead(), folls = lead ? followersOf(lead.id) : [];
+  const act = S.activeAccountId;
+  host.classList.toggle("open", CP.open);
+  const sum = lead ? "Lead" + (folls.length ? " · " + folls.length + " Copy-" + (folls.length > 1 ? "Konten" : "Konto") : " · noch keine Copy-Konten") : "Lead + Copy-Konten verwalten";
+  let h = `<button type="button" class="cp-toggle" id="cpToggle" aria-expanded="${CP.open}"><span><b>🔁 Copy Trading</b><small>${esc(sum)}</small></span><span class="cp-chev">▾</span></button>`;
+  if (lead && folls.length){
+    h += `<div class="cp-menu" role="tablist" aria-label="Konten dieser Copy-Gruppe">` +
+      [lead].concat(folls).map(a => `<button type="button" role="tab" class="cp-tab${a.id === lead.id ? " lead" : ""}${a.id === act ? " on" : ""}" data-cpgo="${esc(a.id)}">${a.id === lead.id ? "★ " : ""}${esc(a.name||"Konto")}<small>${a.id === lead.id ? "Lead" : "×" + fmtFactor(copyFactorOf(a))}</small></button>`).join("") + `</div>`;
+  }
+  h += `<div class="cp-body">`;
+  // Lead-Feld (oben)
+  h += `<div class="cp-lead"><span class="cp-tag">Lead – wird kopiert</span>`;
+  if (lead){
+    const st = accountEquityStats(lead, accountTradesAll(lead));
+    h += `<div class="cp-box${lead.id === act ? " on" : ""}" data-cpgo="${esc(lead.id)}"><b>${esc(lead.name||"Konto")}</b><small>${esc([lead.firma, lead.phase].filter(Boolean).join(" · ") || "Lead-Konto")}${st.start ? " · " + S.cur + f(st.balance) : ""}</small></div>`;
+  }
+  h += `<select class="cp-select" id="cpLeadSel" aria-label="Lead-Konto wählen">${lead ? "" : '<option value="">– Lead-Konto wählen –</option>'}` +
+    S.accounts.filter(a => !a.copyOf || (lead && a.copyOf === lead.id)).map(a => `<option value="${esc(a.id)}"${lead && a.id === lead.id ? " selected" : ""}>${esc(a.name||"Konto")}${a.copyOf ? " (aktuell Copy)" : ""}</option>`).join("") + `</select></div>`;
+  // Verbindung + Copy-Konten
+  if (lead){
+    if (folls.length){
+      h += `<div class="cp-line"></div>${folls.length > 1 ? '<div class="cp-rail"></div>' : ""}<div class="cp-row">` +
+        folls.map(a => {
+          const st = accountEquityStats(a, accountTradesAll(a));
+          return `<div class="cp-box${a.id === act ? " on" : ""}" data-cpgo="${esc(a.id)}"><span class="cp-tag" style="margin:0">Copy</span><b>${esc(a.name||"Konto")}</b><small>Faktor ×${fmtFactor(copyFactorOf(a))}${a.copySince ? " · ab " + deDate(a.copySince) : ""}${st.start ? " · " + S.cur + f(st.balance) : ""}</small><div class="cp-acts"><button type="button" class="cp-mini" data-cpedit="${esc(a.id)}">⚙️ Faktor</button><button type="button" class="cp-mini" data-cprm="${esc(a.id)}">Entfernen</button></div></div>`;
+        }).join("") + `</div>`;
+    } else {
+      h += `<p class="cp-empty">Noch keine Copy-Konten. Tippe auf „+“, um Konten hinzuzufügen, die diesem Lead folgen und dieselben Trades nehmen.</p>`;
+    }
+    h += `<button type="button" class="cp-add" id="cpAdd" aria-label="Copy-Konto hinzufügen">＋ <span style="font-size:.82rem">Copy-Konto hinzufügen</span></button>`;
+    if (CP.adding){
+      const cands = cpCandidates(lead);
+      h += `<div class="cp-addbox"><span class="cp-tag">Welches Konto soll ${esc(lead.name||"den Lead")} kopieren?</span><select class="cp-select" id="cpAddSel" style="margin-top:0">${cands.map(a => `<option value="${esc(a.id)}">${esc(a.name||"Konto")}${a.phase ? " · " + esc(a.phase) : ""}</option>`).join("")}<option value="__new">＋ Neues Konto anlegen …</option></select><div class="row"><button type="button" class="btn" id="cpAddCancel">Abbrechen</button><button type="button" class="btn primary" id="cpAddOk">Hinzufügen</button></div></div>`;
+    }
+  } else {
+    h += `<p class="cp-empty">Wähle oben dein Lead-Konto. Danach kannst du mit „+“ beliebig viele Konten hinzufügen, die ihm folgen.</p>`;
+  }
+  h += `</div>`;
+  host.innerHTML = h;
+}
+$("copyPanel").addEventListener("click", e => {
+  if (e.target.closest("#cpToggle")){ CP.open = !CP.open; if (!CP.open) CP.adding = false; cpSave(); return renderCopyPanel(); }
+  const rm = e.target.closest("[data-cprm]");
+  if (rm){ e.stopPropagation(); return armed(rm, () => { const a = S.accounts.find(x => x.id === rm.dataset.cprm); if (a){ cpUnlink(a); saveAccounts(); render(); toast("Copy-Konto entfernt"); } }); }
+  const ed = e.target.closest("[data-cpedit]");
+  if (ed){ e.stopPropagation(); return openAcctModal(S.accounts.find(x => x.id === ed.dataset.cpedit)); }
+  if (e.target.closest("#cpAdd")){ CP.adding = !CP.adding; return renderCopyPanel(); }
+  if (e.target.closest("#cpAddCancel")){ CP.adding = false; return renderCopyPanel(); }
+  if (e.target.closest("#cpAddOk")){
+    const lead = cpLead(), v = $("cpAddSel").value; if (!lead) return;
+    if (v === "__new"){
+      CP.adding = false; CP.leadPref = lead.id; cpSave(); openAcctModal(null);
+      $("aCopyRole").value = "copy"; $("aCopyOf").value = lead.id; $("aCopySince").value = todayIso();
+      applyCopyRoleVisibility(); updateCopyPreview(); renderCopyPanel(); return;
+    }
+    return cpAddFollower(lead.id, v);
+  }
+  const go = e.target.closest("[data-cpgo]");
+  if (go && go.dataset.cpgo !== S.activeAccountId) setActiveAccount(go.dataset.cpgo);
+});
+$("copyPanel").addEventListener("change", e => { if (e.target.id === "cpLeadSel" && e.target.value) cpSetLead(e.target.value); });
+
 const S = { trades: [], sel: new Set(), edit: null, form: null, cur: "$", cy: new Date().getFullYear(), cm: new Date().getMonth(),
   accounts: loadAccounts(), activeAccountId: null };
 try { S.activeAccountId = localStorage.getItem(ACTIVE_ACCOUNT_KEY) || S.accounts[0].id; } catch(e){ S.activeAccountId = S.accounts[0].id; }
@@ -503,6 +637,7 @@ function accountEquityStats(acc, trades){
 }
 
 function renderAccounts(){
+  renderCopyPanel();
   const bar = $("acctBar");
   const acc0 = activeAccount();
   const crown0 = isMaster(acc0) ? '<span class="crown">👑</span>' : "";
