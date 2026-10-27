@@ -1,11 +1,11 @@
-const CACHE = "sparrechner-v73";
+const CACHE = "sparrechner-v75";
 const ASSETS = [
   "./start.html",
+  "./app.html",
   "./index.html",
-  "./steuererklaerung.html",
-  "./einkommensteuer.html",
   "./trading-journal.html",
-  "./training.html",
+  "./anleitung.html",
+  "./steuer-cockpit.html",
   "./style.css",
   "./manifest.json",
   "./icon-192.png",
@@ -30,6 +30,6 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    caches.match(event.request, { ignoreSearch: true }).then((cached) => cached || fetch(event.request))
   );
 });

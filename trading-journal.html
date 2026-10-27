@@ -10,6 +10,7 @@
     }catch(e){}
   })();
 </script>
+<script>if(/[?&]embed=1/.test(location.search))document.documentElement.classList.add("embed");</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Budget-Ledger — Trading Journal</title>
 <link rel="manifest" href="manifest.json">
@@ -60,43 +61,6 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .chip.on{border-color:var(--brass);box-shadow:inset 0 0 0 1px var(--brass)}
 .chip small{color:var(--ink-soft)}
 
-
-/* copy trading panel */
-.cp{margin-bottom:14px}
-.cp-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--card-line);border-radius:11px;padding:10px 14px;min-height:48px;color:var(--ink);cursor:pointer}
-.cp-toggle b{font-family:'Fraunces',serif;font-weight:500;font-size:.95rem}
-.cp-toggle small{display:block;color:var(--ink-soft);font-size:.72rem;margin-top:1px}
-.cp-toggle .cp-chev{color:var(--ink-soft);transition:transform .15s ease}
-.cp.open .cp-toggle .cp-chev{transform:rotate(180deg)}
-.cp-menu{display:flex;gap:8px;overflow-x:auto;scrollbar-width:thin;padding:8px 0 2px}
-.cp-tab{flex:none;background:rgba(255,255,255,.02);border:1px solid var(--card-line);border-radius:99px;padding:7px 14px;font-size:.8rem;color:var(--ink);cursor:pointer;white-space:nowrap;min-height:38px}
-.cp-tab small{color:var(--ink-soft);margin-left:4px}
-.cp-tab.lead{border-color:color-mix(in srgb, var(--brass) 55%, var(--card-line))}
-.cp-tab.on{border-color:var(--brass);box-shadow:inset 0 0 0 1.5px var(--brass)}
-.cp-body{display:none;background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--card-line);border-radius:11px;padding:16px;margin-top:8px}
-.cp.open .cp-body{display:block}
-.cp-tag{display:block;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
-.cp-lead{max-width:420px;margin:0 auto}
-.cp-box{border:2px solid var(--ink);border-radius:6px;padding:10px 12px;background:rgba(255,255,255,.02);cursor:pointer;min-width:0;position:relative}
-.cp-box.on{border-color:var(--brass);box-shadow:inset 0 0 0 1.5px var(--brass)}
-.cp-box b{display:block;font-family:'Fraunces',serif;font-weight:500;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cp-box small{display:block;color:var(--ink-soft);font-size:.72rem;margin-top:2px}
-.cp-box .cp-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.cp-box .cp-mini{flex:1 1 auto;min-width:0;padding:0 8px;background:none;border:1px solid var(--card-line);border-radius:7px;color:var(--ink-soft);font-size:.75rem;min-height:34px;cursor:pointer}
-.cp-box .cp-mini:hover{border-color:var(--brass);color:var(--ink)}
-.cp-box .cp-mini.armed{background:var(--danger);color:#fff;border-color:var(--danger)}
-.cp-select{width:100%;margin-top:8px;background:rgba(255,255,255,.02);border:1px solid var(--card-line);border-radius:9px;padding:10px;font:inherit;font-size:.84rem;color:var(--ink);min-height:44px}
-.cp-line{width:2px;height:18px;background:var(--card-line);margin:0 auto}
-.cp-rail{height:2px;background:var(--card-line);margin:0 12%}
-.cp-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:12px}
-.cp-add{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:12px;border:2px dashed var(--card-line);border-radius:6px;background:none;color:var(--ink-soft);font-size:1rem;min-height:48px;cursor:pointer}
-.cp-add:hover:not(:disabled){border-color:var(--brass);color:var(--ink)}
-.cp-add:disabled{opacity:.4;cursor:not-allowed}
-.cp-addbox{margin-top:10px;padding:12px;border:1px solid var(--card-line);border-radius:9px}
-.cp-addbox .row{display:flex;gap:8px;margin-top:10px}
-.cp-addbox .row .btn{flex:1}
-.cp-empty{font-size:.78rem;color:var(--ink-soft);text-align:center;margin:12px 0 0;line-height:1.45}
-
 /* accounts */
 .acct-bar{display:flex;gap:8px;overflow-x:auto;scrollbar-width:thin;padding-bottom:2px;margin-bottom:14px}
 .acct-chip{flex:none;background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--card-line);border-radius:11px;padding:9px 13px;font-size:.8rem;text-align:left;line-height:1.3;cursor:pointer;min-width:120px}
@@ -140,6 +104,34 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .payout-row .pr-del{background:none;border:none;color:var(--ink-soft);flex:none;font-size:.9rem;min-height:32px;min-width:32px}
 .payout-row .pr-del:hover{color:var(--danger)}
 .btn.full{grid-column:1/-1}
+.thead{cursor:pointer;-webkit-user-select:none;user-select:none}
+.thead .chev{color:var(--ink-soft);font-size:1.4rem;line-height:1;transition:transform .2s;margin-left:2px;flex:none}
+.trade.open .thead .chev{transform:rotate(90deg)}
+.tmeta{padding:6px 16px 14px;font-size:.74rem;color:var(--ink-soft)}
+.trade .shots{padding:0 16px 14px}
+.trade .shots img{height:68px}
+.trade:not(.open) .tbody{display:none}
+.trade.open .tmeta{padding-bottom:10px}
+.sharebox{background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--card-line);border-radius:14px;padding:4px 16px 16px;margin:16px 0}
+.sharebox .gh{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin:14px 0 8px;font-weight:600}
+.sharebox .copyrow{margin:0}
+.tablewrap th,.tablewrap td{padding:9px 7px;font-size:.74rem;white-space:nowrap}
+.tablewrap tr.total{display:table-row;margin:0;padding:0;border:0;background:transparent}
+.tablewrap tr.total td{display:table-cell}
+@media (max-width:560px){
+  .tablewrap table{min-width:0}
+  .tablewrap th,.tablewrap td{padding:9px 5px}
+  .tablewrap th:nth-child(2),.tablewrap td:nth-child(2),.tablewrap th:nth-child(3),.tablewrap td:nth-child(3),.tablewrap th:nth-child(6),.tablewrap td:nth-child(6){display:none}
+  .tablewrap th{font-size:.6rem;letter-spacing:0}
+  .tablewrap tr.total td:nth-child(2),.tablewrap tr.total td:nth-child(3),.tablewrap tr.total td:nth-child(6){display:none}
+}
+html.embed body{padding-bottom:96px}
+html.embed .guide-link{display:none}
+html.embed .fab{left:auto;right:16px;transform:none;width:56px;height:56px;padding:0;border-radius:50%;font-size:0;display:flex;align-items:center;justify-content:center;bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+html.embed .fab::before{content:"+";font-size:30px;font-weight:400;line-height:1}
+html.embed .trade,html.embed .sharebox,html.embed .tablewrap{border-radius:14px}
+html.embed .trade{border-left-width:1px}
+html.embed .btn{border-radius:12px}
 .cand-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--card-line)}
 .grid .cand-row label{text-transform:none;letter-spacing:0;font-size:.86rem;flex-direction:row;align-items:center;gap:10px;color:var(--ink);flex:1;min-width:0}
 .grid .cand-row input[type=checkbox]{width:22px;height:22px;flex:none;accent-color:var(--brass);padding:0}
@@ -278,10 +270,9 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
   <div class="menu-panel" id="menu-panel">
     <a href="start.html">Start<span class="sub-label">Übersicht aller Bereiche</span></a>
     <a href="index.html">Sparrechner<span class="sub-label">Übersicht &amp; Spartopf</span></a>
-    <a href="steuererklaerung.html">Steuererklärung<span class="sub-label">Gewerbe &amp; Unterlagen</span></a>
-    <a href="einkommensteuer.html">Einkommensteuer<span class="sub-label">Private Steuererklärung</span></a>
+    <a href="steuer-cockpit.html">Steuer-Cockpit<span class="sub-label">Payouts, Belege &amp; EÜR</span></a>
     <a href="trading-journal.html" class="active">Trading Journal<span class="sub-label">NoWick Journal</span></a>
-    <a href="training.html">Training<span class="sub-label">5-Tage-Trainingskalender</span></a>
+    <a href="anleitung.html">Anleitung<span class="sub-label">Funktionen erklärt</span></a>
     <div class="theme-switcher">
       <span class="ts-label">Farbschema</span>
       <div class="ts-row">
@@ -300,8 +291,8 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
     <select class="cur" id="cur" aria-label="Währung"><option>$</option><option>€</option></select>
   </div>
 
+  <p class="guide-link" style="margin:-4px 0 12px;font-size:.78rem"><a href="anleitung.html#journal" style="color:var(--brass)">? Anleitung für das Journal</a></p>
   <div class="acct-bar" id="acctBar"></div>
-  <div class="cp" id="copyPanel"></div>
   <div id="acctStatsWrap"></div>
 
   <div id="app"><div class="loading">Journal wird geladen…</div></div>
@@ -371,7 +362,7 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
   </div>
 </div>
 
-<button class="fab" id="fab">+ Trade eintragen</button>
+<button class="fab" id="fab" aria-label="Trade eintragen">+ Trade eintragen</button>
 
 <div class="modal" id="acctPickModal">
   <div class="sheet">
@@ -447,7 +438,7 @@ tr.total td{font-weight:600;border-bottom:0;font-family:'Fraunces',serif}
     <div class="row"><button class="btn" id="iCancel">Abbrechen</button><button class="btn primary" id="iGo">Übernehmen</button></div>
   </div>
 </div>
-<input type="file" id="impFile" accept=".pdf,.json,.csv,.htm,.html,.txt,application/pdf,application/json" hidden>
+<input type="file" id="impFile" accept=".pdf,.csv,.htm,.html,.txt,application/pdf" hidden>
 <div class="viewer" id="viewer"><img id="viewerImg" alt="Screenshot"></div>
 <div class="toast" id="toast" role="status"></div>
 
@@ -505,102 +496,6 @@ function copyTag(a){
 }
 function isMaster(acc){ return /master/i.test(acc.phase||"") || /master/i.test(acc.name||""); }
 
-/* ---------- Copy-Trading-Feld: Lead oben, darunter beliebig viele Copy-Konten (+), alle per Klick aufrufbar ---------- */
-const CP_OPEN_KEY = "afx_cp_open", CP_LEAD_KEY = "afx_cp_lead";
-const CP = { open: false, adding: false, leadPref: "" };
-try { CP.open = localStorage.getItem(CP_OPEN_KEY) === "1"; CP.leadPref = localStorage.getItem(CP_LEAD_KEY) || ""; } catch(e){}
-function cpSave(){ try{ localStorage.setItem(CP_OPEN_KEY, CP.open ? "1" : "0"); localStorage.setItem(CP_LEAD_KEY, CP.leadPref || ""); }catch(_){} }
-function cpLead(){
-  const act = activeAccount();
-  const l = leadOf(act) || (followersOf(act.id).length ? act : null);   // gehört das aktive Konto zu einer Gruppe, wird diese gezeigt
-  if (l) return l;
-  const pref = S.accounts.find(a => a.id === CP.leadPref && !a.copyOf);
-  if (pref) return pref;
-  return S.accounts.find(a => !a.copyOf && followersOf(a.id).length) || null;
-}
-function cpCandidates(lead){   // Konten, die als Copy-Konto dazukommen können
-  return S.accounts.filter(a => a.id !== lead.id && !a.copyOf && followersOf(a.id).length === 0);
-}
-function cpUnlink(acc){ acc.copyOf = ""; acc.copyFactor = ""; acc.copySince = ""; }
-function cpSetLead(newId){
-  const old = cpLead(), n = S.accounts.find(a => a.id === newId);
-  if (!n) return;
-  if (old && old.id !== n.id){
-    const fol = followersOf(old.id);
-    if (n.copyOf === old.id){ cpUnlink(n); old.copyOf = n.id; old.copySince = todayIso(); old.copyFactor = ""; }   // Tausch: bisheriger Lead wird Copy-Konto
-    fol.forEach(x => { if (x.id !== n.id) x.copyOf = n.id; });
-  } else if (n.copyOf){ cpUnlink(n); }
-  CP.leadPref = n.id; cpSave(); saveAccounts(); render();
-}
-function cpAddFollower(leadId, accId){
-  const a = S.accounts.find(x => x.id === accId); if (!a) return;
-  a.copyOf = leadId; a.copyFactor = ""; a.copySince = todayIso();   // wie im Konto-Dialog: neue Copy-Konten kopieren ab heute
-  CP.leadPref = leadId; CP.adding = false; cpSave(); saveAccounts(); render(); toast("Copy-Konto hinzugefügt");
-}
-function renderCopyPanel(){
-  const host = $("copyPanel"); if (!host) return;
-  const lead = cpLead(), folls = lead ? followersOf(lead.id) : [];
-  const act = S.activeAccountId;
-  host.classList.toggle("open", CP.open);
-  const sum = lead ? "Lead" + (folls.length ? " · " + folls.length + " Copy-" + (folls.length > 1 ? "Konten" : "Konto") : " · noch keine Copy-Konten") : "Lead + Copy-Konten verwalten";
-  let h = `<button type="button" class="cp-toggle" id="cpToggle" aria-expanded="${CP.open}"><span><b>🔁 Copy Trading</b><small>${esc(sum)}</small></span><span class="cp-chev">▾</span></button>`;
-  if (lead && folls.length){
-    h += `<div class="cp-menu" role="tablist" aria-label="Konten dieser Copy-Gruppe">` +
-      [lead].concat(folls).map(a => `<button type="button" role="tab" class="cp-tab${a.id === lead.id ? " lead" : ""}${a.id === act ? " on" : ""}" data-cpgo="${esc(a.id)}">${a.id === lead.id ? "★ " : ""}${esc(a.name||"Konto")}<small>${a.id === lead.id ? "Lead" : "×" + fmtFactor(copyFactorOf(a))}</small></button>`).join("") + `</div>`;
-  }
-  h += `<div class="cp-body">`;
-  // Lead-Feld (oben)
-  h += `<div class="cp-lead"><span class="cp-tag">Lead – wird kopiert</span>`;
-  if (lead){
-    const st = accountEquityStats(lead, accountTradesAll(lead));
-    h += `<div class="cp-box${lead.id === act ? " on" : ""}" data-cpgo="${esc(lead.id)}"><b>${esc(lead.name||"Konto")}</b><small>${esc([lead.firma, lead.phase].filter(Boolean).join(" · ") || "Lead-Konto")}${st.start ? " · " + S.cur + f(st.balance) : ""}</small></div>`;
-  }
-  h += `<select class="cp-select" id="cpLeadSel" aria-label="Lead-Konto wählen">${lead ? "" : '<option value="">– Lead-Konto wählen –</option>'}` +
-    S.accounts.filter(a => !a.copyOf || (lead && a.copyOf === lead.id)).map(a => `<option value="${esc(a.id)}"${lead && a.id === lead.id ? " selected" : ""}>${esc(a.name||"Konto")}${a.copyOf ? " (aktuell Copy)" : ""}</option>`).join("") + `</select></div>`;
-  // Verbindung + Copy-Konten
-  if (lead){
-    if (folls.length){
-      h += `<div class="cp-line"></div>${folls.length > 1 ? '<div class="cp-rail"></div>' : ""}<div class="cp-row">` +
-        folls.map(a => {
-          const st = accountEquityStats(a, accountTradesAll(a));
-          return `<div class="cp-box${a.id === act ? " on" : ""}" data-cpgo="${esc(a.id)}"><span class="cp-tag" style="margin:0">Copy</span><b>${esc(a.name||"Konto")}</b><small>Faktor ×${fmtFactor(copyFactorOf(a))}${a.copySince ? " · ab " + deDate(a.copySince) : ""}${st.start ? " · " + S.cur + f(st.balance) : ""}</small><div class="cp-acts"><button type="button" class="cp-mini" data-cpedit="${esc(a.id)}">⚙️ Faktor</button><button type="button" class="cp-mini" data-cprm="${esc(a.id)}">Entfernen</button></div></div>`;
-        }).join("") + `</div>`;
-    } else {
-      h += `<p class="cp-empty">Noch keine Copy-Konten. Tippe auf „+“, um Konten hinzuzufügen, die diesem Lead folgen und dieselben Trades nehmen.</p>`;
-    }
-    h += `<button type="button" class="cp-add" id="cpAdd" aria-label="Copy-Konto hinzufügen">＋ <span style="font-size:.82rem">Copy-Konto hinzufügen</span></button>`;
-    if (CP.adding){
-      const cands = cpCandidates(lead);
-      h += `<div class="cp-addbox"><span class="cp-tag">Welches Konto soll ${esc(lead.name||"den Lead")} kopieren?</span><select class="cp-select" id="cpAddSel" style="margin-top:0">${cands.map(a => `<option value="${esc(a.id)}">${esc(a.name||"Konto")}${a.phase ? " · " + esc(a.phase) : ""}</option>`).join("")}<option value="__new">＋ Neues Konto anlegen …</option></select><div class="row"><button type="button" class="btn" id="cpAddCancel">Abbrechen</button><button type="button" class="btn primary" id="cpAddOk">Hinzufügen</button></div></div>`;
-    }
-  } else {
-    h += `<p class="cp-empty">Wähle oben dein Lead-Konto. Danach kannst du mit „+“ beliebig viele Konten hinzufügen, die ihm folgen.</p>`;
-  }
-  h += `</div>`;
-  host.innerHTML = h;
-}
-$("copyPanel").addEventListener("click", e => {
-  if (e.target.closest("#cpToggle")){ CP.open = !CP.open; if (!CP.open) CP.adding = false; cpSave(); return renderCopyPanel(); }
-  const rm = e.target.closest("[data-cprm]");
-  if (rm){ e.stopPropagation(); return armed(rm, () => { const a = S.accounts.find(x => x.id === rm.dataset.cprm); if (a){ cpUnlink(a); saveAccounts(); render(); toast("Copy-Konto entfernt"); } }); }
-  const ed = e.target.closest("[data-cpedit]");
-  if (ed){ e.stopPropagation(); return openAcctModal(S.accounts.find(x => x.id === ed.dataset.cpedit)); }
-  if (e.target.closest("#cpAdd")){ CP.adding = !CP.adding; return renderCopyPanel(); }
-  if (e.target.closest("#cpAddCancel")){ CP.adding = false; return renderCopyPanel(); }
-  if (e.target.closest("#cpAddOk")){
-    const lead = cpLead(), v = $("cpAddSel").value; if (!lead) return;
-    if (v === "__new"){
-      CP.adding = false; CP.leadPref = lead.id; cpSave(); openAcctModal(null);
-      $("aCopyRole").value = "copy"; $("aCopyOf").value = lead.id; $("aCopySince").value = todayIso();
-      applyCopyRoleVisibility(); updateCopyPreview(); renderCopyPanel(); return;
-    }
-    return cpAddFollower(lead.id, v);
-  }
-  const go = e.target.closest("[data-cpgo]");
-  if (go && go.dataset.cpgo !== S.activeAccountId) setActiveAccount(go.dataset.cpgo);
-});
-$("copyPanel").addEventListener("change", e => { if (e.target.id === "cpLeadSel" && e.target.value) cpSetLead(e.target.value); });
-
 const S = { trades: [], sel: new Set(), edit: null, form: null, cur: "$", cy: new Date().getFullYear(), cm: new Date().getMonth(),
   accounts: loadAccounts(), activeAccountId: null };
 try { S.activeAccountId = localStorage.getItem(ACTIVE_ACCOUNT_KEY) || S.accounts[0].id; } catch(e){ S.activeAccountId = S.accounts[0].id; }
@@ -637,7 +532,6 @@ function accountEquityStats(acc, trades){
 }
 
 function renderAccounts(){
-  renderCopyPanel();
   const bar = $("acctBar");
   const acc0 = activeAccount();
   const crown0 = isMaster(acc0) ? '<span class="crown">👑</span>' : "";
@@ -1035,14 +929,20 @@ function summaryText(list, part){
 
 /* ---------- render ---------- */
 function filtered(){ return activeTrades().filter(t => !S.sel.size || S.sel.has(t.date)).sort((a,b)=> (b.date+(b.time||"")).localeCompare(a.date+(a.time||"")) || b.createdAt-a.createdAt); }
+document.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("thead")){ e.preventDefault(); e.target.click(); } });
 function tradeCard(t){
   const c = calc(t);
   const leadAcc = t._mirror ? S.accounts.find(a => a.id === t._leadAccId) : null;
-  return `<article class="trade ${t.result}" data-id="${t.id}">
-    <div class="thead"><span class="badge">${label(t.result)}</span>
+  const open = !!(S.open && S.open.has(t.id));
+  const meta = [wday(t.date) + " " + shortDate(t.date), t.time || "", (c.rr !== null && c.rr !== undefined) ? rfmt(c.rr) : "", t.shots.length ? t.shots.length + (t.shots.length === 1 ? " Bild" : " Bilder") : ""].filter(Boolean).join(" · ");
+  return `<article class="trade ${t.result}${open?" open":""}" data-id="${t.id}">
+    <div class="thead" data-act="toggle" role="button" tabindex="0" aria-expanded="${open}"><span class="badge">${label(t.result)}</span>
       <div class="sym">${esc(t.symbol||"Trade")} ${c.dir?(c.dir==="long"?"Long":"Short"):""}</div>
-      <div class="tp ${c.pnl>0?"pos":c.pnl<0?"neg":""}">${c.pnl!==null?money(c.pnl):""}</div></div>
+      <div class="tp ${c.pnl>0?"pos":c.pnl<0?"neg":""}">${c.pnl!==null?money(c.pnl):""}</div><span class="chev" aria-hidden="true">›</span></div>
+    <div class="tmeta">${esc(meta)}</div>
     ${t._mirror?`<div class="mirror-tag">Copy von ${esc(leadAcc?.name||"Lead")} · ×${fmtFactor(t._k)}</div>`:""}
+    ${t.shots.length?`<div class="shots">${t.shots.map((s,i)=>`<img src="${esc(s.src)}" alt="Screenshot ${i+1}" data-act="view" data-i="${i}" loading="lazy">`).join("")}</div>`:""}
+    <div class="tbody">
     <div class="facts">
       <div><small>Datum</small><b>${wday(t.date)} ${shortDate(t.date)}</b></div>
       <div><small>Uhrzeit</small><b>${esc(t.time||"–")}</b></div>
@@ -1055,7 +955,6 @@ function tradeCard(t){
       ${c.commission?`<div><small>Kommission</small><b>${S.cur}${f(c.commission)}</b></div>`:""}
       ${c.swap?`<div><small>Swap</small><b>${money(c.swap)}</b></div>`:""}
     </div>
-    ${t.shots.length?`<div class="shots">${t.shots.map((s,i)=>`<img src="${esc(s.src)}" alt="Screenshot ${i+1}" data-act="view" data-i="${i}" loading="lazy">`).join("")}</div>`:""}
     ${t.notes?`<div class="note">${esc(t.notes)}</div>`:""}
     <div class="actions">
       <button class="btn primary" data-act="copy">Für Discord kopieren</button>
@@ -1063,7 +962,7 @@ function tradeCard(t){
       ${t._mirror ? `<button class="btn" data-act="gotolead">Beim Lead bearbeiten</button>` : `<button class="btn" data-act="move">Kopieren / Verschieben</button>
       <button class="btn" data-act="edit">Bearbeiten</button>
       <button class="btn" data-act="del">Löschen</button>`}
-    </div></article>`;
+    </div></div></article>`;
 }
 function selLabel(){
   const t = todayIso();
@@ -1174,19 +1073,26 @@ function render(){
       <div class="stat"><small>Ø RRR Wins</small><b>${s.avgWinRR===null?"–":f(s.avgWinRR)+"R"}</b></div>
       <div class="stat"><small>Rendite auf Risiko</small><b>${s.pnl!==null&&s.risk?f(s.pnl/s.risk*100,1)+" %":"–"}</b></div>
     </section>
-    <div class="copyrow">
-      <button class="btn primary" data-copy="all">Zusammenfassung kopieren</button>
-      <button class="btn" data-copy="win">Wins kopieren</button>
-      <button class="btn" data-copy="loss">Losses kopieren</button>
-      <button class="btn" id="pdfSum">PDF exportieren <small style="opacity:.7">(Auswertung mit Bild-Links)</small></button>
-      ${copyGroupOf(acc) ? `<button class="btn" id="pdfGroup">PDF Copy-Gruppe exportieren</button>` : ""}
-      <button class="btn" id="jsonExp">Daten exportieren (JSON)</button>
-      <button class="btn" id="impBtn">Importieren <small style="opacity:.7">(PDF, JSON, CSV, HTML)</small></button>
-    </div>
-    <div class="copyrow">
-      <button class="btn" data-copyimg="win" ${wins.some(t=>t.shots.length)?"":"disabled"}>Bilder (Wins) kopieren</button>
-      <button class="btn" data-copyimg="loss" ${losses.some(t=>t.shots.length)?"":"disabled"}>Bilder (Losses) kopieren</button>
-    </div>
+    <section class="sharebox">
+      <div class="gh">Für Discord</div>
+      <div class="copyrow">
+        <button class="btn primary" data-copy="all">Zusammenfassung kopieren</button>
+        <button class="btn" data-copy="win">Wins kopieren</button>
+        <button class="btn" data-copy="loss">Losses kopieren</button>
+      </div>
+      <div class="gh">Screenshots</div>
+      <div class="copyrow">
+        <button class="btn" data-copyimg="win" ${wins.some(t=>t.shots.length)?"":"disabled"}>Bilder (Wins) kopieren</button>
+        <button class="btn" data-copyimg="loss" ${losses.some(t=>t.shots.length)?"":"disabled"}>Bilder (Losses) kopieren</button>
+      </div>
+      <div class="gh">PDF</div>
+      <div class="copyrow">
+        <button class="btn" id="pdf">PDF exportieren</button>
+        <button class="btn" id="pdfSum">Auswertung (PDF mit Bild-Links)</button>
+        ${copyGroupOf(acc) ? `<button class="btn" id="pdfGroup">Auswertung Copy-Gruppe (PDF)</button>` : ""}
+        <button class="btn" id="impBtn">PDF importieren</button>
+      </div>
+    </section>
     ${galleryHtml(wins, losses, bes)}
     ${periodHtml()}
     ${weeksHtml(list)}
@@ -1221,10 +1127,10 @@ if (window.claude && claude.use) claude.use("sample").then(x => { S.sample = x; 
     if (await copyText(txt)){ const sm=pb.querySelector("small").innerHTML; pb.classList.add("done"); pb.querySelector("small").textContent="Kopiert ✓"; setTimeout(()=>{ pb.classList.remove("done"); pb.querySelector("small").innerHTML=sm; },1300);
       if (txt.length > 2000) toast("Länger als 2000 Zeichen – Discord macht daraus eine Datei"); }
     else toast("Kopieren nicht möglich"); return; }
-  if (e.target.closest("#jsonExp")) return exportJson(e.target.closest("#jsonExp"));
-  if (e.target.closest("#pdfSum")) return makeSummaryPdf(e.target.closest("#pdfSum"));
-  if (e.target.closest("#pdfGroup")) return makeSummaryPdf(e.target.closest("#pdfGroup"), { group: true });
-  if (e.target.closest("#impBtn")) return $("impFile").click();
+  if (e.target.id === "pdf") return makePdf(e.target);
+  if (e.target.id === "pdfSum") return makeSummaryPdf(e.target);
+  if (e.target.id === "pdfGroup") return makeSummaryPdf(e.target, { group: true });
+  if (e.target.id === "impBtn") return $("impFile").click();
   const cp = e.target.closest("[data-copy]");
   if (cp){ const list = filtered(); if (!list.length) return toast("Keine Trades ausgewählt"); (await copyText(summaryText(list, cp.dataset.copy))) ? flash(cp,"Kopiert ✓") : toast("Kopieren nicht möglich"); return; }
   const gitem = e.target.closest("[data-gcopy]");
@@ -1251,6 +1157,11 @@ if (window.claude && claude.use) claude.use("sample").then(x => { S.sample = x; 
   }
   if (e.target.id === "reset") return armed(e.target, async () => { for (const t of ownTrades(activeAccount().id)) await Store.del(t); toast("Trades dieses Kontos gelöscht"); });
   const el = e.target.closest("[data-act]"); if (!el) return;
+  if (el.dataset.act === "toggle"){
+    const art = el.closest(".trade"); S.open = S.open || new Set(); art.classList.toggle("open");
+    const on = art.classList.contains("open"); el.setAttribute("aria-expanded", String(on));
+    if (on) S.open.add(art.dataset.id); else S.open.delete(art.dataset.id); return;
+  }
   const t = findTradeAny(el.closest(".trade").dataset.id); if (!t) return;
   const a = el.dataset.act;
   if (a==="gotolead"){ const orig = S.trades.find(x => x.id === t._leadTradeId); if (orig){ setActiveAccount(t._leadAccId); openForm(orig); } return; }
@@ -1521,7 +1432,6 @@ async function makeSummaryPdf(btn, opts = {}){
     for (const r of rows){
       if (!r.shots.length) continue;
       const imgs=[]; for (const s of r.shots){ try{ imgs.push(await toJpeg(s.src)); }catch(e){} }
-      r.embShots = imgs.map(i=>i.data);
       if (!imgs.length) continue;
       for (let k=0;k<imgs.length;k+=4){
         const chunk=imgs.slice(k,k+4);
@@ -1549,23 +1459,7 @@ async function makeSummaryPdf(btn, opts = {}){
 
     const pages = doc.getNumberOfPages();
     for (let i=1;i<=pages;i++){ doc.setPage(i); T(`NoWick Journal  |  Trade Summary  |  Seite ${i}/${pages}`, W/2, H-6, 8, "normal", grey, { align:"center" }); }
-    /* Importierbare Daten einbetten: echte Trades (nicht die umgerechneten Spiegel-Trades), Gruppe = Trades des Leads */
-    let subject = "";
-    try{
-      let src;
-      if (grp){ const inSel = t => !S.sel.size || S.sel.has(t.date); src = ownTrades(grp.lead.id).filter(inSel).sort((x,y)=>(x.date+(x.time||"")).localeCompare(y.date+(y.time||""))); }
-      else src = rows.map(r => r.t).filter(t => !t._mirror);
-      const embed = [];
-      for (const t of src){
-        const em = { ...t, shots: [] }; delete em._orig;
-        const row = rows.find(r => r.t === t);
-        if (row && row.embShots) em.shots = row.embShots;
-        else for (const sh of (t.shots||[])){ try{ em.shots.push((await toJpeg(sh.src)).data); }catch(e){} }
-        embed.push(em);
-      }
-      subject = "AFXJ1:" + btoa(unescape(encodeURIComponent(JSON.stringify({ v:1, cur:S.cur, trades: embed }))));
-    }catch(e){}
-    doc.setProperties({ title:"Trade Summary", subject, creator:"NoWick Journal" });
+    doc.setProperties({ title:"Trade Summary", creator:"NoWick Journal" });
     const ds=[...new Set(list.map(t=>t.date))].sort();
     const name=`Trade_Summary_${grp?"CopyGruppe_":""}${deDate(ds[0])}${ds.length>1?"_bis_"+deDate(ds[ds.length-1]):""}.pdf`;
     const blob=doc.output("blob");
@@ -1576,24 +1470,132 @@ async function makeSummaryPdf(btn, opts = {}){
   finally{ btn.textContent = old; btn.disabled = false; }
 }
 
-/* ---------- JSON-Export (Daten inkl. Screenshots) ---------- */
-async function exportJson(btn){
+async function makePdf(btn){
   const list = filtered().slice().sort((a,b)=>(a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
-  const own = list.filter(t => !t._mirror);
-  if (!own.length) return toast("Keine eigenen Trades im gewählten Zeitraum");
-  const old = btn.textContent; btn.textContent = "Wird erstellt…"; btn.disabled = true;
+  if (!list.length) return toast("Keine Trades im gewählten Zeitraum");
+  if (!window.jspdf) return toast("PDF-Modul konnte nicht geladen werden");
+  const old = btn.textContent; btn.textContent = "PDF wird erstellt…"; btn.disabled = true;
   try{
-    const trades = [];
-    for (const t of own){
-      const em = { ...t, shots: [] }; delete em._orig;
-      for (const sh of (t.shots||[])){ try{ em.shots.push((await toJpeg(sh.src)).data); }catch(e){} }
-      trades.push(em);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit:"mm", format:"a4" });
+    const W=210, H=297, M=14, CW=W-2*M; let y=M;
+    const P = v => String(v ?? "").replace(/−/g,"-").replace(/[^\x00-\xFF€–]/g,"");
+    const mon = n => P(money(n));
+    const need = h => { if (y+h > H-M){ doc.addPage(); y=M; } };
+    const text = (t, x, size=10, style="normal", color=[20,25,35]) => { doc.setFont("helvetica", style); doc.setFontSize(size); doc.setTextColor(...color); doc.text(P(t), x, y); };
+    const green=[19,140,90], red=[200,50,65], grey=[100,110,125];
+    const tot = stats(list);
+    text("NoWick Journal", M, 18, "bold"); y+=8;
+    text(rangeLabel(list), M, 11, "normal", grey); y+=9;
+    doc.setDrawColor(210); doc.setFillColor(244,246,250); doc.roundedRect(M, y-5, CW, 24, 2, 2, "F");
+    const kv = [["Trades", tot.n], ["Win/Loss/BE", `${tot.w}/${tot.l}/${tot.b}`], ["Winrate", tot.wr===null?"-":f(tot.wr,1)+" %"], ["Riskiert", S.cur+f(tot.risk)], ["P&L", mon(tot.pnl)], ["Gesamt R", P(rfmt(tot.R))]];
+    kv.forEach(([k,v],i)=>{ const x=M+4+i*(CW/6); text(k, x, 8, "normal", grey); y+=6; text(v, x, 11, "bold", k==="P&L"||k==="Gesamt R" ? (String(v).startsWith("-")?red:green) : [20,25,35]); y-=6; });
+    y += 24;
+    // Auszahlungen im gewählten Zeitraum
+    const acctForPdf = activeAccount();
+    const payoutsInRange = (acctForPdf.payouts||[]).filter(pp => !S.sel.size || S.sel.has(pp.date)).sort((a,b)=>a.date.localeCompare(b.date));
+    if (payoutsInRange.length){
+      need(10 + payoutsInRange.length*6);
+      text("Auszahlungen", M, 13, "bold"); y+=7;
+      const totalPO = payoutsInRange.reduce((s,pp)=>s+(num(pp.amount)||0),0);
+      payoutsInRange.forEach(pp => {
+        const net = payoutNet(pp);
+        need(6);
+        text(deDate(pp.date), M, 9.5, "normal", grey);
+        text(P((pp.note||"") + (net!==null ? `  (Split ${f(num(pp.split))}%)` : "")), M+32, 9.5, "normal", grey);
+        doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.setTextColor(...red);
+        doc.text(P("- "+S.cur+f(num(pp.amount)||0)), W-M, y, { align:"right" });
+        y += 6;
+        if (net!==null){
+          need(5);
+          text(P(`davon erhalten: ${S.cur}${f(net)}`), M+32, 8.5, "italic", grey);
+          y += 5;
+        }
+      });
+      doc.setDrawColor(210); doc.line(M,y-2,W-M,y-2); y+=4;
+      text("Ausgezahlt gesamt", M, 10, "bold");
+      doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(...red);
+      doc.text(P("- "+S.cur+f(totalPO)), W-M, y, { align:"right" });
+      y += 6;
+      if (tot.pnl !== null){
+        const netAfterPO = tot.pnl - totalPO;
+        text("P&L nach Auszahlungen", M, 10, "bold");
+        doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(...(netAfterPO>=0?green:red));
+        doc.text(P(mon(netAfterPO)), W-M, y, { align:"right" });
+        y += 6;
+      }
+      y += 4;
     }
-    const blob = new Blob([JSON.stringify({ app:"NoWick Journal", v:1, cur:S.cur, account: activeAccount().name||"", trades })], { type:"application/json" });
-    const ds = [...new Set(own.map(t=>t.date))].sort();
-    const name = `NoWick_Journal_${deDate(ds[0])}${ds.length>1?"_bis_"+deDate(ds[ds.length-1]):""}.json`;
-    const u = URL.createObjectURL(blob); const a = document.createElement("a"); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u), 4000);
-  }catch(e){ toast("Export fehlgeschlagen"); }
+    // weekly table
+    text("Winrate pro Woche", M, 13, "bold"); y+=7;
+    const cols=[["Woche",0],["Zeitraum",20],["Trades",62],["W/L/BE",80],["Winrate",104],["Riskiert",126],["P&L",150],["R",172]];
+    cols.forEach(([c,x])=>text(c, M+x, 8, "bold", grey)); y+=2; doc.setDrawColor(200); doc.line(M,y,W-M,y); y+=5;
+    const wrow = (a,b,st,bold) => { need(7); const vals=[a,b,st.n,`${st.w}/${st.l}/${st.b}`,st.wr===null?"-":f(st.wr,1)+" %",S.cur+f(st.risk),mon(st.pnl),P(rfmt(st.R))];
+      vals.forEach((v,i)=>text(v, M+cols[i][1], 9, bold?"bold":"normal", i>=6 ? ((i===6?st.pnl:st.R)>0?green:(i===6?st.pnl:st.R)<0?red:[20,25,35]) : [20,25,35])); y+=6; };
+    weekRows(list).forEach(r=>wrow(`KW ${r.week}`, `${shortDate(r.from)} - ${shortDate(r.to)}`, r.s));
+    doc.line(M,y-4,W-M,y-4); wrow("Gesamt","",tot,true); y+=4;
+    // days
+    const embed = [];
+    const days = [...new Set(list.map(t=>t.date))];
+    for (const d of days){
+      const dl = list.filter(t=>t.date===d), ds = stats(dl);
+      need(22);
+      doc.setFillColor(58,111,240); doc.rect(M, y-5, CW, 9, "F");
+      text(`${wday(d)} ${deDate(d)}`, M+3, 11, "bold", [255,255,255]);
+      doc.setFont("helvetica","normal"); doc.setFontSize(9);
+      const info = P(`${ds.n} Trades  |  ${ds.w}W / ${ds.l}L / ${ds.b}BE  |  Winrate ${ds.wr===null?"-":f(ds.wr,1)+" %"}  |  ${mon(ds.pnl)}  |  ${rfmt(ds.R)}`);
+      doc.setTextColor(255,255,255); doc.text(info, W-M-3, y, { align:"right" });
+      y += 10;
+      for (const t of dl){
+        const c = calc(t), col = t.result==="win"?green:t.result==="loss"?red:grey;
+        // Bilder vorab laden, damit die komplette Blockhöhe (Text + Bild) VOR dem Zeichnen feststeht
+        // -> Text und Bild werden nie durch einen Seitenumbruch getrennt.
+        const em = { ...t, shots: [] }; delete em._orig; if (!t._mirror) embed.push(em);
+        let firstImg = null;
+        for (const sh of t.shots){
+          let im; try{ im = await toJpeg(sh.src); }catch(e){ continue; }
+          em.shots.push(im.data);
+          if (!firstImg) firstImg = im;
+        }
+        const FIXH = 52, maxW = CW-4; // feste Bildhöhe -> mind. 3 Trades pro Seite, gleichmäßiges Layout
+        let imgW = 0, imgH = 0;
+        if (firstImg){ imgH = FIXH; imgW = firstImg.w/firstImg.h*imgH; if (imgW > maxW){ imgW = maxW; imgH = firstImg.h/firstImg.w*imgW; } }
+        const notesLines = t.notes ? doc.splitTextToSize(P(t.notes), CW-6) : [];
+        const blockH = 5.5 + 5 + (notesLines.length ? notesLines.length*4.5 : 0) + (firstImg ? imgH+4 : 0) + 7;
+        need(blockH);
+        doc.setFillColor(...col); doc.rect(M, y-4, 1.6, 12, "F");
+        text(`${t.time||"--:--"}   ${t.symbol||"Trade"} ${c.dir?(c.dir==="long"?"Long":"Short"):""}`, M+4, 11, "bold");
+        doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(...col);
+        doc.text(P(`${label(t.result)}   ${rfmt(c.rr)}   ${c.pnl!==null?mon(c.pnl):""}`), W-M, y, { align:"right" });
+        y += 5.5;
+        const px = [["Entry",t.entry],["SL",t.sl],["TP",t.tp],["Exit",t.exit]].filter(([,v])=>v!==""&&v!=null).map(([k,v])=>`${k} ${v}`);
+        if (c.risk!==null) px.push(`Risiko ${S.cur}${f(c.risk)}`);
+        if (c.commission) px.push(`Kommission ${S.cur}${f(c.commission)}`);
+        if (c.swap) px.push(`Swap ${mon(c.swap)}`);
+        if (c.planRR!==null) px.push(`geplant 1:${f(c.planRR)}`);
+        text(px.join("   |   ") || "-", M+4, 9, "normal", grey); y += 5;
+        if (notesLines.length){ doc.setFont("helvetica","italic"); doc.setFontSize(9); doc.setTextColor(60,70,85); doc.text(notesLines, M+4, y); y += notesLines.length*4.5; }
+        // genau EIN Bild pro Trade, feste Größe -> sauberes, vorhersehbares Layout
+        if (firstImg){
+          doc.addImage(firstImg.data, "JPEG", M+4, y, imgW, imgH); doc.setDrawColor(210); doc.rect(M+4, y, imgW, imgH);
+          if (em.shots.length > 1){ doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...grey); doc.text(P(`+${em.shots.length-1} weitere${em.shots.length===2?"s":""} Screenshot${em.shots.length>2?"s":""}`), M+8+imgW, y+imgH-2); }
+          y += imgH + 4;
+        }
+        y += 7;
+      }
+      y += 3;
+    }
+    const pages = doc.getNumberOfPages();
+    for (let i=1;i<=pages;i++){ doc.setPage(i); doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...grey); doc.text(`NoWick Journal  |  Seite ${i}/${pages}`, W/2, H-7, { align:"center" }); }
+    const ds = [...new Set(list.map(t=>t.date))].sort();
+    const name = `NoWick_Journal_${deDate(ds[0])}${ds.length>1?"_bis_"+deDate(ds[ds.length-1]):""}.pdf`;
+    try{ const json = JSON.stringify({ v:1, cur:S.cur, trades: embed }); const b64 = btoa(unescape(encodeURIComponent(json)));
+      doc.setProperties({ title: "NoWick Journal", subject: "AFXJ1:" + b64, creator: "NoWick Journal" }); }catch(e){}
+    const blob = doc.output("blob");
+    const dl = window.claude && claude.use ? await claude.use("downloads").catch(()=>null) : null;
+    if (dl){ try{ await dl.save({ filename: name, data: blob }); } catch(e){ if (e.code!=="declined") toast("PDF speichern nicht möglich"); } }
+    else { const u=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u), 4000); }
+  } catch(e){ toast("PDF konnte nicht erstellt werden"); }
   finally{ btn.textContent = old; btn.disabled = false; }
 }
 
@@ -1898,13 +1900,6 @@ $("impFile").addEventListener("change", async e => {
   const file = e.target.files[0]; e.target.value = ""; if (!file) return;
   toast("Datei wird gelesen…");
   try{
-    if (/\.json$/i.test(file.name) || file.type === "application/json"){
-      const data = JSON.parse(await file.text());
-      const arr = Array.isArray(data) ? data : (data.trades || []);
-      IMP.lines = []; IMP.name = file.name;
-      const rows = arr.filter(t => t && t.date).map(t => ({ ...t, symbol: t.symbol || "", direction: t.direction || null, result: t.result || "be", shots: t.shots || [] }));
-      return showImport(rows, rows.length ? `JSON erkannt: ${rows.length} Trades${rows.some(r=>r.shots.length)?" mit Screenshots":""}. Bereits vorhandene Trades sind abgewählt.` : "In der JSON-Datei wurden keine Trades gefunden.");
-    }
     const { subject, lines } = await fileLines(file);
     IMP.lines = lines; IMP.name = file.name;
     if (subject.startsWith("AFXJ1:")){

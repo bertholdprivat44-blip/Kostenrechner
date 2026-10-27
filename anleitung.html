@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<script>
+  (function(){
+    try{
+      var t = localStorage.getItem('sparrechner_theme_v1');
+      if(t && t !== 'midnight') document.documentElement.setAttribute('data-theme', t);
+    }catch(e){}
+  })();
+</script>
+<script>if(/[?&]embed=1/.test(location.search))document.documentElement.classList.add("embed");</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budget-Ledger — Anleitung</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#04060c">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sparrechner">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+.g-wrap{max-width:760px;margin:0 auto;padding:22px 0 60px}
+.g-eyebrow{font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--brass);margin:0 0 6px}
+.g-wrap h1{font-family:'Fraunces',serif;font-weight:500;font-size:2.1rem;margin:0 0 8px;line-height:1.15}
+.g-lead{color:var(--ink-soft);line-height:1.6;margin:0 0 18px;font-size:.88rem}
+.g-tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.g-tools input{flex:1;min-width:220px;font:inherit;font-size:16px;color:var(--ink);background:var(--card);border:1px solid var(--card-line);border-radius:8px;padding:11px 13px}
+.g-tools input:focus{outline:none;border-color:var(--brass)}
+.g-btns{display:flex;gap:8px}
+.g-btns button{font:inherit;font-size:.74rem;color:var(--ink-soft);background:transparent;border:1px solid var(--card-line);border-radius:8px;padding:9px 11px;min-height:40px;cursor:pointer}
+.g-toc{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.g-toc a{color:var(--ink);text-decoration:none;font-size:.78rem;border:1px solid var(--card-line);background:var(--card);border-radius:99px;padding:8px 14px}
+.g-toc a:hover{border-color:var(--brass)}
+.g-sec{background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--card-line);border-radius:4px;padding:18px 18px 4px;margin-bottom:16px;scroll-margin-top:16px}
+.g-sec h2{font-family:'Fraunces',serif;font-weight:500;font-size:1.25rem;margin:0 0 4px}
+.g-item{border-top:1px solid var(--card-line)}
+.g-item summary{cursor:pointer;list-style:none;padding:14px 30px 14px 0;font-size:.9rem;font-weight:500;position:relative;min-height:44px;line-height:1.4}
+.g-item summary::-webkit-details-marker{display:none}
+.g-item summary::after{content:"+";position:absolute;right:4px;top:10px;color:var(--brass);font-size:1.3rem}
+.g-item[open] summary::after{content:"–"}
+.g-body{padding:0 0 16px;font-size:.84rem;line-height:1.65;color:var(--ink-soft)}
+.g-body p{margin:0 0 10px}.g-body ul,.g-body ol{margin:0 0 10px;padding-left:20px}.g-body li{margin:0 0 6px}
+.g-body b{color:var(--ink);font-weight:500}.g-body a{color:var(--brass)}
+.ui{color:var(--ink);background:rgba(255,255,255,.06);border:1px solid var(--card-line);border-radius:5px;padding:0 5px;font-size:.78rem;line-height:1.75;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.g-body code{font-size:.78rem;background:rgba(255,255,255,.06);padding:1px 5px;border-radius:4px;color:var(--ink)}
+.g-body dt{color:var(--ink);font-weight:500;margin-top:12px}.g-body dd{margin:3px 0 0}
+.g-none{color:var(--ink-soft);text-align:center;padding:24px 0}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <span class="brand">Budget-Ledger</span>
+  <button class="menu-toggle" id="menu-toggle" type="button">☰ Menü</button>
+  <div class="menu-panel" id="menu-panel">
+    <a href="start.html">Start<span class="sub-label">Übersicht aller Bereiche</span></a>
+    <a href="index.html">Sparrechner<span class="sub-label">Übersicht &amp; Spartopf</span></a>
+    <a href="steuer-cockpit.html">Steuer-Cockpit<span class="sub-label">Payouts, Belege &amp; EÜR</span></a>
+    <a href="trading-journal.html">Trading Journal<span class="sub-label">NoWick Journal</span></a>
+    <a href="anleitung.html" class="active">Anleitung<span class="sub-label">Funktionen erklärt</span></a>
+    <div class="theme-switcher">
+      <span class="ts-label">Farbschema</span>
+      <div class="ts-row">
+        <button class="theme-swatch" data-swatch="midnight" title="Mitternacht (Standard)" type="button"></button>
+        <button class="theme-swatch" data-swatch="redblack" title="Rot-Schwarz" type="button"></button>
+        <button class="theme-swatch" data-swatch="emerald" title="Smaragd" type="button"></button>
+        <button class="theme-swatch" data-swatch="amber" title="Bernstein" type="button"></button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main class="g-wrap">
+  <p class="g-eyebrow">Hilfe</p>
+  <h1>Anleitung</h1>
+  <p class="g-lead">Hier steht, was jede Seite und jede Funktion macht – Schritt für Schritt und mit den Namen der Knöpfe, so wie du sie in der App siehst. Tippe auf eine Überschrift, um sie aufzuklappen.</p>
+
+  <div class="g-tools">
+    <input id="gsearch" type="search" placeholder="Suchen (z. B. Copy, Swap, PDF, Drawdown …)" autocomplete="off">
+    <div class="g-btns"><button type="button" id="gOpen">Alles aufklappen</button><button type="button" id="gClose">Alles zuklappen</button></div>
+  </div>
+
+  <nav class="g-toc" id="toc" aria-label="Inhalt">
+    <a href="#schnellstart">Schnellstart</a><a href="#grundlagen">Grundlagen</a><a href="#sparrechner">Sparrechner</a><a href="#steuer-cockpit">Steuer-Cockpit</a><a href="#journal">Trading Journal</a><a href="#konten">Konten &amp; Drawdown</a><a href="#copy">Copy-Trading</a><a href="#hilfe">Probleme lösen</a><a href="#glossar">Begriffe</a>
+  </nav>
+  <p class="g-none" id="gnone" style="display:none">Nichts gefunden – probier ein anderes Stichwort.</p>
+
+  <section class="g-sec" id="schnellstart">
+    <h2>Schnellstart</h2>
+    <details class="g-item" open><summary>Dein erster Trade in 5 Schritten</summary><div class="g-body">
+      <ol>
+        <li>Menü <span class="ui">☰</span> → <span class="ui">Trading Journal</span>.</li>
+        <li>Oben auf die Konto-Zeile tippen und mit <span class="ui">+ Neues Konto</span> ein Konto anlegen (Name und Kontogröße reichen). Mit nur einem Konto brauchst du nichts auszuwählen.</li>
+        <li><span class="ui">+ Trade eintragen</span> tippen. Entweder einen <b>Screenshot</b> hochladen (die App liest die Werte selbst aus) oder die Felder von Hand ausfüllen: Ergebnis (Win/Loss/BE), Gewinn/Verlust, Paar, Richtung.</li>
+        <li>Werte prüfen und <span class="ui">Speichern</span>. Der Trade erscheint im Kalender und in den Listen.</li>
+        <li>Unten kopierst du Texte für Discord oder erstellst ein PDF – siehe <a href="#journal">Trading Journal</a>.</li>
+      </ol>
+    </div></details>
+    <details class="g-item"><summary>Welche Seite ist wofür?</summary><div class="g-body">
+      <ul>
+        <li><b>Sparrechner</b> – Einkommen auf fünf Töpfe verteilen, Monate speichern, Spartopf verwalten.</li>
+        <li><b>Steuer-Cockpit</b> – Payouts als Eigenbeleg buchen, Ausgaben erfassen, EÜR-Übersicht, Steuerprognose und Steuer pro Payout.</li>
+        <li><b>Trading Journal</b> – Trades mit Screenshots, Statistik, Konten, Drawdown, Auszahlungen, Copy-Trading, PDF-Auswertungen.</li>
+      </ul>
+    </div></details>
+  </section>
+
+  <section class="g-sec" id="grundlagen">
+    <h2>Grundlagen</h2>
+    <details class="g-item"><summary>Wo sind meine Daten? – lokal auf diesem Gerät</summary><div class="g-body">
+      <p>Alles wird nur im Browser deines Geräts gespeichert. Es gibt <b>kein Benutzerkonto und keinen Server</b>, nichts wird hochgeladen.</p>
+      <ul>
+        <li>Anderes Handy, anderer Browser oder anderer Rechner = andere, getrennte Daten.</li>
+        <li>Löschst du die Website-Daten des Browsers, sind die Einträge weg.</li>
+        <li><b>Sicherung des Journals:</b> <span class="ui">PDF exportieren</span> speichert die Trades samt Screenshots im PDF. Mit <span class="ui">PDF importieren</span> liest du sie wieder ein.</li>
+        <li>Nicht im PDF enthalten: Konten, Auszahlungen und Copy-Einstellungen. Die liegen nur im Browser.</li>
+        <li><b>Sicherung des Steuer-Cockpits:</b> <span class="ui">💾 Backup sichern</span> speichert alle Buchungen und Einstellungen als Datei, <span class="ui">📂 Datei laden</span> liest sie wieder ein.</li>
+      </ul>
+    </div></details>
+    <details class="g-item"><summary>Als App aufs Handy legen</summary><div class="g-body">
+      <ul>
+        <li><b>iPhone (Safari):</b> Teilen-Symbol → <span class="ui">Zum Home-Bildschirm</span>.</li>
+        <li><b>Android (Chrome):</b> Menü ⋮ → <span class="ui">App installieren</span> oder <span class="ui">Zum Startbildschirm hinzufügen</span>.</li>
+      </ul>
+      <p>Danach öffnet sie sich wie eine App ohne Browserleiste und lädt ihre Seiten aus dem Zwischenspeicher.</p>
+    </div></details>
+    <details class="g-item"><summary>Neue Oberfläche mit Tab-Leiste (app.html)</summary><div class="g-body">
+      <p>Öffne <code>app.html</code> statt <code>start.html</code>: Unten liegt eine feste Leiste mit <b>Heute</b>, <b>Trading</b>, <b>Steuer</b>, <b>Sparen</b> und <b>Mehr</b>. Die Seiten selbst sind dieselben wie sonst, nur ohne Menü darüber.</p>
+      <ul>
+        <li><b>Heute</b> zeigt live deine Zahlen: Trading-Ergebnis des Monats, Payouts und Rücklage. Darunter Schnellknöpfe wie <span class="ui">Trade eintragen</span> und <span class="ui">Payout buchen</span>. Der <b>Sparrechner</b> bleibt ein eigener Reiter.</li>
+        <li><b>Mehr</b> enthält Farbschema, diese Anleitung und den Link zur klassischen Ansicht mit Menü.</li>
+        <li>Die Live-Zahlen funktionieren nur, wenn alles von derselben Internetadresse kommt (z. B. deine GitHub-Pages-Seite), nicht beim Öffnen per Doppelklick.</li>
+      </ul>
+    </div></details>
+    <details class="g-item"><summary>Menü und Farbschema</summary><div class="g-body">
+      <p>Oben rechts öffnet <span class="ui">☰ Menü</span> alle Bereiche. Unten im Menü wählst du eines von vier <b>Farbschemata</b> (Mitternacht, Rot-Schwarz, Smaragd, Bernstein). Es gilt für alle Seiten und wird gemerkt. Die aktuelle Seite ist im Menü farbig markiert.</p>
+    </div></details>
+    <details class="g-item"><summary>Was braucht Internet?</summary><div class="g-body">
+      <p>Die Seiten laufen auch ohne Internet. Diese Dinge laden beim ersten Gebrauch etwas nach:</p>
+      <ul>
+        <li><b>PDF-Erstellung</b> (alle PDFs): das PDF-Modul wird einmal geladen.</li>
+        <li><b>Texterkennung für Screenshots</b> (Journal und Steuer-Cockpit): wird beim ersten Screenshot geladen. In manchen App-Vorschauen ist das gesperrt – dann die Seite im normalen Browser öffnen.</li>
+        <li><b>Schriftarten</b>: ohne Internet erscheint eine Ersatzschrift.</li>
+        <li><b>Bild kopieren / einfügen</b> geht nur auf <code>https</code>-Seiten (z. B. GitHub Pages) oder <code>localhost</code> – nicht, wenn du die Datei per Doppelklick öffnest.</li>
+      </ul>
+    </div></details>
+  </section>
+
+  <section class="g-sec" id="sparrechner">
+    <h2>Sparrechner</h2>
+    <details class="g-item"><summary>Einkommen eintragen</summary><div class="g-body">
+      <p>Drei Felder: <span class="ui">Hauptberufliches Einkommen (monatlich)</span>, <span class="ui">Sonstige Einkünfte</span> (z. B. Gewerbe) und <span class="ui">Extra-Einkommen</span>. Bei jedem gibt es den Schalter <span class="ui">In der Verteilung berücksichtigen</span>: Nur was angehakt ist, wird auf die Töpfe verteilt.</p>
+    </div></details>
+    <details class="g-item"><summary>Extra-Einkommen: Trading oder Gespartes</summary><div class="g-body">
+      <p>Bei <span class="ui">Quelle</span> wählst du <b>Trading</b> oder <b>Gespartes</b>. Bei Trading holt der Knopf <span class="ui">Betrag aus Trading Journal übernehmen</span> den Gewinn (P&amp;L) des gewählten Monats aus deinem Journal.</p>
+    </div></details>
+    <details class="g-item"><summary>Die Verteilung – Standard 55 / 5 / 10 / 15 / 15</summary><div class="g-body">
+      <p>Dein Einkommen wird auf fünf Kategorien verteilt, in dieser Reihenfolge und mit diesen Standardwerten:</p>
+      <ol><li>Wohnen &amp; Lebensmittel – 55 %</li><li>Für mich selbst – 5 %</li><li>Schulden – 10 %</li><li>Kurzfristige Ziele – 15 %</li><li>Investieren – 15 %</li></ol>
+      <p>Die Prozentwerte kannst du direkt in den Feldern ändern. <span class="ui">Zurücksetzen auf Standard (55/5/10/15/15)</span> stellt alles wieder her.</p>
+    </div></details>
+    <details class="g-item"><summary>Monat speichern und Verlauf</summary><div class="g-body">
+      <p>Wähle den <span class="ui">Monat</span> und tippe <span class="ui">Diesen Monat speichern</span>. Gespeicherte Monate erscheinen im <b>Verlauf</b> (Übersicht). <span class="ui">Insgesamt gespart</span> zeigt die Summe.</p>
+    </div></details>
+    <details class="g-item"><summary>Spartopf: entnehmen und gutschreiben</summary><div class="g-body">
+      <p>Unter <span class="ui">Vom Ersparten entnehmen</span> gibst du einen <b>Betrag</b> an, den <b>Monat</b>, dem er gutgeschrieben wird, und die <b>Kategorie</b>. <span class="ui">Entnehmen &amp; gutschreiben</span> bucht das um. Darüber steht, wie viel im Spartopf verfügbar ist.</p>
+    </div></details>
+  </section>
+
+  <section class="g-sec" id="steuer-cockpit">
+    <h2>Steuer-Cockpit</h2>
+    <details class="g-item"><summary>Wofür ist das Cockpit? – und was es nicht ist</summary><div class="g-body">
+      <p>Das Cockpit ist für dein Prop-Trading-Gewerbe gebaut: Du bucht jede <b>Auszahlung (Payout)</b> als Eigenbeleg, erfasst <b>Betriebsausgaben</b> (z. B. Challenges) und siehst jederzeit die <b>EÜR-Zahlen</b>, die Steuerprognose und was du je Payout zurücklegen solltest.</p>
+      <p>Es ist eine <b>vereinfachte Orientierung und keine Steuerberatung</b>. Eingereicht wird nichts – du überträgst die Zahlen selbst in ELSTER.</p>
+    </div></details>
+    <details class="g-item"><summary>Die fünf Bereiche</summary><div class="g-body">
+      <ol>
+        <li><b>📊 Cockpit</b> – Jahresübersicht mit Journal.</li>
+        <li><b>💰 Payout</b> – Auszahlung erfassen, Belege hochladen, buchen.</li>
+        <li><b>🎯 Ausgabe</b> – Betriebsausgaben buchen.</li>
+        <li><b>🧮 Rechner</b> – Steuer auf ein einzelnes Payout.</li>
+        <li><b>📘 Steuern</b> – Parameter, Berechnung, Handbuch, Jahresreport.</li>
+      </ol>
+      <p>Am Handy gibt es unten eine feste Leiste mit <span class="ui">🤖</span> (Steuer-Assistent) und den passenden Aktionsknöpfen des Bereichs, z. B. <span class="ui">✅ Buchen</span>.</p>
+    </div></details>
+    <details class="g-item"><summary>Cockpit: die Jahresübersicht</summary><div class="g-body">
+      <ul>
+        <li><b>Finanzstatistik</b> – oben das Jahr wählen. Betriebseinnahmen, Betriebsausgaben, Gewinn (EÜR) und ein Balkenbild „Gewinn pro Monat".</li>
+        <li><b>Steuerprognose</b> – Einkommensteuer, Gewerbesteuer, Ermäßigung nach § 35 EStG, Gesamtsteuer auf den Gewinn und die <b>empfohlene Rücklage je Payout</b> in Prozent.</li>
+        <li><b>Nach Propfirma</b> – je Firma Payouts, Kosten (Challenges, Gebühren) und Netto: Was lohnt sich wo?</li>
+        <li><b>Für ELSTER (Anlage EÜR)</b> – die Summen für „nicht steuerbare Betriebseinnahmen" und „übrige unbeschränkt abziehbare Betriebsausgaben" nach Kategorie, dazu der Gewinn für Anlage G.</li>
+        <li><b>Journal</b> – alle Buchungen, filterbar nach Propfirma.</li>
+      </ul>
+    </div></details>
+    <details class="g-item"><summary>Payout erfassen und buchen</summary><div class="g-body">
+      <p>Im Bereich <b>Payout</b> trägst du ein:</p>
+      <ul>
+        <li><b>Propfirma</b> (Pflicht, neue einfach eintippen) und optional das <b>Konto</b>.</li>
+        <li><b>Zuflussdatum</b> (Bankeingang) und <b>Belegnummer</b>. Sie zählt automatisch hoch (PT-2026-001, -002 …).</li>
+        <li><b>Brutto (USD)</b> und <b>Gebühr (USD)</b> laut Firma, <b>Zulauf (USDT)</b>, <b>Bankeingang (EUR)</b> und die <b>SEPA-Gebühr</b> der Börse.</li>
+        <li><b>Kurs (EUR je USD)</b> und ein <b>Kursnachweis</b> (z. B. „Binance-Konvertierung vom 21.10.").</li>
+      </ul>
+      <p>Mit <span class="ui">✅ Ins Journal buchen</span> legt die App <b>getrennte Buchungen</b> an (Bruttoprinzip): die Einnahme in Euro, die Transfergebühr, die <b>Kursdifferenz</b> als Kursgewinn oder -verlust und die SEPA-Gebühr. Die Differenz rechnet sie aus Bankeingang und Kurs selbst aus.</p>
+      <p>Gibt es die Belegnummer schon, fragt die App vor dem Überschreiben nach.</p>
+    </div></details>
+    <details class="g-item"><summary>Stammdaten für den Beleg</summary><div class="g-body">
+      <p>Unter <span class="ui">⚙️ Stammdaten</span> stehen deine Gewerbedaten, die <b>Adresse der Propfirma</b> (wird pro Firma gespeichert), dein <b>Geschäftskonto</b> und der <b>steuerliche Hinweis</b> auf dem Beleg. Alles bleibt gespeichert und erscheint im Eigenbeleg.</p>
+    </div></details>
+    <details class="g-item"><summary>Screenshots hochladen und automatisch ausfüllen</summary><div class="g-body">
+      <p>Fünf Kacheln: <b>Propfirma-Payout</b>, <b>USDT-Eingang</b>, <b>Convert-Beleg</b>, <b>SEPA-Auszahlung</b> und <b>Kontoauszug</b>. Tippe eine Kachel an, um ein Foto oder einen Screenshot zu wählen. Das ✕ entfernt es wieder.</p>
+      <ul>
+        <li>Ist <b>„Felder automatisch aus Screenshots ausfüllen"</b> an, liest die App Brutto, Gebühr, Konto, USDT-Betrag, Kurs, Bankeingang, SEPA-Gebühr und Datum aus dem Bild. Erkannte Felder leuchten <b>grün</b> – bitte kurz prüfen.</li>
+        <li>Die Erkennung lädt beim ersten Mal nach und braucht Internet. Ohne sie trägst du die Werte von Hand ein.</li>
+        <li><b>Die Screenshots werden nicht dauerhaft gespeichert.</b> Sie gehören zum gerade offenen Beleg und kommen ins Beleg-PDF. Nach dem Neuladen der Seite sind sie weg.</li>
+      </ul>
+    </div></details>
+    <details class="g-item"><summary>Eigenbeleg und Beleg-PDF</summary><div class="g-body">
+      <p>Unter „3. Eigenbeleg" siehst du den Beleg live, so wie er ins PDF kommt. <span class="ui">📄 Beleg-PDF inkl. Anhänge</span> erstellt Seite 1 mit dem Eigenbeleg und danach je eine Seite pro hochgeladenem Screenshot (Anhang 1–5). Am Handy öffnet sich dafür das Teilen-Menü, sonst startet ein Download. Das PDF-Modul braucht beim ersten Mal Internet.</p>
+    </div></details>
+    <details class="g-item"><summary>Ausgaben buchen (Challenges, Software …)</summary><div class="g-body">
+      <ul>
+        <li><b>Zahlungsdatum</b>, <b>Kategorie</b> (Challenge-Gebühr, Software/TradingView, Daten-Feed, Bank-/Transfergebühr, Hardware/Büro, Weiterbildung, Sonstiges), <b>Beschreibung</b>, <b>Betrag in €</b> und optional Rechnungsnummer.</li>
+        <li>Bei Challenges die <b>Propfirma</b> eintragen, dann erscheint die Ausgabe in der Tabelle „Nach Propfirma". Bei Zahlung in USD den Euro-Betrag laut Kontoauszug nehmen.</li>
+        <li>Die <b>Kaufquittung</b> kannst du hochladen und mit <span class="ui">📄 Ausgabe-PDF</span> als Beleg ausgeben.</li>
+        <li>Die Karte <b>Was ist absetzbar?</b> erklärt kurz, was als Betriebsausgabe zählt.</li>
+      </ul>
+    </div></details>
+    <details class="g-item"><summary>Rechner: Steuer auf ein Payout</summary><div class="g-body">
+      <p>Der Bereich <b>Rechner</b> zeigt, was ein einzelnes Payout an Steuern kostet. Er rechnet <b>Einkommensteuer, Soli und Kirchensteuer nach dem Tarif 2026</b> – ohne Gewerbesteuer.</p>
+      <ul>
+        <li><b>Gewinn aus dem Payout</b> – von Hand oder mit <span class="ui">↙ Aus aktuellem Payout-Beleg übernehmen</span>.</li>
+        <li><b>Zu versteuerndes Einkommen aus dem Hauptjob</b> (steht im Steuerbescheid; Faustregel: Jahresbrutto minus ca. 20 %).</li>
+        <li><b>Bisherige Nebengewinne</b> dieses Jahr, auf Wunsch mit <span class="ui">↙ Gewinn aus Journal übernehmen</span>.</li>
+        <li><b>Kirchensteuer</b> (keine, 8 % oder 9 %), <b>Splitting</b> bei Zusammenveranlagung und <b>Härteausgleich bis 820 €</b>.</li>
+      </ul>
+      <p>Ergebnis: die <b>Steuer auf dieses Payout</b>, der Anteil davon in Prozent, was du <b>behältst</b>, und dein <b>Grenzsteuersatz</b>. Mit <span class="ui">📌 Grenzsteuersatz für Cockpit übernehmen</span> setzt du diesen Satz für die Prognose ein.</p>
+    </div></details>
+    <details class="g-item"><summary>Steuern: Parameter, Berechnung, Handbuch</summary><div class="g-body">
+      <ul>
+        <li><b>Grenzsteuersatz</b> (Standard 30 %), <b>Hebesatz</b> deiner Gemeinde (Standard 450 %, Dresden) und ein <b>Planwert</b> für Was-wäre-wenn.</li>
+        <li><b>Härteausgleich</b>: Nebeneinkünfte bis 410 € sind steuerfrei, bis 820 € gemildert (für alle Nebeneinkünfte zusammen).</li>
+        <li><b>Berechnung</b>: Einkommensteuer, Gewerbesteuer (Freibetrag 24.500 €, Messzahl 3,5 %), Ermäßigung nach § 35 EStG, Gesamtabgabe, echte Mehrbelastung durch die Gewerbesteuer und der effektive Satz.</li>
+        <li><b>Steuer-Handbuch</b>: welche Unterlagen du je Auszahlung brauchst, ELSTER-Wegweiser und Alltags-Regeln.</li>
+        <li><span class="ui">💾 Jahresreport &amp; Handbuch als PDF</span> fasst alles für das gewählte Jahr zusammen.</li>
+      </ul>
+    </div></details>
+    <details class="g-item"><summary>Löschen, Rückgängig und Backup</summary><div class="g-body">
+      <ul>
+        <li><span class="ui">🗑️ Löschen</span> an einer Buchung fragt nach. Gehört sie zu einem Payout, werden <b>alle Buchungen dieses Belegs</b> gelöscht (Payout, Gebühren, Kursdifferenz).</li>
+        <li>Nach Buchen, Löschen oder Import erscheint oben <span class="ui">↶ Rückgängig</span>, einige Sekunden lang.</li>
+        <li><span class="ui">📄 CSV (Excel)</span> exportiert das gewählte Jahr, <span class="ui">💾 Backup sichern</span> speichert alles als Datei.</li>
+        <li><span class="ui">📂 Datei laden</span> und <span class="ui">📋 JSON einfügen</span> öffnen eine <b>Import-Vorschau</b>: neue Buchungen sind „neu", schon vorhandene „schon da". Dann <b>Hinzufügen</b> (nur Neues) oder <b>Alles ersetzen</b> (mit Rückfrage).</li>
+      </ul>
+      <p><b>Vom bisherigen Cockpit umziehen:</b> Dort <i>Backup sichern</i>, hier <i>Datei laden</i>. Die Daten liegen pro Browser und Adresse getrennt, deshalb gehen sie nicht von selbst mit.</p>
+    </div></details>
+    <details class="g-item"><summary>Der Steuer-Assistent (🤖)</summary><div class="g-body">
+      <p>Ein Chat mit einfachen Regel-Antworten, der dein Journal kennt. Die Schnellknöpfe fragen z. B. nach <b>Stand</b>, <b>Propfirmen</b>, <b>Steuer/Payout</b>, <b>Fehlbuchung</b>, <b>ELSTER</b>, <b>Challenges</b>, <b>Gewerbesteuer</b>, <b>Rücklage</b>, <b>Freibetrag</b>, <b>USt</b> und <b>KV</b>. Es ist kein KI-Dienst im Internet, die Antworten sind feste Regeln mit deinen Zahlen.</p>
+    </div></details>
+  </section>
+
+  <section class="g-sec" id="journal">
+    <h2>Trading Journal</h2>
+    <details class="g-item"><summary>Der Aufbau der Seite</summary><div class="g-body">
+      <ol>
+        <li><b>Konto-Zeile</b> – aktives Konto, tippen zum Wechseln, ⚙️ zum Bearbeiten.</li>
+        <li><b>Konto-Karte</b> – Kontostand, Höchststand, Drawdown-Grenze, Puffer (siehe <a href="#konten">Konten &amp; Drawdown</a>).</li>
+        <li><b>Kalender</b> – Tage antippen, um sie auszuwählen.</li>
+        <li><b>Kennzahlen</b> – Ergebnis, Winrate, Win/Loss/BE, Gesamt-R, riskiert gesamt, Ø RRR der Wins, Rendite auf Risiko – immer für die gewählten Tage.</li>
+        <li><b>Teilen &amp; Export</b> – Kasten mit drei Gruppen: Discord, Screenshots, PDF.</li>
+        <li><b>Winrate pro Woche</b> – Tabelle je Kalenderwoche.</li>
+        <li><b>Wins</b>, <b>Losses</b> und <b>Break-even</b> – die Trades als kompakte Karten mit Ergebnis und Screenshot-Vorschau. <b>Antippen klappt eine Karte auf</b>: Details und alle Knöpfe (Discord, Bild kopieren, Bearbeiten …).</li>
+      </ol>
+    </div></details>
+    <details class="g-item"><summary>Kalender und Zeitraum wählen</summary><div class="g-body">
+      <p>Tippe einen oder mehrere Tage an. Praktisch sind die Schnellwahlen <span class="ui">Heute</span>, <span class="ui">Diese Woche</span>, <span class="ui">Ganzer Monat</span> und <span class="ui">Alle Tage</span>. Mit ‹ und › wechselst du den Monat. <b>Alles darunter</b> (Kennzahlen, Listen, Kopieren, PDF) bezieht sich auf die gewählten Tage.</p>
+    </div></details>
+    <details class="g-item"><summary>Trade eintragen – alle Felder erklärt</summary><div class="g-body">
+      <p><span class="ui">+ Trade eintragen</span> öffnet das Formular. Von oben nach unten:</p>
+      <ul>
+        <li><b>Ergebnis</b> – Win, Loss oder BE (ausgeglichen).</li>
+        <li><b>Konto</b> – nur sichtbar, wenn du mehrere Konten hast. Der Trade wird diesem Konto zugeordnet.</li>
+        <li><b>Gewinn / Verlust</b> – der Betrag <b>ohne Vorzeichen</b>. Win macht ihn positiv, Loss negativ, egal ob du „80" oder „-80" tippst.</li>
+        <li><b>Kommission</b> – wird <b>immer abgezogen</b>. Auch ein negativer Wert wie bei MT5 (−3,50) zählt als Kosten.</li>
+        <li><b>Paar</b> und <b>Richtung</b> (Long/Short), <b>Datum</b> und <b>Uhrzeit</b>.</li>
+        <li><b>Entry</b>, <b>Stop Loss</b>, <b>Take Profit</b>, <b>Exit</b> (optional) – Kurswerte, aus denen der R-Wert entsteht.</li>
+        <li><b>Swap</b> (optional) – mit Vorzeichen wie in MT5: Minus = Kosten, Plus = Gutschrift.</li>
+        <li><b>Risiko</b> (optional) – nur für den R-Wert.</li>
+        <li><b>Notiz</b> – frei, z. B. Setup oder Fehler.</li>
+        <li><b>Screenshots</b> – siehe unten.</li>
+      </ul>
+      <p>Unten zeigt eine Vorschau das geplante RRR, das Ergebnis in R und das <b>P&amp;L (netto)</b>. Die Knöpfe <span class="ui">Abbrechen</span> und <span class="ui">Speichern</span> bleiben immer sichtbar.</p>
+    </div></details>
+    <details class="g-item"><summary>Wie das Ergebnis berechnet wird</summary><div class="g-body">
+      <p><b>P&amp;L (netto) = Gewinn/Verlust − Kommission + Swap.</b></p>
+      <ul>
+        <li>Ist nur eine Kommission eingetragen, wird genau diese abgezogen.</li>
+        <li>Ein BE-Trade mit Kommission zeigt im P&amp;L einen kleinen Verlust, bleibt aber BE.</li>
+        <li><b>R-Wert:</b> Mit Exit-Kurs rechnet die App aus Entry, Stop Loss und Exit. Sonst gilt Gewinn ÷ Risiko. Fehlt auch das, nimmt sie bei Win das geplante RRR und bei Loss −1R (wenn der Stop Loss bekannt ist).</li>
+        <li>Der R-Wert zeigt die reine Kursbewegung. Kommission und Swap verändern nur die Geldbeträge.</li>
+      </ul>
+    </div></details>
+    <details class="g-item"><summary>Screenshots hinzufügen</summary><div class="g-body">
+      <ul>
+        <li><b>Screenshot tippen oder reinziehen</b> – Bild aus Galerie oder Kamera wählen (mehrere möglich).</li>
+        <li><span class="ui">Bild aus Zwischenablage einfügen</span> – nimmt ein kopiertes Bild auf. Das geht nur auf https oder localhost.</li>
+        <li>Mit dem ✕ am Bild entfernst du es wieder.</li>
+        <li>In der Trade-Karte tippst du ein Bild zum Vergrößern an. <span class="ui">Bild kopieren</span> legt es in die Zwischenablage.</li>
+      </ul>
+    </div></details>
+    <details class="g-item"><summary>Automatische Erkennung aus Screenshots (MT5, TradingView)</summary><div class="g-body">
+      <p>Sobald du einen Screenshot hinzufügst, liest die App den Text im Bild und füllt das Formular aus. Die Meldung „bitte prüfen" erinnert dich, die Werte kurz zu kontrollieren.</p>
+      <p><b>Das wird erkannt:</b></p>
+      <ul>
+        <li>Paar, Richtung (buy/sell), Datum und Uhrzeit (die erste Zeitangabe = Einstieg)</li>
+        <li>Entry und Ausstiegskurs. In MT5 steht beides als „Kurs → Kurs". Der Kurs nach dem Pfeil kommt ins Feld <b>TP</b> (und ins Feld Exit).</li>
+        <li>Stop Loss, Kommission, Swap („Swap: -" heißt: keiner)</li>
+        <li><b>Gewinn/Verlust und Win/Loss:</b> Entscheidend ist die <b>Farbe der Zahl</b> – blau/grün = Win, rot = Loss. Das ist zuverlässiger als das Minuszeichen, das die Texterkennung manchmal verschluckt. Ohne erkennbare Farbe zählt das Vorzeichen.</li>
+      </ul>
+      <p><b>Wichtig zu wissen:</b></p>
+      <ul>
+        <li>Es werden nur <b>leere Felder</b> gefüllt. Was du schon eingetragen oder angetippt hast, bleibt.</li>
+        <li>Am besten klappt es mit der <b>Detailansicht eines geöffneten Trades</b> (tippe den Trade in MT5 an). Eine Liste mit vielen Trades ist unsicherer.</li>
+        <li>Zeigt der Screenshot Liste <i>und</i> geöffneten Trade, nimmt die App den geöffneten, weil nur er S/L, T/P und Kommission zeigt.</li>
+        <li>Unter den Bildern zeigt <span class="ui">Erkannten Rohtext anzeigen</span>, was die App gelesen hat – hilfreich, wenn etwas nicht stimmt.</li>
+        <li>Die Erkennung braucht beim ersten Mal Internet.</li>
+      </ul>
+    </div></details>
+    <details class="g-item"><summary>TradingView-Vorlage für sichere Erkennung</summary><div class="g-body">
+      <p>Der Knopf <span class="ui">Vorlage für TradingView-Notiz kopieren</span> kopiert die aktuellen Formularwerte als klaren Text (Paar, Richtung, Ergebnis, Entry, SL, TP, Gewinn/Verlust, Risiko, Kommission, Swap, Datum, Uhrzeit). Füge ihn als Text-Notiz in dein TradingView-Chart ein, mach einen Screenshot und lade ihn hoch – dieses Format liest die App besonders sicher.</p>
+    </div></details>
+    <details class="g-item"><summary>Bearbeiten, löschen, auf anderen Tag kopieren</summary><div class="g-body">
+      <ul>
+        <li><span class="ui">Bearbeiten</span> öffnet den Trade wieder im Formular.</li>
+        <li><span class="ui">Löschen</span> fragt nach: Tippe zweimal („Nochmal tippen").</li>
+        <li><span class="ui">Kopieren / Verschieben</span> öffnet ein kleines Fenster: Zieldatum (und optional Uhrzeit) wählen, dann <b>Kopieren</b> (Original bleibt, Screenshots werden mitkopiert) oder <b>Verschieben</b>.</li>
+        <li><span class="ui">Alle Trades dieses Kontos löschen</span> ganz unten betrifft nur das aktive Konto.</li>
+      </ul>
+    </div></details>
+    <details class="g-item"><summary>Texte für Discord kopieren</summary><div class="g-body">
+      <ul>
+        <li><span class="ui">Für Discord kopieren</span> (an einem Trade, Karte vorher antippen) – Text mit allen Werten dieses Trades.</li>
+        <li><span class="ui">Zusammenfassung kopieren</span> – Kennzahlen plus alle Trades der gewählten Tage.</li>
+        <li><span class="ui">Wins kopieren</span> / <span class="ui">Losses kopieren</span> – nur die Gewinner bzw. Verlierer mit Summe.</li>
+        <li><b>Kompletten Zeitraum für Discord kopieren</b> – vier Kacheln (Tag, Woche, Monat, Jahr), bezogen auf den gewählten Tag.</li>
+      </ul>
+      <p>Kommission und Swap stehen mit im Text, sobald sie eingetragen sind.</p>
+    </div></details>
+    <details class="g-item"><summary>Bilder gesammelt kopieren</summary><div class="g-body">
+      <ul>
+        <li><span class="ui">Bilder (Wins) kopieren</span> / <span class="ui">Bilder (Losses) kopieren</span> – setzt alle Screenshots untereinander (mit Beschriftung) zu <b>einem</b> Bild zusammen und kopiert es.</li>
+        <li>Der Bereich <b>Bilder</b> darunter ist eine Galerie nach Wins/Losses/Breakeven, durchnummeriert („Bild 1, Bild 2 …"). Tippe ein Bild an, um genau dieses zu kopieren.</li>
+      </ul>
+      <p>Discord fügt pro Einfügen entweder Text <i>oder</i> ein Bild ein – darum erst den Text, dann das Bild einfügen.</p>
+    </div></details>
+    <details class="g-item"><summary>PDF exportieren (Tagesjournal)</summary><div class="g-body">
+      <p><span class="ui">PDF exportieren</span> erstellt ein Journal-PDF der gewählten Tage: Kennzahlen, Winrate pro Woche, Auszahlungen im Zeitraum, dann jeder Handelstag mit seinen Trades. Pro Trade steht erst der Text, dann ein Screenshot. Das PDF enthält die Trades auch als Sicherung zum späteren Einlesen.</p>
+    </div></details>
+    <details class="g-item"><summary>Auswertung (PDF mit Bild-Links)</summary><div class="g-body">
+      <p><span class="ui">Auswertung (PDF mit Bild-Links)</span> erstellt eine Übersicht im Querformat:</p>
+      <ul>
+        <li>links Kennzahlen (Trades, Win/Loss/BE, Winrate, Profit-Faktor, Ø Gewinn/Verlust, bester/schlechtester Trade, Gesamt-P&amp;L, R, Kommission/Swap, längste Serie)</li>
+        <li>drei Diagramme: Win/Loss-Torte, Kontoverlauf, P&amp;L pro Tag/Woche/Monat</li>
+        <li>eine Tabelle mit allen Trades; die P&amp;L-Zelle ist grün, rot oder grau</li>
+        <li>in der Spalte <b>Bilder</b> ein blauer Pfeil: Antippen springt zu den Screenshots des Trades, dort führt <i>„&lt; zurück zur Tabelle"</i> wieder zurück</li>
+      </ul>
+      <p>Die Links funktionieren in den üblichen PDF-Programmen (Browser, Vorschau, Acrobat). Manche Vorschauen in Apps ignorieren sie – dann das PDF im Browser öffnen.</p>
+    </div></details>
+    <details class="g-item"><summary>PDF importieren</summary><div class="g-body">
+      <p>Mit <span class="ui">PDF importieren</span> liest du ein früher exportiertes <b>Journal-PDF</b> wieder ein (Trades mit Screenshots). Bereits vorhandene Trades sind in der Vorschau abgewählt, damit nichts doppelt entsteht. Auch ein MT5-Verlauf als PDF, HTML oder CSV kann erkannt werden – das klappt am besten mit dem Bericht aus dem MT5-Desktop-Terminal. Der mobile „Handelsbericht" enthält oft keine Trade-Tabelle.</p>
+    </div></details>
+  </section>
+
+  <section class="g-sec" id="konten">
+    <h2>Konten &amp; Drawdown</h2>
+    <details class="g-item"><summary>Konten anlegen, wechseln, bearbeiten</summary><div class="g-body">
+      <ul>
+        <li>Ein Tipp auf die <b>Konto-Zeile</b> öffnet die Auswahl mit allen Konten und ihrem Kontostand. Antippen wählt ein Konto.</li>
+        <li><span class="ui">+ Neues Konto</span> legt ein neues an, ⚙️ neben einem Eintrag bearbeitet es.</li>
+        <li>Jedes Konto hat <b>eigene Trades, eigene Auszahlungen und eigene Regeln</b>. Die Kennzahlen darunter zeigen immer nur das aktive Konto.</li>
+        <li><span class="ui">Konto + alle Trades löschen</span> entfernt das Konto samt Trades (zweimal tippen).</li>
+      </ul>
+    </div></details>
+    <details class="g-item"><summary>Die Konto-Felder</summary><div class="g-body">
+      <ul>
+        <li><b>Name</b> und <b>Firma</b> (z. B. die Prop-Firma, optional).</li>
+        <li><b>Phase</b> – frei, mit Vorschlägen (Eigenkapital, Step 1, Step 2, Master). Steht „Master" im Namen oder in der Phase, erscheint 👑.</li>
+        <li><b>Kontogröße / Start</b> – der Ausgangsbetrag für Kontostand und Drawdown. Alles ist frei eintragbar, auch für bestehende Konten.</li>
+        <li><b>Drawdown-Typ</b> – <i>Statisch</i> (fix ab Start) oder <i>Mitlaufend</i> (vom Höchststand).</li>
+        <li><b>Max. Drawdown gesamt (%)</b> – erlaubter Verlust.</li>
+        <li><b>Max. Tages-Drawdown (%)</b> – wird bisher nur gespeichert, <b>nicht automatisch überwacht</b>. Nimm das Feld als Erinnerung.</li>
+        <li><b>Gewinnziel (%)</b> – optional, für den Fortschrittswert.</li>
+        <li><b>Profit Split – dein Anteil (%)</b> – für Auszahlungen.</li>
+        <li><b>Regeln</b> – freies Textfeld, z. B. „keine News-Trades, max. 2 Trades pro Tag".</li>
+      </ul>
+    </div></details>
+    <details class="g-item"><summary>Die Konto-Karte: Kontostand, Höchststand, Puffer</summary><div class="g-body">
+      <ul>
+        <li><b>Kontostand</b> = Start + alle Trades (netto) − Auszahlungen.</li>
+        <li><b>Höchststand</b> – höchster Kontostand bisher. Eine Auszahlung senkt ihn nicht.</li>
+        <li><b>Drawdown-Grenze</b> – statisch: Start × (1 − Max-Drawdown). Mitlaufend: Höchststand × (1 − Max-Drawdown).</li>
+        <li><b>Puffer bis Drawdown</b> – wie viel Prozent Luft zwischen Kontostand und Grenze bleiben. Der Balken färbt sich bei wenig Puffer gelb, dann rot.</li>
+        <li><b>Ø Risiko / Trade</b> – Durchschnitt deiner eingetragenen Risiken, absolut und in % des Kontostands.</li>
+        <li><b>Gewinnziel</b> – Fortschritt in %, wenn ein Ziel eingetragen ist.</li>
+        <li>Liegt der Kontostand <b>unter</b> der Grenze (z. B. durch zu hohe Auszahlungen), wird der Balken rot und eine Warnung nennt den Betrag.</li>
+      </ul>
+    </div></details>
+    <details class="g-item"><summary>Auszahlungen und Profit Split</summary><div class="g-body">
+      <p>Im Konto-Sheet (⚙️) steht unten der Bereich <b>Auszahlungen</b>. Er erscheint, sobald das Konto gespeichert ist.</p>
+      <ul>
+        <li>Datum, <b>Betrag (brutto)</b> und Notiz eintragen, dann <span class="ui">+ Auszahlung hinzufügen</span>. Mit ✕ löschst du eine.</li>
+        <li>Ist ein <b>Profit Split</b> eingetragen (z. B. 80 %), zeigt die App schon beim Tippen, was du bekommst: „$800 von $1.000". In der Liste steht „$1.000 → $800 (80%)".</li>
+        <li>Der <b>Kontostand sinkt um den vollen Betrag</b>, der Puffer wird neu berechnet. Der Höchststand bleibt, weil er real erreicht wurde.</li>
+        <li>Im PDF steht ein Abschnitt <b>Auszahlungen</b> und die Zeile „P&amp;L nach Auszahlungen".</li>
+      </ul>
+    </div></details>
+  </section>
+
+  <section class="g-sec" id="copy">
+    <h2>Copy-Trading</h2>
+    <details class="g-item"><summary>Die Idee</summary><div class="g-body">
+      <p>Du handelst auf einem <b>Lead-Konto</b>, mehrere <b>Copy-Konten</b> kopieren die Trades. Du trägst jeden Trade <b>nur einmal beim Lead</b> ein, die Copy-Konten bekommen ihn live dazu – mit einem <b>Faktor</b> umgerechnet (Gewinn, Kommission, Swap und Risiko). Änderst oder löschst du den Lead-Trade, ziehen die Copy-Konten sofort nach.</p>
+    </div></details>
+    <details class="g-item"><summary>Einrichten (zwei Wege)</summary><div class="g-body">
+      <p>Im Konto-Sheet (⚙️) gibt es den Bereich <b>Copy-Trading</b> mit der <b>Rolle dieses Kontos</b>:</p>
+      <ul>
+        <li><b>Lead-Konto (wird kopiert)</b> – du siehst eine Liste deiner anderen Konten. Haken setzen macht ein Konto zum Copy-Konto, daneben steht der Faktor. So fügst du beliebig viele hinzu.</li>
+        <li><b>Copy-Konto (kopiert einen Lead)</b> – du wählst das Lead-Konto aus, Faktor und „Ab Datum". Das ist der richtige Weg beim Anlegen eines neuen Kontos.</li>
+        <li><b>Kein Copy-Trading</b> – löst die Verknüpfung.</li>
+      </ul>
+    </div></details>
+    <details class="g-item"><summary>Faktor und „Größe für den Faktor"</summary><div class="g-body">
+      <p>Ist der Faktor <b>leer</b>, rechnet die App automatisch: <b>Größe des Copy-Kontos ÷ Größe des Leads</b>. Die Rechnung steht live unter dem Feld, z. B. „Automatisch ×0,05 (5.000 ÷ 100.000)". Alternativ trägst du einen festen Faktor ein.</p>
+      <p>Als Größe gilt standardmäßig die <b>Kontogröße / Start</b> – <b>nie der aktuelle Kontostand</b>. Mit dem Feld <b>Größe für den Faktor</b> legst du eine andere Zahl fest. Beispiel: Auf deinem Konto sind gerade 5.300 € (das trägst du als Start ein), du willst aber mit 5.000 € rechnen – dann trägst du bei „Größe für den Faktor" 5.000 ein.</p>
+    </div></details>
+    <details class="g-item"><summary>„Ab Datum" – nichts doppelt rechnen</summary><div class="g-body">
+      <p>Neu verknüpfte Copy-Konten kopieren standardmäßig <b>erst ab heute</b>. Frühere Trades des Leads werden nicht nachträglich aufs Konto gerechnet – sonst würden sie auf einen Kontostand kommen, in dem sie schon stecken. Ein <b>leeres Datum</b> kopiert rückwirkend alle Lead-Trades. Bereits verknüpfte Konten behalten ihr eigenes Datum.</p>
+    </div></details>
+    <details class="g-item"><summary>So sieht ein Copy-Konto aus</summary><div class="g-body">
+      <ul>
+        <li>Die Trades stehen wie eigene im Kalender, in den Listen und Statistiken.</li>
+        <li>Auf der Karte steht <b>„Copy von … ×0,5"</b>.</li>
+        <li>Statt Bearbeiten/Löschen gibt es <span class="ui">Beim Lead bearbeiten</span>: Es wechselt zum Lead-Trade.</li>
+        <li>Der Screenshot des Lead-Trades erscheint auch hier.</li>
+        <li>Ein Copy-Konto kann <b>zusätzlich eigene Trades</b> haben.</li>
+        <li>Kontostand, Drawdown und Puffer gelten für dieses Konto mit seinen kopierten und eigenen Trades.</li>
+      </ul>
+    </div></details>
+    <details class="g-item"><summary>Regeln pro Konto</summary><div class="g-body">
+      <p>Regeln, Drawdown-Limits, Gewinnziel, Profit Split und Auszahlungen gelten <b>für jedes Konto einzeln</b>. Bei einem Copy-Konto hilft <span class="ui">Regeln &amp; Limits vom Lead übernehmen</span>: Es füllt die Felder mit den Werten des Leads vor, du passt sie an und speicherst. Der Lead bleibt unverändert.</p>
+    </div></details>
+    <details class="g-item"><summary>Auswertung der ganzen Gruppe (PDF)</summary><div class="g-body">
+      <p>Beim Lead und bei jedem Copy-Konto erscheint <span class="ui">Auswertung Copy-Gruppe (PDF)</span>. Jeder Lead-Trade steht <b>einmal</b> in der Tabelle, mit nur <b>einem</b> Screenshot (vom Lead). Daneben stehen <b>Lead P&amp;L</b>, <b>Copy-Konten</b> (Summe) und <b>Gesamt P&amp;L</b>. Eigene Trades eines Copy-Kontos kommen mit seinem Namen in der Notiz dazu. Eine zusätzliche Seite listet alle Konten mit Faktor, Trades, P&amp;L, Kontostand und Anteil in %.</p>
+    </div></details>
+    <details class="g-item"><summary>Regeln, die du kennen solltest</summary><div class="g-body">
+      <ul>
+        <li>Ein Konto kann nur <b>einem</b> Lead folgen.</li>
+        <li>Ein Lead kann nicht zugleich Copy-Konto sein.</li>
+        <li>Löschst du das Lead-Konto, werden seine Copy-Konten automatisch gelöst und behalten ihre eigenen Trades.</li>
+        <li>Der Faktor gilt für <b>alle</b> Trades gleich. Abweichungen pro Trade (z. B. durch Slippage) lassen sich bisher nicht einzeln anpassen.</li>
+      </ul>
+    </div></details>
+  </section>
+
+  <section class="g-sec" id="hilfe">
+    <h2>Probleme lösen</h2>
+    <details class="g-item"><summary>„Texterkennung hat nicht geklappt (Internet nötig)"</summary><div class="g-body">
+      <p>Die Texterkennung lädt beim ersten Mal nach. Prüfe die Verbindung. Läuft die Seite in einer App-Vorschau (z. B. aus einem Chat), kann das Nachladen gesperrt sein – öffne die Seite im normalen Browser. Solange trägst du die Werte von Hand ein.</p>
+    </div></details>
+    <details class="g-item"><summary>Falsche oder fehlende Werte nach dem Screenshot</summary><div class="g-body">
+      <p>Öffne unter den Bildern <span class="ui">Erkannten Rohtext anzeigen</span>: Siehst du dort Zahlen, die falsch gelesen wurden? Nimm den Screenshot am besten von der <b>Detailansicht eines geöffneten Trades</b> und gut lesbar (nicht verkleinert). Oder nutze die TradingView-Vorlage. Korrigieren kannst du jedes Feld vor dem Speichern.</p>
+    </div></details>
+    <details class="g-item"><summary>„Bild konnte nicht gespeichert werden"</summary><div class="g-body">
+      <p>Die Meldung nennt in Klammern den Grund. Versuche das Bild erneut oder ein anderes Format (JPG/PNG). Blockiert der Browser das Speichern ganz (z. B. im privaten Modus), arbeitet die App nur für diese Sitzung – der Hinweis erscheint beim Start.</p>
+    </div></details>
+    <details class="g-item"><summary>Kopieren und Einfügen von Bildern geht nicht</summary><div class="g-body">
+      <p>Die Zwischenablage funktioniert nur auf <code>https</code> (z. B. deiner GitHub-Pages-Adresse) oder <code>localhost</code>, nicht beim Öffnen einer Datei per Doppelklick. Der Knopf <span class="ui">Bild aus Zwischenablage einfügen</span> ist zuverlässiger als Strg+V. Alternativ das Bild tippen und aus der Galerie wählen.</p>
+    </div></details>
+    <details class="g-item"><summary>„PDF-Modul konnte nicht geladen werden"</summary><div class="g-body">
+      <p>Beim ersten PDF braucht die App Internet, um das PDF-Modul zu laden. Danach merkt es sich der Browser meist.</p>
+    </div></details>
+    <details class="g-item"><summary>Die Seite zeigt eine alte Version</summary><div class="g-body">
+      <p>Die App speichert Seiten zum Offline-Nutzen zwischen. Nach einem Update einmal die App komplett schließen und neu öffnen. Hilft das nicht, die Seite im Browser neu laden.</p>
+    </div></details>
+  </section>
+
+  <section class="g-sec" id="glossar">
+    <h2>Begriffe</h2>
+    <details class="g-item"><summary>Kurz erklärt</summary><div class="g-body">
+      <dl>
+        <dt>Winrate</dt><dd>Anteil der Wins an allen Trades mit Ergebnis (Win oder Loss). BE zählt nicht mit.</dd>
+        <dt>BE (Break-even)</dt><dd>Trade ohne nennenswerten Gewinn oder Verlust.</dd>
+        <dt>R / RRR</dt><dd>R ist dein Risiko pro Trade. „+2R" heißt: doppelt so viel gewonnen wie riskiert. RRR ist das Chance-Risiko-Verhältnis, geplant aus Entry, SL und TP.</dd>
+        <dt>P&amp;L brutto / netto</dt><dd>Brutto ist der Betrag aus dem Trade, netto nach Abzug von Kommission und Swap.</dd>
+        <dt>Swap</dt><dd>Übernachtgebühr oder -gutschrift. Minus = Kosten, Plus = Gutschrift.</dd>
+        <dt>Drawdown</dt><dd>Der Rückgang des Kontos. <i>Statisch</i>: die Grenze liegt fest unter dem Startkapital. <i>Mitlaufend</i>: die Grenze steigt mit dem Höchststand mit.</dd>
+        <dt>Puffer</dt><dd>Wie viel Prozent der Kontostand noch von der Drawdown-Grenze entfernt ist.</dd>
+        <dt>Profit Split</dt><dd>Dein Anteil am Gewinn bei einer Auszahlung, z. B. 80 %.</dd>
+        <dt>Lead / Copy-Konto</dt><dd>Lead: dort trägst du Trades ein. Copy-Konto: bekommt sie automatisch, umgerechnet mit dem Faktor.</dd>
+        <dt>Faktor</dt><dd>Verhältnis der Kontogrößen: ×0,5 heißt halb so große Ergebnisse wie beim Lead.</dd>
+      </dl>
+    </div></details>
+  </section>
+</main>
+
+<p class="site-footer">Budget-Ledger &middot; erstellt von AndrewFXTD &middot; alle Daten bleiben lokal auf diesem Gerät</p>
+
+<script>
+document.getElementById('menu-toggle').addEventListener('click', () => { document.getElementById('menu-panel').classList.toggle('open'); });
+document.addEventListener('click', (ev) => {
+  const panel = document.getElementById('menu-panel'), toggle = document.getElementById('menu-toggle');
+  if (panel.classList.contains('open') && !panel.contains(ev.target) && !toggle.contains(ev.target)) panel.classList.remove('open');
+});
+const THEME_KEY = 'sparrechner_theme_v1';
+function applyTheme(theme){
+  if (!theme || theme === 'midnight') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', theme);
+  document.querySelectorAll('.theme-swatch').forEach(btn => btn.classList.toggle('active', (btn.dataset.swatch || 'midnight') === (theme || 'midnight')));
+}
+document.querySelectorAll('.theme-swatch').forEach(btn => btn.addEventListener('click', () => { const t = btn.dataset.swatch; try{ localStorage.setItem(THEME_KEY, t); }catch(e){} applyTheme(t); }));
+applyTheme((function(){ try{ return localStorage.getItem(THEME_KEY) || 'midnight'; }catch(e){ return 'midnight'; } })());
+
+/* Suche: filtert die Erklärungen und klappt Treffer auf */
+const q = document.getElementById('gsearch');
+function filterGuide(){
+  const t = q.value.trim().toLowerCase(); let any = false;
+  document.querySelectorAll('.g-sec').forEach(sec => {
+    let secAny = false;
+    sec.querySelectorAll('.g-item').forEach(it => {
+      const hit = !t || it.textContent.toLowerCase().includes(t);
+      it.style.display = hit ? '' : 'none'; if (t) it.open = hit;
+      if (hit) secAny = true;
+    });
+    sec.style.display = secAny ? '' : 'none'; if (secAny) any = true;
+  });
+  document.getElementById('gnone').style.display = any ? 'none' : '';
+  document.getElementById('toc').style.display = t ? 'none' : '';
+}
+q.addEventListener('input', filterGuide);
+document.getElementById('gOpen').addEventListener('click', () => document.querySelectorAll('.g-item').forEach(i => { if (i.style.display !== 'none') i.open = true; }));
+document.getElementById('gClose').addEventListener('click', () => document.querySelectorAll('.g-item').forEach(i => i.open = false));
+if ('serviceWorker' in navigator) window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+</script>
+
+</body>
+</html>

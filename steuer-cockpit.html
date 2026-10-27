@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<script>
+  (function(){
+    try{
+      var t = localStorage.getItem('sparrechner_theme_v1');
+      if(t && t !== 'midnight') document.documentElement.setAttribute('data-theme', t);
+    }catch(e){}
+  })();
+</script>
+<script>if(/[?&]embed=1/.test(location.search))document.documentElement.classList.add("embed");</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Budget-Ledger — Steuer-Cockpit</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#04060c">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sparrechner">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+#cp *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+#cp .wrap{max-width:1300px;margin:0 auto}
+#cp .title{font-size:22px;margin:0 0 14px}
+#cp .container{display:grid;grid-template-columns:2fr 1fr;gap:20px}
+#cp .card{background:var(--cp-card);padding:22px;border-radius:14px;box-shadow:0 4px 6px rgba(0,0,0,.05);margin-bottom:20px;border-top:4px solid var(--cp-border)}
+#cp .card.c-blue{border-top-color:#2563eb}
+#cp .card.c-red{border-top-color:#dc2626}
+#cp .card.c-green{border-top-color:#10b981}
+#cp .card.c-dark{border-top-color:#64748b}
+#cp h3{margin:0 0 4px;font-size:17px}
+#cp label{font-weight:600;display:block;margin:14px 0 6px;font-size:14px}
+#cp input,#cp select,#cp textarea{width:100%;padding:12px;border:1px solid var(--cp-border);border-radius:8px;font-size:16px;background:var(--cp-card);color:var(--cp-text);font-family:inherit;min-height:46px}
+#cp input:focus,#cp select:focus,#cp textarea:focus{outline:2px solid var(--cp-accent);outline-offset:1px;border-color:transparent}
+#cp input[type=checkbox]{width:20px;min-height:20px;height:20px;margin:0}
+#cp textarea{resize:vertical}
+#cp .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#cp .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+#cp button{background:var(--cp-accent);color:#fff;border:none;padding:14px 20px;font-size:16px;font-weight:600;border-radius:10px;cursor:pointer;width:100%;margin-top:15px;min-height:50px;font-family:inherit}
+#cp button.ok{background:var(--cp-ok)}
+#cp button.ghost{background:var(--cp-tile);color:var(--cp-text);border:1px solid var(--cp-border)}
+#cp button:disabled{opacity:.6;cursor:wait}
+#cp .btn-row{display:flex;gap:10px;flex-wrap:wrap}
+#cp .btn-row button{flex:1;min-width:150px}
+#cp .hint{font-size:12px;color:var(--cp-muted);margin-top:4px}
+#cp .neg{color:var(--cp-neg)}
+#cp .pos{color:var(--cp-pos)}
+#cp .warn{color:var(--cp-warn)}
+#cp details.stamm{margin-top:14px;border:1px solid var(--cp-border);border-radius:10px;padding:0 14px}
+#cp details.stamm summary{cursor:pointer;font-weight:600;padding:14px 0;list-style:none}
+#cp details.stamm summary::after{content:' ▾';color:var(--cp-muted)}
+#cp details.stamm[open]{padding-bottom:14px}
+#cp .check{display:flex;gap:10px;align-items:center;font-weight:600;font-size:14px;margin-top:14px}
+#cp .tabs{position:sticky;top:0;z-index:15;display:flex;gap:4px;background:var(--cp-card);padding:4px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.06);margin-bottom:16px}
+#cp .tabs button{margin:0;min-height:44px;background:transparent;color:var(--cp-muted);border-radius:9px;font-size:15px;padding:8px 6px}
+#cp .tabs button.active{background:var(--cp-accent);color:#fff}
+#cp .tab{display:none}
+#cp .tab.active{display:block}
+#cp .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+#cp .kpi{background:var(--cp-tile);border:1px solid var(--cp-border);border-radius:12px;padding:12px;border-left:4px solid var(--cp-border)}
+#cp .kpi small{display:block;color:var(--cp-muted);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.02em}
+#cp .kpi b{font-size:20px}
+#cp .kpi.k-in{border-left-color:#16a34a}
+#cp .kpi.k-out{border-left-color:#dc2626}
+#cp .kpi.k-net{border-left-color:#2563eb}
+#cp .calc-list{margin-top:14px;border-top:1px solid var(--cp-border)}
+#cp .calc-row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--cp-border);align-items:baseline}
+#cp .calc-row span small{display:block;color:var(--cp-muted);font-size:12px;font-weight:400}
+#cp .calc-row b{white-space:nowrap}
+#cp .calc-row.total{background:var(--cp-tile);margin:0 -10px;padding:12px 10px;border-radius:8px;border-bottom:none}
+#cp .bars{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;height:130px;margin-top:14px;align-items:end}
+#cp .bar-col{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:4px}
+#cp .bar{width:100%;border-radius:4px 4px 0 0;min-height:2px;background:var(--cp-pos)}
+#cp .bar.n{background:var(--cp-neg)}
+#cp .bar-col small{font-size:10px;color:var(--cp-muted)}
+#cp .journal{margin-top:12px;max-height:420px;overflow-y:auto}
+#cp .j-item{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--cp-border)}
+#cp .j-item .d{font-size:12px;color:var(--cp-muted)}
+#cp .j-item .t{font-weight:600;font-size:14px}
+#cp .j-item .tag{display:inline-block;font-size:11px;background:var(--cp-tile);border:1px solid var(--cp-border);border-radius:999px;padding:1px 8px;margin-left:4px;color:var(--cp-muted);font-weight:500}
+#cp .j-item b{white-space:nowrap}
+#cp .j-item .x{width:34px;min-height:34px;margin:0;padding:0;background:transparent;color:var(--cp-muted);border:1px solid var(--cp-border);border-radius:50%;font-size:14px}
+#cp .empty{color:var(--cp-muted);text-align:center;padding:24px 0;font-size:14px}
+#cp .elster-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
+#cp .elster-table td{padding:8px 0;border-bottom:1px solid var(--cp-border)}
+#cp .elster-table td:last-child{text-align:right;font-weight:600;white-space:nowrap}
+#cp .uploads{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+#cp .uploads.single{grid-template-columns:minmax(0,180px)}
+#cp .tile{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;aspect-ratio:3/4;border:2px dashed var(--cp-border);border-radius:10px;background:var(--cp-tile);color:var(--cp-muted);font-size:12px;font-weight:600;text-align:center;padding:8px;cursor:pointer;overflow:hidden;margin:0}
+#cp .tile input{position:absolute;inset:0;opacity:0;cursor:pointer;min-height:0}
+#cp .tile .ico{font-size:26px}
+#cp .tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#cp .tile.has{border-style:solid;border-color:var(--cp-accent)}
+#cp .tile .badge{position:absolute;left:6px;right:6px;bottom:6px;background:rgba(0,0,0,.65);color:#fff;border-radius:6px;padding:3px 4px;font-size:10px;z-index:1}
+#cp .tile .del{position:absolute;top:6px;right:6px;z-index:2;width:28px;height:28px;min-height:0;margin:0;padding:0;border-radius:50%;background:rgba(0,0,0,.65);font-size:14px;display:none}
+#cp .tile.has .del{display:block}
+#cp .preview-box{position:relative;overflow:hidden;border-radius:8px;margin-top:12px}
+#cp .preview-scale{transform-origin:top left;width:760px}
+#cp #invoice-preview{background:#fff;border:1px solid #e2e8f0;padding:40px;border-radius:8px;font-size:12px;line-height:1.5;color:#000;width:760px}
+#cp .inv-header{display:flex;justify-content:space-between;border-bottom:2px solid #2563eb;padding-bottom:15px;margin-bottom:25px}
+#cp .inv-header h2{margin:0 0 6px}
+#cp .inv-grid{display:grid;grid-template-columns:1fr 1fr;margin-bottom:25px;gap:20px}
+#cp .inv-table{width:100%;border-collapse:collapse;margin-bottom:20px}
+#cp .inv-table th{background:#f8fafc;text-align:left;padding:8px;border-bottom:2px solid #cbd5e1}
+#cp .inv-table td{padding:8px;border-bottom:1px solid #e2e8f0}
+#cp .r{text-align:right}
+#cp #invoice-preview .neg{color:#dc2626}
+#cp #invoice-preview .pos{color:#16a34a}
+#cp .tax-note{background:#f1f5f9;padding:12px;border-left:4px solid #64748b;font-style:italic;margin-top:20px;font-size:11px}
+#cp .guide h4{margin:18px 0 6px;color:var(--cp-head);font-size:15px}
+#cp .guide ul{margin:0;padding-left:20px}
+#cp .guide li{margin-bottom:8px;line-height:1.45}
+#cp .guide p{line-height:1.5;margin:6px 0}
+#cp .chat-card{position:sticky;top:76px;border-top-color:#10b981}
+#cp .chat-box{height:360px;border:1px solid var(--cp-border);border-radius:8px;padding:10px;overflow-y:auto;background:var(--cp-chat);margin-bottom:10px;font-size:14px}
+#cp .chat-msg{margin-bottom:10px;padding:9px 12px;border-radius:10px;max-width:88%;line-height:1.4}
+#cp .chat-msg.user{background:var(--cp-user);margin-left:auto;color:var(--cp-usertext)}
+#cp .chat-msg.ai{background:var(--cp-ai)}
+#cp .chat-row{display:flex;gap:6px}
+#cp .chat-row button{width:auto;margin-top:0;padding:0 16px}
+#cp .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+#cp .chips button{width:auto;margin:0;min-height:34px;padding:6px 12px;font-size:13px;background:var(--cp-tile);color:var(--cp-text);border:1px solid var(--cp-border);border-radius:999px}
+#cp .sheet-head,#cp .backdrop,#cp .bottom-bar{display:none}
+#cp .toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top,0px));transform:translate(-50%,-150%);background:#0f172a;color:#fff;padding:12px 18px;border-radius:10px;font-size:14px;font-weight:600;z-index:50;transition:transform .25s ease;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:90vw}
+#cp .toast.show{transform:translate(-50%,0)}
+#cp .toast{display:flex;gap:14px;align-items:center}
+#cp .toast button{width:auto;min-height:34px;margin:0;padding:6px 12px;font-size:14px;background:#fff;color:#0f172a;border-radius:8px}
+#cp .toast button:empty{display:none}
+#cp .j-item .x{width:auto;padding:0 10px;border-radius:8px;font-size:13px;color:var(--cp-neg);border-color:var(--cp-neg)}
+#cp .res-big{font-size:34px;font-weight:700;margin:6px 0 2px}
+#cp .res-sub{color:var(--cp-muted);font-size:14px}
+#cp .split{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+#cp .split>div{background:var(--cp-tile);border:1px solid var(--cp-border);border-radius:12px;padding:12px}
+#cp .split small{display:block;color:var(--cp-muted);font-size:12px}
+#cp .split b{font-size:20px}
+#cp .meter{height:14px;border-radius:999px;background:var(--cp-pos);overflow:hidden;margin-top:14px;display:flex}
+#cp .meter i{display:block;height:100%;background:var(--cp-neg)}
+#cp .modal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:20px}
+#cp .modal.open{display:flex}
+#cp .modal-box{background:var(--cp-card);color:var(--cp-text);border-radius:16px;padding:20px;max-width:380px;width:100%;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+#cp .modal-box p{margin:0 0 6px;font-size:16px;line-height:1.4}
+#cp .modal-box .btn-row button{min-width:0}
+#cp button.danger{background:var(--cp-neg)}
+#cp .imp-box{max-width:560px;max-height:88vh;display:flex;flex-direction:column}
+#cp .imp-box h3{margin-bottom:8px}
+#cp .imp-list{overflow-y:auto;flex:1;margin:10px 0;border-top:1px solid var(--cp-border)}
+#cp .imp-list .j-item{grid-template-columns:1fr auto}
+#cp .imp-tag{display:inline-block;font-size:11px;border-radius:999px;padding:1px 8px;margin-left:4px;font-weight:600}
+#cp .imp-tag.dup{background:#fef3c7;color:#92400e}
+#cp .imp-tag.new{background:#dcfce7;color:#166534}
+#cp .imp-sum{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px}
+#cp .imp-sum>div{background:var(--cp-tile);border:1px solid var(--cp-border);border-radius:10px;padding:10px}
+#cp .imp-sum b{display:block;font-size:15px;margin-top:2px}
+#cp .imp-warn{background:#fef3c7;color:#92400e;border-radius:10px;padding:10px;font-size:13px;margin-top:8px}
+#cp #imp-text{font-family:ui-monospace,monospace;font-size:13px;min-height:220px}
+#cp .j-item .tag.firm{background:#dbeafe;color:#1e40af;border-color:#bfdbfe}
+#cp .firm-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
+#cp .firm-table th{text-align:right;font-size:12px;color:var(--cp-muted);font-weight:600;padding:6px 0 6px 8px;border-bottom:1px solid var(--cp-border)}
+#cp .firm-table th:first-child{text-align:left;padding-left:0}
+#cp .firm-table td{padding:10px 0 10px 8px;border-bottom:1px solid var(--cp-border);text-align:right;white-space:nowrap}
+#cp .firm-table td:first-child{text-align:left;padding-left:0;white-space:normal;font-weight:600}
+#cp .firm-table td small{display:block;color:var(--cp-muted);font-weight:400;font-size:12px}
+#cp .firm-pill{display:inline-flex;align-items:center;gap:6px;background:#dbeafe;color:#1e40af;border-radius:999px;padding:4px 12px;font-weight:600;font-size:13px;margin-top:8px}
+#cp .autofilled{box-shadow:0 0 0 2px var(--cp-ok)!important;background:rgba(16,185,129,.08)!important}
+#cp .tile.firm-tile{border-color:#2563eb}
+#cp .tile .badge.scan{background:rgba(37,99,235,.9)}
+#cp .ocr-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;flex-wrap:wrap}
+#cp .ocr-row .check{margin-top:0}
+#cp .ocr-log{font-size:12px;color:var(--cp-muted);margin-top:8px;line-height:1.5}
+#cp .uploads.five{grid-template-columns:repeat(5,1fr)}
+@media (max-width:820px){#cp .uploads.five{grid-template-columns:1fr 1fr}
+#cp .uploads.five .tile:first-child{grid-column:1/-1;aspect-ratio:auto;min-height:130px}}
+#cp .mini-btn{width:auto;min-height:38px;margin:8px 0 0;padding:6px 12px;font-size:14px}
+@media (max-width:820px){#cp .title{font-size:19px;margin-bottom:10px}
+#cp .tabs{top:env(safe-area-inset-top,0px)}
+#cp .tabs button{font-size:13px;padding:6px 2px;min-height:48px;line-height:1.15}
+#cp .tabs .tl{display:block;font-size:11px}
+#cp .container{grid-template-columns:1fr;gap:0}
+#cp .card{padding:16px;margin-bottom:12px}
+#cp .uploads{grid-template-columns:1fr 1fr}
+#cp .uploads.single{grid-template-columns:1fr 1fr}
+#cp .desk-btn{display:none!important}
+#cp .kpis{grid-template-columns:1fr 1fr}
+#cp .kpis .kpi.k-net{grid-column:1/-1}
+#cp .bottom-bar{display:flex;gap:8px;position:fixed;left:0;right:0;bottom:0;z-index:20;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));background:var(--cp-card);border-top:1px solid var(--cp-border);box-shadow:0 -4px 12px rgba(0,0,0,.08)}
+#cp .bottom-bar button{margin:0}
+#cp .bottom-bar .chat-btn{width:56px;flex:none;font-size:22px;padding:0;background:var(--cp-tile);border:1px solid var(--cp-border)}
+#cp #bb-actions{flex:1;display:flex;gap:8px}
+#cp #bb-actions button{padding:0 10px;font-size:15px}
+#cp .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:30}
+#cp .backdrop.open{display:block}
+#cp .chat-card{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:31;margin:0;border-radius:18px 18px 0 0;max-height:85vh;display:flex;flex-direction:column;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateY(105%);transition:transform .25s ease}
+#cp .chat-card.open{transform:translateY(0)}
+#cp .chat-card>h3{display:none}
+#cp .sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+#cp .sheet-head b{font-size:17px}
+#cp .sheet-head button{width:40px;min-height:40px;margin:0;padding:0;background:var(--cp-tile);color:var(--cp-text);border:1px solid var(--cp-border);border-radius:50%}
+#cp .chat-box{height:auto;flex:1;min-height:200px}}
+@media (min-width:821px){#cp .tabs .tl{margin-left:4px}}
+@media (max-width:420px){#cp .grid-2.stack,#cp .grid-3{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){#cp .chat-card,#cp .toast{transition:none}}
+#cp{--cp-bg:transparent;--cp-card:var(--card);--cp-text:var(--ink);--cp-muted:var(--ink-soft);--cp-border:var(--card-line);--cp-accent:var(--brass);--cp-chat:rgba(0,0,0,.28);--cp-ai:rgba(255,255,255,.09);--cp-user:var(--brass-deep);--cp-usertext:#fff;--cp-tile:rgba(255,255,255,.04);--cp-neg:var(--danger);--cp-pos:var(--sage);--cp-warn:#fbbf24;--cp-head:var(--ink);--cp-ok:var(--sage);color-scheme:dark;color:var(--ink);font-family:inherit;max-width:1300px;margin:0 auto;padding:6px 0 0}
+#cp .card{backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+#cp input,#cp select,#cp textarea{background:rgba(255,255,255,.05)}
+#cp select option{background:#0d1428;color:#f4f6fb}
+#cp .tabs,#cp .bottom-bar,#cp .modal-box{background:var(--bg)}
+#cp .tabs{border:1px solid var(--card-line);box-shadow:none}
+#cp .toast{background:var(--bg);color:var(--ink);border:1px solid var(--card-line)}
+#cp .toast button{background:var(--brass);color:#fff}
+#cp .j-item .tag.firm,#cp .firm-pill{background:rgba(255,255,255,.08);color:var(--ink);border-color:var(--card-line)}
+#cp .tile.firm-tile{border-color:var(--brass)}
+#cp .tile .badge.scan{background:var(--brass-deep)}
+#cp .kpi.k-net{border-left-color:var(--brass)}
+#cp .card.c-blue{border-top-color:var(--brass)}
+#cp .kpi.k-in{border-left-color:var(--sage)}#cp .kpi.k-out{border-left-color:var(--danger)}
+#cp button.ok{color:#04120b}
+@media (max-width:820px){#cp .chat-card{background:var(--bg)}#cp{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}}
+
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <span class="brand">Budget-Ledger</span>
+  <button class="menu-toggle" id="menu-toggle" type="button">☰ Menü</button>
+  <div class="menu-panel" id="menu-panel">
+    <a href="start.html">Start<span class="sub-label">Übersicht aller Bereiche</span></a>
+    <a href="index.html">Sparrechner<span class="sub-label">Übersicht &amp; Spartopf</span></a>
+    <a href="steuer-cockpit.html" class="active">Steuer-Cockpit<span class="sub-label">Payouts, Belege &amp; EÜR</span></a>
+    <a href="trading-journal.html">Trading Journal<span class="sub-label">NoWick Journal</span></a>
+    <a href="anleitung.html">Anleitung<span class="sub-label">Funktionen erklärt</span></a>
+    <div class="theme-switcher">
+      <span class="ts-label">Farbschema</span>
+      <div class="ts-row">
+        <button class="theme-swatch" data-swatch="midnight" title="Mitternacht (Standard)" type="button"></button>
+        <button class="theme-swatch" data-swatch="redblack" title="Rot-Schwarz" type="button"></button>
+        <button class="theme-swatch" data-swatch="emerald" title="Smaragd" type="button"></button>
+        <button class="theme-swatch" data-swatch="amber" title="Bernstein" type="button"></button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main id="cp">
+
+<div class="modal" id="modal"><div class="modal-box"><p id="modal-msg"></p><div class="btn-row"><button type="button" class="ghost" id="modal-no">Abbrechen</button><button type="button" class="danger" id="modal-yes">Löschen</button></div></div></div>
+<div class="modal" id="paste-modal"><div class="modal-box imp-box">
+  <h3>📋 JSON einfügen</h3>
+  <div class="hint">Cockpit-Backup oder Journal im Format mit „datum / typ / wert_eur“.</div>
+  <textarea id="imp-text" placeholder='{ "journal": [ ... ] }'></textarea>
+  <div class="btn-row"><button type="button" class="ghost" onclick="closeModal('paste-modal')">Abbrechen</button><button type="button" onclick="previewFromText()">👁️ Vorschau</button></div>
+</div></div>
+<div class="modal" id="imp-modal"><div class="modal-box imp-box">
+  <h3>👁️ Import-Vorschau</h3>
+  <div class="imp-sum" id="imp-sum"></div>
+  <div id="imp-warn"></div>
+  <div class="imp-list" id="imp-list"></div>
+  <div class="btn-row">
+    <button type="button" class="ghost" onclick="closeModal('imp-modal')">Abbrechen</button>
+    <button type="button" class="ok" id="imp-merge">➕ Hinzufügen</button>
+    <button type="button" class="danger" id="imp-replace">♻️ Alles ersetzen</button>
+  </div>
+</div></div>
+<div class="toast" id="toast"><span id="toast-msg"></span><button type="button" id="toast-btn"></button></div>
+<div class="wrap"><h2 class="title">📊 AndrewFXTD Steuer-Cockpit</h2></div>
+
+<div class="wrap tabs" role="tablist">
+  <button type="button" class="active" data-tab="cockpit" onclick="showTab('cockpit')">📊<span class="tl">Cockpit</span></button>
+  <button type="button" data-tab="payout" onclick="showTab('payout')">💰<span class="tl">Payout</span></button>
+  <button type="button" data-tab="ausgabe" onclick="showTab('ausgabe')">🎯<span class="tl">Ausgabe</span></button>
+  <button type="button" data-tab="rechner" onclick="showTab('rechner')">🧮<span class="tl">Rechner</span></button>
+  <button type="button" data-tab="steuer" onclick="showTab('steuer')">📘<span class="tl">Steuern</span></button>
+</div>
+
+<div class="wrap container">
+<div>
+
+<!-- ================= COCKPIT ================= -->
+<section class="tab active" id="tab-cockpit">
+  <div class="card c-dark">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <h3>📈 Finanzstatistik</h3>
+      <select id="view-year" style="width:auto;min-width:110px"></select>
+    </div>
+    <div class="kpis">
+      <div class="kpi k-in"><small>Betriebseinnahmen</small><b id="kpi-in">–</b></div>
+      <div class="kpi k-out"><small>Betriebsausgaben</small><b id="kpi-out">–</b></div>
+      <div class="kpi k-net"><small>Gewinn (EÜR)</small><b id="kpi-net">–</b></div>
+    </div>
+    <div class="bars" id="bars"></div>
+    <div class="hint" style="text-align:center">Gewinn pro Monat</div>
+  </div>
+
+  <div class="card c-blue">
+    <h3>🏛️ Steuerprognose <span id="prog-year"></span></h3>
+    <div class="hint" id="prog-hint"></div>
+    <div class="calc-list">
+      <div class="calc-row"><span>Einkommensteuer<small id="c-est-lbl">Gewinn × Grenzsteuersatz</small></span><b id="c-est">–</b></div>
+      <div class="calc-row"><span>Gewerbesteuer<small id="c-gew-lbl">–</small></span><b id="c-gew" class="neg">–</b></div>
+      <div class="calc-row"><span>Ermäßigung § 35 EStG</span><b id="c-red" class="pos">–</b></div>
+      <div class="calc-row total"><span><strong>Gesamtsteuer auf Gewinn</strong></span><b id="c-total">–</b></div>
+      <div class="calc-row"><span>Empfohlene Rücklage je Payout<small>konservativ, ab Grenzsteuersatz</small></span><b id="c-res" class="warn">–</b></div>
+    </div>
+  </div>
+
+  <div class="card c-blue">
+    <h3>🏢 Nach Propfirma</h3>
+    <div class="hint">Woher kommen die Payouts – und was haben Challenges & Gebühren dort gekostet?</div>
+    <div style="overflow-x:auto"><table class="firm-table" id="firm-table"></table></div>
+  </div>
+
+  <div class="card c-green">
+    <h3>🧮 Für ELSTER (Anlage EÜR)</h3>
+    <table class="elster-table" id="elster-table"></table>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <h3>📒 Journal</h3><span class="hint" id="j-count"></span>
+    </div>
+    <select id="j-filter" style="margin-top:10px"><option value="">🏢 Alle Propfirmen</option></select>
+    <div class="journal" id="journal"></div>
+    <div class="btn-row">
+      <button class="ghost" onclick="exportCSV()">📄 CSV (Excel)</button>
+      <button class="ghost" onclick="exportBackup()">💾 Backup sichern</button>
+      <button class="ghost" onclick="$('import-file').click()">📂 Datei laden</button>
+      <button class="ghost" onclick="openPaste()">📋 JSON einfügen</button>
+    </div>
+    <input type="file" id="import-file" accept="application/json,.json" style="display:none" onchange="importBackup(this)">
+    <div class="hint" style="margin-top:10px">Daten bleiben nur in diesem Browser gespeichert. Regelmäßig ein Backup sichern.</div>
+  </div>
+</section>
+
+<!-- ================= PAYOUT ================= -->
+<section class="tab" id="tab-payout">
+  <div class="card c-blue">
+    <h3>💰 1. Payout erfassen</h3>
+    <div class="grid-2 stack">
+      <div><label for="pay-firm">🏢 Propfirma (Herkunft)</label><input type="text" id="pay-firm" list="firm-list" value="Funding Pips" placeholder="z. B. Funding Pips, FTMO, The5ers" autocomplete="off"></div>
+      <div><label for="pay-acc">Konto / Account</label><input type="text" id="pay-acc" placeholder="optional, z. B. Master 100k #12345"></div>
+    </div>
+    <datalist id="firm-list"></datalist>
+    <div class="hint">Neue Firma einfach eintippen – Adresse dann in den Stammdaten ergänzen, sie wird pro Firma gespeichert.</div>
+    <div class="grid-2 stack">
+      <div><label for="inv-date">Zuflussdatum (Bankeingang)</label><input type="date" id="inv-date"></div>
+      <div><label for="inv-no">Belegnummer</label><input type="text" id="inv-no"></div>
+    </div>
+    <div class="grid-2">
+      <div><label for="amount-gross">Brutto (USD)</label><input type="text" inputmode="decimal" id="amount-gross" value="135,81"></div>
+      <div><label for="amount-fee">Gebühr (USD)</label><input type="text" inputmode="decimal" id="amount-fee" value="6,67"></div>
+    </div>
+    <div class="grid-2">
+      <div><label for="amount-crypto">Zulauf (USDT)</label><input type="text" inputmode="decimal" id="amount-crypto" value="129,14"></div>
+      <div><label for="amount-eur">Bankeingang (EUR)</label><input type="text" inputmode="decimal" id="amount-eur" value="113,44"></div>
+    </div>
+    <div class="grid-2">
+      <div><label for="sepa-fee">SEPA-Gebühr Binance (EUR)</label><input type="text" inputmode="decimal" id="sepa-fee" value="1,00"></div>
+      <div></div>
+    </div>
+    <div class="grid-2 stack">
+      <div><label for="rate">Kurs (EUR je USD)</label><input type="text" inputmode="decimal" id="rate" value="0,8840875"><div class="hint">Daraus werden die Euro-Werte berechnet.</div></div>
+      <div><label for="rate-note">Kursnachweis / Notiz</label><input type="text" id="rate-note" value="Binance-Konvertierung vom 21.10.2026"></div>
+    </div>
+
+    <details class="stamm">
+      <summary>⚙️ Stammdaten (werden gespeichert)</summary>
+      <div class="grid-2 stack">
+        <div><label for="my-details">Deine Gewerbedaten</label><textarea id="my-details" rows="4" data-stamm>Andrew Berthold
+Musterstraße 12
+01234 Dresden
+Steuernummer: 12/345/67890</textarea></div>
+        <div><label for="firm-details">Adresse der Propfirma <span class="hint" id="firm-details-for"></span></label><textarea id="firm-details" rows="4">Tradin Global / Funding Pips
+IFZA Business Park, DDP
+Dubai, Vereinigte Arabische Emirate</textarea></div>
+      </div>
+      <label for="bank-name">Geschäftskonto</label><input type="text" id="bank-name" value="Revolut Pro" data-stamm>
+      <label for="tax-text">Steuerlicher Hinweis auf dem Beleg</label>
+      <textarea id="tax-text" rows="3" data-stamm>Leistungsempfänger mit Sitz im Drittland. Leistungsort gem. § 3a Abs. 2 UStG im Ausland – im Inland nicht steuerbar.</textarea>
+    </details>
+  </div>
+
+  <div class="card">
+    <h3>🗂️ 2. Screenshots & Belege</h3>
+    <div class="hint">Antippen zum Hochladen oder Foto aufnehmen.</div>
+    <div class="ocr-row">
+      <label class="check"><input type="checkbox" id="ocr-on" checked> ✨ Felder automatisch aus Screenshots ausfüllen</label>
+    </div>
+    <div class="uploads five">
+      <label class="tile firm-tile" id="slot-firm"><span class="ico">🏢</span>Propfirma Payout<input type="file" accept="image/*" onchange="handleImage(this,'slot-firm')"><button type="button" class="del" onclick="clearImage(event,'slot-firm')" aria-label="Entfernen">✕</button></label>
+      <label class="tile" id="slot-dep"><span class="ico">📥</span>USDT Eingang<input type="file" accept="image/*" onchange="handleImage(this,'slot-dep')"><button type="button" class="del" onclick="clearImage(event,'slot-dep')" aria-label="Entfernen">✕</button></label>
+      <label class="tile" id="slot-conv"><span class="ico">🔄</span>Convert Beleg<input type="file" accept="image/*" onchange="handleImage(this,'slot-conv')"><button type="button" class="del" onclick="clearImage(event,'slot-conv')" aria-label="Entfernen">✕</button></label>
+      <label class="tile" id="slot-with"><span class="ico">💶</span>SEPA Auszahlung<input type="file" accept="image/*" onchange="handleImage(this,'slot-with')"><button type="button" class="del" onclick="clearImage(event,'slot-with')" aria-label="Entfernen">✕</button></label>
+      <label class="tile" id="slot-bank"><span class="ico">🏦</span><span id="bank-tile-lbl">Kontoauszug</span><input type="file" accept="image/*" onchange="handleImage(this,'slot-bank')"><button type="button" class="del" onclick="clearImage(event,'slot-bank')" aria-label="Entfernen">✕</button></label>
+    </div>
+    <div class="ocr-log" id="ocr-log">Erkannte Werte werden grün markiert – bitte kurz prüfen.</div>
+  </div>
+
+  <div class="card c-green">
+    <h3>📄 3. Eigenbeleg</h3>
+    <div class="preview-box" id="preview-box"><div class="preview-scale" id="preview-scale"><div id="invoice-preview"></div></div></div>
+    <div class="btn-row desk-btn">
+      <button class="ok" onclick="bookPayout()">✅ Ins Journal buchen</button>
+      <button class="pdf-btn" onclick="generateSammelPDF()">📄 Beleg-PDF inkl. Anhänge</button>
+    </div>
+    <div class="hint" style="margin-top:10px">Buchen legt Einnahme, Transfergebühr und Kursdifferenz getrennt im Journal an (Bruttoprinzip).</div>
+  </div>
+</section>
+
+<!-- ================= AUSGABE ================= -->
+<section class="tab" id="tab-ausgabe">
+  <div class="card c-red">
+    <h3>🎯 Betriebsausgabe erfassen</h3>
+    <div class="grid-2 stack">
+      <div><label for="exp-date">Zahlungsdatum</label><input type="date" id="exp-date"></div>
+      <div><label for="exp-cat">Kategorie</label>
+        <select id="exp-cat">
+          <option>Challenge-Gebühr</option>
+          <option>Software / TradingView</option>
+          <option>Daten-Feed</option>
+          <option>Bank- / Transfergebühr</option>
+          <option>Hardware / Büro</option>
+          <option>Weiterbildung</option>
+          <option>Sonstiges</option>
+        </select>
+      </div>
+    </div>
+    <label for="exp-firm">🏢 Propfirma (optional)</label><input type="text" id="exp-firm" list="firm-list" placeholder="z. B. Funding Pips" autocomplete="off">
+    <div class="hint">Bei Challenges ausfüllen – dann siehst du im Cockpit, was sich pro Firma lohnt.</div>
+    <label for="exp-desc">Beschreibung</label><input type="text" id="exp-desc" value="100k Challenge">
+    <div class="grid-2">
+      <div><label for="exp-val">Betrag (€)</label><input type="text" inputmode="decimal" id="exp-val" placeholder="0,00"></div>
+      <div><label for="exp-ref">Rechnungs-Nr.</label><input type="text" id="exp-ref" placeholder="optional"></div>
+    </div>
+    <div class="hint">Bei Zahlung in USD den Euro-Betrag laut Kontoauszug eintragen.</div>
+
+    <label style="margin-top:18px">Kaufquittung</label>
+    <div class="uploads single">
+      <label class="tile" id="slot-chal"><span class="ico">🧾</span>Quittung<input type="file" accept="image/*" onchange="handleImage(this,'slot-chal')"><button type="button" class="del" onclick="clearImage(event,'slot-chal')" aria-label="Entfernen">✕</button></label>
+    </div>
+    <div class="btn-row desk-btn">
+      <button class="ok" onclick="bookExpense()">✅ Ausgabe buchen</button>
+      <button class="pdf-btn" onclick="expensePDF()">📄 Ausgabe-PDF</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>💡 Was ist absetzbar?</h3>
+    <div class="guide">
+      <ul>
+        <li><strong>Challenge-Gebühren:</strong> Betriebsausgabe im Jahr der Zahlung – egal ob bestanden oder nicht.</li>
+        <li><strong>Software, Daten, TradingView:</strong> voll absetzbar, bei Mischnutzung nur der betriebliche Anteil.</li>
+        <li><strong>Hardware:</strong> bis 800 € netto sofort, Computer/Software seit 2021 auch darüber sofort (Nutzungsdauer 1 Jahr).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PAYOUT-STEUER-RECHNER ================= -->
+<section class="tab" id="tab-rechner">
+  <div class="card c-blue">
+    <h3>🧮 Wie viel Steuer zahle ich auf mein Payout?</h3>
+    <div class="hint">Rechnet nur Einkommensteuer, Soli und Kirchensteuer nach Tarif 2026 – ohne Journal und ohne Gewerbesteuer.</div>
+    <label for="pc-amount">Gewinn aus dem Payout (€)</label>
+    <input type="text" inputmode="decimal" id="pc-amount" value="1000">
+    <button type="button" class="ghost mini-btn" onclick="takeFromBeleg()">↙ Aus aktuellem Payout-Beleg übernehmen</button>
+    <label for="pc-zve">Zu versteuerndes Einkommen aus dem Hauptjob (€/Jahr)</label>
+    <input type="text" inputmode="decimal" id="pc-zve" placeholder="z. B. 38000">
+    <div class="hint">Steht im letzten Steuerbescheid. Faustregel: Jahresbrutto minus ca. 20 %.</div>
+    <div class="grid-2">
+      <div><label for="pc-prior">Bisherige Nebengewinne dieses Jahr (€)</label><input type="text" inputmode="decimal" id="pc-prior" value="0"></div>
+      <div><label for="pc-kist">Kirchensteuer</label>
+        <select id="pc-kist"><option value="0">keine</option><option value="8">8 % (BY, BW)</option><option value="9">9 % (übrige, inkl. Sachsen)</option></select></div>
+    </div>
+    <button type="button" class="ghost mini-btn" onclick="priorFromJournal()">↙ Gewinn aus Journal übernehmen</button>
+    <label class="check"><input type="checkbox" id="pc-split"> Verheiratet, Zusammenveranlagung (Splitting)</label>
+    <label class="check"><input type="checkbox" id="pc-haerte" checked> Härteausgleich bis 820 € Nebeneinkünfte</label>
+  </div>
+
+  <div class="card c-green" id="pc-result">
+    <div class="res-sub">Steuer auf dieses Payout</div>
+    <div class="res-big neg" id="pc-tax">–</div>
+    <div class="res-sub" id="pc-eff">–</div>
+    <div class="meter"><i id="pc-meter" style="width:0"></i></div>
+    <div class="split">
+      <div><small>Davon behältst du</small><b class="pos" id="pc-net">–</b></div>
+      <div><small>Grenzsteuersatz</small><b id="pc-marg">–</b></div>
+    </div>
+    <div class="calc-list">
+      <div class="calc-row"><span>Einkommensteuer</span><b id="pc-est">–</b></div>
+      <div class="calc-row"><span>Solidaritätszuschlag<small>meist 0 € dank Freigrenze</small></span><b id="pc-soli">–</b></div>
+      <div class="calc-row"><span>Kirchensteuer</span><b id="pc-ks">–</b></div>
+    </div>
+    <div class="hint" id="pc-note" style="margin-top:10px"></div>
+    <button type="button" class="ghost" onclick="useMarginal()">📌 Grenzsteuersatz für Cockpit übernehmen</button>
+  </div>
+</section>
+
+<!-- ================= STEUERN ================= -->
+<section class="tab" id="tab-steuer">
+  <div class="card c-blue">
+    <h3>⚙️ Steuer-Parameter</h3>
+    <div class="grid-3">
+      <div><label for="tax-rate">Grenzsteuersatz (%)</label><input type="text" inputmode="decimal" id="tax-rate" value="30"></div>
+      <div><label for="hebesatz">Hebesatz (%)</label><input type="text" inputmode="numeric" id="hebesatz" value="450"><div class="hint">Dresden 2026: 450 %</div></div>
+      <div><label for="plan-profit">Planwert Gewinn (€)</label><input type="text" inputmode="decimal" id="plan-profit" placeholder="leer = Journal"><div class="hint">Für Was-wäre-wenn</div></div>
+    </div>
+    <label class="check"><input type="checkbox" id="haerte" checked> Arbeitnehmer mit Lohn – Härteausgleich bis 820 € anwenden</label>
+    <div class="hint">Grenzsteuersatz = Satz, mit dem jeder zusätzliche Euro neben dem Hauptjob belastet wird. Ohne Soli/Kirchensteuer.</div>
+  </div>
+
+  <div class="card">
+    <h3>📊 Berechnung <span class="hint" id="t-src"></span></h3>
+    <div class="calc-list">
+      <div class="calc-row"><span>Gewinn</span><b id="t-profit">–</b></div>
+      <div class="calc-row"><span>Einkommensteuer<small id="t-est-lbl">–</small></span><b id="t-est">–</b></div>
+      <div class="calc-row"><span>Gewerbeertrag über Freibetrag<small>auf volle 100 € abgerundet − 24.500 €</small></span><b id="t-over">–</b></div>
+      <div class="calc-row"><span>Steuermessbetrag<small>× 3,5 %</small></span><b id="t-mess">–</b></div>
+      <div class="calc-row"><span>Gewerbesteuer<small id="t-heb-lbl">–</small></span><b id="t-gew" class="neg">–</b></div>
+      <div class="calc-row"><span>Ermäßigung § 35 EStG<small>4,0 × Messbetrag, max. gezahlte GewSt</small></span><b id="t-red" class="pos">–</b></div>
+      <div class="calc-row total"><span><strong>Gesamtabgabe</strong><small>ESt + GewSt − Ermäßigung</small></span><b id="t-total">–</b></div>
+      <div class="calc-row"><span>Echte Gewerbe-Mehrbelastung</span><b id="t-drag" class="warn">–</b></div>
+      <div class="calc-row"><span>Effektiv vom Gewinn</span><b id="t-eff">–</b></div>
+    </div>
+  </div>
+
+  <div class="card guide">
+    <h3>📘 Steuer-Handbuch</h3>
+    <h4>📋 Unterlagen je Auszahlung</h4>
+    <ul>
+      <li><strong>Beleg 1:</strong> Eigenbeleg über den Brutto-Euro-Wert (Tab Payout).</li>
+      <li><strong>Beleg 2–4:</strong> Binance USDT-Eingang, Convert-Verlauf, SEPA-Auszahlung + Kontoauszug.</li>
+      <li><strong>Ausgaben:</strong> Kaufquittung jeder Challenge, jedes Abos (Tab Ausgabe).</li>
+    </ul>
+    <h4>🏛️ ELSTER-Wegweiser</h4>
+    <p><strong>Anlage EÜR:</strong> Payouts und Kursgewinne in die Zeile für <em>umsatzsteuerfreie bzw. nicht steuerbare Betriebseinnahmen</em>. Als Kleinunternehmer stattdessen in <em>Betriebseinnahmen als umsatzsteuerlicher Kleinunternehmer</em>. Gebühren, Challenges, Software, Kursverluste unter <em>übrige unbeschränkt abziehbare Betriebsausgaben</em> (Summe aus dem Cockpit).</p>
+    <p><strong>Gewerbesteuer:</strong> keine abziehbare Betriebsausgabe. Erklärung erst nötig, wenn der Gewerbeertrag 24.500 € übersteigt.</p>
+    <p><strong>Anlage G:</strong> Gewinn in <em>Gewinn als Einzelunternehmer</em>, dazu den Hebesatz der Gemeinde.</p>
+    <h4>✅ Alltags-Regeln</h4>
+    <ul>
+      <li><strong>Bruttoprinzip:</strong> Einnahmen und Gebühren getrennt buchen – macht das Journal automatisch.</li>
+      <li><strong>Zuflussprinzip:</strong> Maßgeblich ist das Datum des Bankeingangs bzw. der Zahlung.</li>
+      <li><strong>Rücklage:</strong> Von jedem Payout den empfohlenen Satz aus dem Cockpit beiseitelegen.</li>
+      <li><strong>Kleine Nebeneinkünfte:</strong> Bis 410 € im Jahr steuerfrei, bis 820 € gemildert (§ 46 Abs. 3 und 5 EStG) – gilt für die Summe aller Nebeneinkünfte. EÜR trotzdem abgeben.</li>
+      <li><strong>Krankenkasse:</strong> Als gesetzlich Pflichtversicherter i. d. R. keine Beiträge auf den Gewerbegewinn, solange das Gewerbe nebenberuflich bleibt (Zeit und Einkommen klar unter dem Hauptjob). Nicht bei freiwilliger/privater Versicherung.</li>
+      <li><strong>Umsatzsteuer:</strong> Kleinunternehmerregelung prüfen – davon hängen Belegtext und EÜR-Zeile ab.</li>
+    </ul>
+    <p class="hint">Vereinfachte Orientierung, keine Steuerberatung.</p>
+    <button class="desk-btn pdf-btn" onclick="exportHandbuchPDF()">💾 Jahresreport & Handbuch als PDF</button>
+  </div>
+</section>
+</div>
+
+<!-- ================= CHAT ================= -->
+<div>
+  <div class="backdrop" id="backdrop" onclick="toggleChat(false)"></div>
+  <div class="card chat-card" id="chat-card">
+    <div class="sheet-head"><b>🤖 Steuer-Assistent</b><button type="button" onclick="toggleChat(false)" aria-label="Schließen">✕</button></div>
+    <h3>🤖 Steuer- & Buchhaltungs-Assistent</h3>
+    <div class="chips">
+      <button type="button" onclick="quick('Stand')">Stand</button>
+      <button type="button" onclick="quick('Propfirma')">Propfirmen</button>
+      <button type="button" onclick="quick('Wie viel Steuer auf mein Payout?')">Steuer/Payout</button>
+      <button type="button" onclick="quick('Fehlbuchung löschen')">Fehlbuchung</button>
+      <button type="button" onclick="quick('ELSTER')">ELSTER</button>
+      <button type="button" onclick="quick('Challenge')">Challenges</button>
+      <button type="button" onclick="quick('Gewerbesteuer')">Gewerbesteuer</button>
+      <button type="button" onclick="quick('Rücklage')">Rücklage</button>
+      <button type="button" onclick="quick('Freibetrag')">Freibetrag</button>
+      <button type="button" onclick="quick('Umsatzsteuer')">USt</button>
+      <button type="button" onclick="quick('Krankenkasse')">KV</button>
+    </div>
+    <div class="chat-box" id="chat-box"></div>
+    <div class="chat-row">
+      <input type="text" id="chat-input" placeholder="Frage eingeben…" enterkeyhint="send" onkeydown="if(event.key==='Enter')askAI()">
+      <button type="button" onclick="askAI()">Fragen</button>
+    </div>
+    <div class="hint">Einfache Regel-Antworten, keine Steuerberatung.</div>
+  </div>
+</div>
+</div>
+
+<div class="bottom-bar">
+  <button type="button" class="chat-btn" onclick="toggleChat(true)" aria-label="Steuer-Assistent öffnen">🤖</button>
+  <div id="bb-actions"></div>
+</div>
+
+
+</main>
+
+<p class="site-footer">Budget-Ledger &middot; erstellt von AndrewFXTD &middot; alle Daten bleiben lokal auf diesem Gerät</p>
+
+<script>
+
+/* ================= Basis ================= */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function num(s){s=String(s).replace(/[^\d,.\-]/g,'');if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');return parseFloat(s)||0;}
+const fmt=(n,d=2)=>(n||0).toLocaleString('de-DE',{minimumFractionDigits:d,maximumFractionDigits:d});
+const eur=n=>fmt(n)+' €';
+const r2=n=>Math.round(n*100)/100;
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const months=["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
+const monthsLong=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+const todayISO=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10);};
+const deDate=iso=>iso?iso.split('-').reverse().join('.'):'';
+const isMobile=()=>matchMedia('(max-width:820px)').matches;
+
+/* ================= Speicher ================= */
+const KEY='andrewfxtd-steuer-cockpit-v1';
+let state={journal:[],settings:{rate:'30',heb:'450',haerte:true},stamm:{}};
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s)state=Object.assign(state,s);}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+
+function askConfirm(msg,yes='Löschen'){
+  return new Promise(res=>{
+    const m=$('modal');$('modal-msg').textContent=msg;$('modal-yes').textContent=yes;m.classList.add('open');
+    const done=v=>{m.classList.remove('open');$('modal-yes').onclick=$('modal-no').onclick=m.onclick=null;res(v);};
+    $('modal-yes').onclick=e=>{e.stopPropagation();done(true);};
+    $('modal-no').onclick=e=>{e.stopPropagation();done(false);};
+    m.onclick=e=>{if(e.target===m)done(false);};
+  });
+}
+let undoFn=null;
+function toast(msg,undo){
+  const t=$('toast');$('toast-msg').textContent=msg;
+  undoFn=undo||null;$('toast-btn').textContent=undo?'↶ Rückgängig':'';
+  t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>{t.classList.remove('show');undoFn=null;},undo?6000:2200);
+}
+function snapshot(){const snap=JSON.stringify(state.journal);return()=>{state.journal=JSON.parse(snap);save();renderAll();$('inv-no').value=nextInvNo();updateInvoice();toast('↶ Rückgängig gemacht');};}
+document.addEventListener('DOMContentLoaded',()=>{});
+
+/* ================= Propfirmen ================= */
+const DEFAULT_FIRMS={'Funding Pips':'Tradin Global / Funding Pips\nIFZA Business Park, DDP\nDubai, Vereinigte Arabische Emirate'};
+function firmName(){return ($('pay-firm').value||'').trim();}
+function allFirms(){
+  const set=new Set(Object.keys(state.firms||{}));
+  state.journal.forEach(e=>{if(e.firm)set.add(e.firm);});
+  return [...set].sort((a,b)=>a.localeCompare(b,'de'));
+}
+function renderFirmList(){
+  const f=allFirms();
+  $('firm-list').innerHTML=f.map(n=>`<option value="${esc(n)}">`).join('');
+  const sel=$('j-filter'),cur=sel.value;
+  sel.innerHTML='<option value="">🏢 Alle Propfirmen</option>'+f.map(n=>`<option${n===cur?' selected':''} value="${esc(n)}">${esc(n)}</option>`).join('')+'<option value="__none"'+(cur==='__none'?' selected':'')+'>ohne Firma</option>';
+}
+function loadFirmDetails(){
+  const n=firmName();
+  $('firm-details-for').textContent=n?'('+n+')':'';
+  if(!n)return;
+  const known=state.firms[n];
+  $('firm-details').value=known!=null?known:n;
+}
+function migrate(){
+  if(!state.firms)state.firms={};
+  if(!Object.keys(state.firms).length){
+    Object.assign(state.firms,DEFAULT_FIRMS);
+    if(state.stamm&&state.stamm['firm-details'])state.firms['Funding Pips']=state.stamm['firm-details'];
+  }
+  // Alte Buchungen ohne Firma: aus Beschreibung "Payout X (...)" ableiten
+  const byGroup={};
+  state.journal.forEach(e=>{
+    if(!e.firm&&e.cat==='Payout'){const m=/^Payout (.+?) \(/.exec(e.desc||'');if(m)e.firm=m[1].includes('Funding Pips')?'Funding Pips':m[1];}
+    if(e.firm&&e.g)byGroup[e.g]=e.firm;
+  });
+  state.journal.forEach(e=>{if(!e.firm&&e.g&&byGroup[e.g])e.firm=byGroup[e.g];});
+}
+
+/* ================= Tabs ================= */
+let currentTab='cockpit';
+const actions={
+  cockpit:[['＋ Payout','showTab("payout")',''],['＋ Ausgabe','showTab("ausgabe")','ghost']],
+  payout:[['✅ Buchen','bookPayout()','ok'],['📄 PDF','generateSammelPDF()','pdf-btn']],
+  ausgabe:[['✅ Buchen','bookExpense()','ok'],['📄 PDF','expensePDF()','pdf-btn']],
+  rechner:[['↙ Aus Beleg','takeFromBeleg()','ghost'],['📌 Satz übernehmen','useMarginal()','']],
+  steuer:[['💾 Report-PDF','exportHandbuchPDF()','pdf-btn']]
+};
+function showTab(t){
+  currentTab=t;
+  document.querySelectorAll('.tab').forEach(s=>s.classList.toggle('active',s.id==='tab-'+t));
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
+  $('bb-actions').innerHTML=actions[t].map(([l,f,c])=>`<button type="button" class="${c}" onclick='${f}'>${l}</button>`).join('');
+  if(t==='payout')fitPreview();
+  window.scrollTo({top:0});
+}
+
+/* ================= Bilder ================= */
+const uploadedImages={'slot-firm':null,'slot-dep':null,'slot-conv':null,'slot-with':null,'slot-bank':null,'slot-chal':null};
+function handleImage(input,slotId){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      const max=1800,s=Math.min(1,max/Math.max(img.width,img.height));
+      const c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+      const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(img,0,0,c.width,c.height);
+      const data=c.toDataURL('image/jpeg',0.85);
+      uploadedImages[slotId]=data;
+      const t=$(slotId);t.classList.add('has');
+      let im=t.querySelector('img');if(!im){im=document.createElement('img');t.prepend(im);}
+      im.src=data;
+      let b=t.querySelector('.badge');if(!b){b=document.createElement('span');b.className='badge';t.appendChild(b);}
+      b.textContent='✓ Hochgeladen';
+      if($('ocr-on').checked&&slotId!=='slot-chal')runOCR(slotId,c);
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);input.value='';
+}
+function clearImage(ev,slotId){
+  ev.preventDefault();ev.stopPropagation();
+  uploadedImages[slotId]=null;const t=$(slotId);t.classList.remove('has');
+  t.querySelector('img')?.remove();t.querySelector('.badge')?.remove();
+}
+
+/* ================= Auto-Ausfüllen (OCR) ================= */
+const KNOWN_FIRMS=['Funding Pips','FundingPips','FTMO','The5ers','The 5%ers','FundedNext','Funded Next','Apex Trader Funding','Topstep','E8 Markets','E8 Funding','Alpha Capital','Blue Guardian','Maven Trading','Goat Funded','MyFundedFX','Lucid Trading','Take Profit Trader','Tradeify','Instant Funding','Fintokei','Audacity Capital'];
+let ocrWorker=null,ocrLoading=null;
+function loadTesseract(){
+  if(window.Tesseract)return Promise.resolve();
+  if(ocrLoading)return ocrLoading;
+  ocrLoading=new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';sc.onload=res;sc.onerror=()=>{ocrLoading=null;rej(new Error('OCR konnte nicht geladen werden'));};document.head.appendChild(sc);});
+  return ocrLoading;
+}
+async function getWorker(){await loadTesseract();if(!ocrWorker)ocrWorker=await Tesseract.createWorker('eng');return ocrWorker;}
+/* Dunkle Screenshots invertieren + vergrößern -> deutlich bessere Erkennung */
+function prepCanvas(src){
+  const w=src.width,h=src.height,sc=Math.min(2.5,2400/Math.max(w,h));
+  const c=document.createElement('canvas');c.width=Math.round(w*sc);c.height=Math.round(h*sc);
+  const ctx=c.getContext('2d');ctx.drawImage(src,0,0,c.width,c.height);
+  const im=ctx.getImageData(0,0,c.width,c.height),d=im.data;let sum=0;
+  for(let i=0;i<d.length;i+=4)sum+=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+  const dark=sum/(d.length/4)<128;
+  for(let i=0;i<d.length;i+=4){let g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];if(dark)g=255-g;g=g<150?0:255;d[i]=d[i+1]=d[i+2]=g;}
+  ctx.putImageData(im,0,0);return c;
+}
+function pnum(str){
+  str=String(str).replace(/[^\d.,]/g,'');if(!str)return NaN;
+  const lc=str.lastIndexOf(','),ld=str.lastIndexOf('.');
+  if(lc>-1&&ld>-1){return lc>ld?parseFloat(str.replace(/\./g,'').replace(',','.')):parseFloat(str.replace(/,/g,''));}
+  if(lc>-1){const dec=str.length-lc-1;return dec===3&&str.split(',').length>2?parseFloat(str.replace(/,/g,'')):parseFloat(str.replace(',','.'));}
+  return parseFloat(str);
+}
+const NUM='(\\d{1,3}(?:[.,]\\d{3})*(?:[.,]\\d+)?|\\d+(?:[.,]\\d+)?)';
+function amountsWith(text,cur){
+  const re=new RegExp(`(?:${cur}\\s?${NUM})|(?:${NUM}\\s?${cur})`,'gi');const out=[];let m;
+  while((m=re.exec(text))){const v=pnum(m[1]||m[2]);if(!isNaN(v))out.push({v,i:m.index});}
+  return out;
+}
+function lineVal(text,keys,cur){
+  const lines=text.split('\n');
+  for(const ln of lines){if(keys.some(k=>ln.toLowerCase().includes(k))){const a=cur?amountsWith(ln,cur):[...ln.matchAll(new RegExp(NUM,'g'))].map(m=>({v:pnum(m[1])}));const f=a.find(x=>x.v>0);if(f)return f.v;}}
+  return null;
+}
+function findDate(text){
+  let m=/(20\d{2})-(\d{2})-(\d{2})/.exec(text);if(m)return `${m[1]}-${m[2]}-${m[3]}`;
+  m=/(\d{1,2})\.(\d{1,2})\.(20\d{2})/.exec(text);if(m)return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  m=/(\d{1,2})\/(\d{1,2})\/(20\d{2})/.exec(text);if(m)return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+  return null;
+}
+function setField(id,val,label,found){
+  if(val==null||val===''||(typeof val==='number'&&(isNaN(val)||val<=0)))return;
+  const el=$(id);el.value=typeof val==='number'?fmt(val,id==='rate'?7:2):val;el.classList.add('autofilled');
+  found.push(label);
+}
+function parseSlot(slot,text){
+  const f=[],low=text.toLowerCase();
+  if(slot==='slot-firm'){
+    const firm=KNOWN_FIRMS.find(n=>low.replace(/\s/g,'').includes(n.toLowerCase().replace(/\s/g,'')));
+    if(firm){const name=/fundingpips/i.test(firm)?'Funding Pips':firm;setField('pay-firm',name,'Propfirma',f);loadFirmDetails();}
+    const usd=amountsWith(text,'(?:\\$|USD)');
+    const fee=lineVal(text,['fee','gebühr','charge','commission'],'(?:\\$|USD)');
+    let gross=lineVal(text,['payout amount','amount','payout','profit split','withdraw','total','reward'],'(?:\\$|USD)');
+    if(gross==null&&usd.length)gross=Math.max(...usd.map(x=>x.v));
+    if(fee!=null&&gross!=null&&fee>=gross)gross=Math.max(...usd.map(x=>x.v));
+    setField('amount-gross',gross,'Brutto',f);
+    if(fee!=null&&fee<(gross||Infinity))setField('amount-fee',fee,'Gebühr',f);
+    const acc=/(?:account|konto|login)\s*(?:id|no\.?|nr\.?|number|#)?\s*[:#]?\s*([A-Z0-9][A-Z0-9\-]{4,})/i.exec(text);
+    if(acc)setField('pay-acc',acc[1],'Konto',f);
+  }
+  if(slot==='slot-dep'){
+    let v=lineVal(text,['deposit amount','amount','betrag'],null);
+    if(v==null){const a=amountsWith(text,'USDT');if(a.length)v=a[0].v;}
+    setField('amount-crypto',v!=null?r2(v):null,'USDT-Eingang',f);
+  }
+  if(slot==='slot-conv'){
+    const rm=new RegExp(`(0[.,]\\d{4,})\\s*USDT\\s*/\\s*EUR`,'i').exec(text)||/(0[.,]\d{5,})/.exec(text);
+    if(rm)setField('rate',pnum(rm[1]),'Kurs',f);
+    const eurs=amountsWith(text,'EUR').map(x=>x.v).filter(v=>v>0);
+    const d=findDate(text);
+    if(d)setField('rate-note',`Binance-Konvertierung vom ${deDate(d)}`,'Kursnotiz',f);
+    if(eurs.length&&!$('amount-eur').classList.contains('autofilled'))f.push(`Binance-EUR ${fmt(Math.max(...eurs))}`);
+  }
+  if(slot==='slot-with'){
+    const eurs=[...new Set(amountsWith(text,'EUR').map(x=>r2(x.v)))].filter(v=>v>0).sort((a,b)=>b-a);
+    let fee=lineVal(text,['fee','gebühr'],'EUR');
+    if(eurs.length>=2){
+      const net=eurs[1]>=eurs[0]*0.5?eurs[1]:null;
+      if(net){setField('amount-eur',net,'Bankeingang',f);if(fee==null)fee=r2(eurs[0]-net);}
+    }
+    if(fee!=null)setField('sepa-fee',fee,'SEPA-Gebühr',f);
+    const d=findDate(text);if(d)setField('inv-date',d,'Zuflussdatum',f);
+  }
+  if(slot==='slot-bank'){
+    const lines=text.split('\n');
+    const ln=lines.find(l=>/zahlung von|payment from|eingang|überweisung von|from\s/i.test(l)&&/\d/.test(l));
+    if(ln){
+      const a=[...ln.matchAll(new RegExp(NUM+'\\s?€?','g'))].map(m=>pnum(m[1])).filter(v=>v>1);
+      if(a.length)setField('amount-eur',a[a.length-1],'Bankeingang',f);
+      const d=findDate(ln);if(d)setField('inv-date',d,'Zuflussdatum',f);
+    }
+  }
+  return f;
+}
+async function runOCR(slotId,canvas){
+  const t=$(slotId);const b=t.querySelector('.badge');
+  b.textContent='🔍 Lese Text…';b.classList.add('scan');
+  try{
+    const w=await getWorker();
+    const {data:{text}}=await w.recognize(prepCanvas(canvas));
+    const found=parseSlot(slotId,text);
+    b.classList.remove('scan');
+    b.textContent=found.length?`✓ ${found.length} Wert${found.length>1?'e':''} erkannt`:'✓ Hochgeladen';
+    $('ocr-log').textContent=found.length?`Erkannt: ${found.join(', ')} – bitte kurz prüfen.`:'Nichts Eindeutiges erkannt – Werte bitte von Hand eintragen.';
+    if(found.length){updateInvoice();toast(`✨ ${found.join(', ')} ausgefüllt`);}
+  }catch(e){
+    b.classList.remove('scan');b.textContent='✓ Hochgeladen';
+    $('ocr-log').textContent='Auto-Ausfüllen nicht verfügbar (offline oder blockiert) – Screenshot ist trotzdem gespeichert.';
+  }
+}
+
+/* ================= Payout ================= */
+function calc(){
+  const gross=num($('amount-gross').value),fee=num($('amount-fee').value),crypto=num($('amount-crypto').value),
+        eurIn=num($('amount-eur').value),rate=num($('rate').value),sepa=num($('sepa-fee').value);
+  const grossEur=r2(gross*rate),feeEur=r2(fee*rate);
+  const diff=r2(eurIn+sepa-(grossEur-feeEur));
+  return {gross,fee,crypto,eur:eurIn,rate,grossEur,feeEur,diff,sepa};
+}
+function nextInvNo(){
+  const y=($('inv-date').value||todayISO()).slice(0,4);
+  const pre=`PT-${y}-`;let max=0;
+  state.journal.forEach(e=>{if(e.ref&&e.ref.startsWith(pre)){const n=parseInt(e.ref.slice(pre.length));if(n>max)max=n;}});
+  return pre+String(max+1).padStart(3,'0');
+}
+function fitPreview(){
+  const box=$('preview-box'),sc=$('preview-scale');
+  if(!box.clientWidth)return;
+  const s=Math.min(1,box.clientWidth/760);
+  sc.style.transform=`scale(${s})`;
+  box.style.height=($('invoice-preview').offsetHeight*s)+'px';
+}
+function updateInvoice(){
+  const c=calc();
+  const iso=$('inv-date').value||todayISO();
+  const [y,m]=iso.split('-');
+  const bank=$('bank-name').value||'Bankkonto';
+  $('bank-tile-lbl').textContent=bank;
+  const diffRow=Math.abs(c.diff)>=0.01?`<tr><td>Kurs-/Umtauschdifferenz Binance</td><td class="r">–</td><td class="r ${c.diff<0?'neg':''}">${c.diff>0?'+':''}${fmt(c.diff)} EUR</td></tr>`:'';
+  $('invoice-preview').innerHTML=`
+    <div class="inv-header">
+      <div><h2>EIGENBELEG</h2><div>Periode: <strong>${monthsLong[+m-1]} ${y}</strong></div><div>Beleg-Nr.: ${esc($('inv-no').value)}</div></div>
+      <div style="text-align:right"><strong>Gewerbliche Einnahme (EÜR)</strong><br>Zufluss: ${deDate(iso)}</div>
+    </div>
+    <div class="inv-grid">
+      <div><strong>Leistungserbringer:</strong><br>${esc($('my-details').value).replace(/\n/g,'<br>')}</div>
+      <div><strong>Zahlender / Leistungsempfänger:</strong><br>${esc($('firm-details').value).replace(/\n/g,'<br>')}${$('pay-acc').value.trim()?'<br>Konto: '+esc($('pay-acc').value.trim()):''}</div>
+    </div>
+    <table class="inv-table">
+      <thead><tr><th>Beschreibung</th><th class="r">Fremdwährung</th><th class="r">Euro-Wert</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Auszahlung Trading-Gewinnbeteiligung</strong></td><td class="r">${fmt(c.gross)} USD</td><td class="r">${fmt(c.grossEur)} EUR</td></tr>
+        <tr><td class="neg">Abzüglich Transfergebühr</td><td class="r neg">-${fmt(c.fee)} USD</td><td class="r neg">-${fmt(c.feeEur)} EUR</td></tr>
+        ${diffRow}
+        ${c.sepa>0?`<tr><td class="neg">Abzüglich SEPA-Auszahlungsgebühr Binance</td><td class="r">–</td><td class="r neg">-${fmt(c.sepa)} EUR</td></tr>`:''}
+        <tr style="background:#f8fafc;font-weight:bold"><td>Zufluss auf ${esc(bank)}</td><td class="r">${fmt(c.crypto)} USDT</td><td class="r pos">${fmt(c.eur)} EUR</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Umrechnung:</strong> 1 USD = ${fmt(c.rate,7)} EUR – ${esc($('rate-note').value)}</p>
+    <div class="tax-note"><strong>Hinweis:</strong> ${esc($('tax-text').value)}</div>`;
+  fitPreview();
+}
+async function bookPayout(){
+  const c=calc();
+  if(!c.gross||!c.rate){toast('⚠️ Brutto und Kurs eintragen');return;}
+  const ref=$('inv-no').value.trim()||nextInvNo(),date=$('inv-date').value||todayISO();
+  if(state.journal.some(e=>e.ref===ref)){
+    if(!await askConfirm(`Beleg ${ref} ist schon gebucht. Überschreiben?`,'Überschreiben'))return;
+    state.journal=state.journal.filter(e=>e.ref!==ref);
+  }
+  const undo=snapshot();
+  const firm=firmName();
+  if(!firm){toast('⚠️ Propfirma eintragen');$('pay-firm').focus();return;}
+  const acc=$('pay-acc').value.trim();
+  state.firms[firm]=$('firm-details').value;
+  const g=uid();
+  state.journal.push({id:uid(),g,ref,date,firm,acc,type:'in',cat:'Payout',desc:`Payout ${firm}${acc?' · '+acc:''} (${fmt(c.gross)} USD)`,amount:c.grossEur});
+  if(c.feeEur>0)state.journal.push({id:uid(),g,ref,date,firm,acc,type:'out',cat:'Transfergebühr',desc:`Transfergebühr ${ref} (${fmt(c.fee)} USD)`,amount:c.feeEur});
+  if(Math.abs(c.diff)>=0.01)state.journal.push({id:uid(),g,ref,date,firm,acc,type:c.diff>0?'in':'out',cat:c.diff>0?'Kursgewinn':'Kursverlust',desc:`Kursdifferenz ${ref}`,amount:Math.abs(c.diff)});
+  if(c.sepa>0)state.journal.push({id:uid(),g,ref,date,firm,acc,type:'out',cat:'Bank- / Transfergebühr',desc:`SEPA-Auszahlungsgebühr Binance ${ref}`,amount:r2(c.sepa)});
+  save();renderAll();
+  $('view-year').value=date.slice(0,4);renderCockpit();
+  $('inv-no').value=nextInvNo();updateInvoice();
+  toast(`✅ ${ref} von ${firm} gebucht: +${eur(c.eur)} netto`,undo);
+}
+
+/* ================= Ausgabe ================= */
+function bookExpense(){
+  const amount=num($('exp-val').value);
+  if(amount<=0){toast('⚠️ Betrag eintragen');return;}
+  const date=$('exp-date').value||todayISO();
+  const undo=snapshot();
+  const firm=$('exp-firm').value.trim();
+  const desc=($('exp-desc').value||$('exp-cat').value);
+  state.journal.push({id:uid(),date,firm:firm||undefined,type:'out',cat:$('exp-cat').value,desc:firm&&!desc.toLowerCase().includes(firm.toLowerCase())?`${firm} ${desc}`:desc,amount:r2(amount),ref:$('exp-ref').value.trim()||''});
+  save();renderAll();
+  $('view-year').value=date.slice(0,4);renderCockpit();
+  $('exp-val').value='';$('exp-ref').value='';
+  toast(`✅ Ausgabe gebucht: −${eur(amount)}`,undo);
+}
+
+/* ================= Steuerlogik ================= */
+function taxFor(profit){
+  const rate=num($('tax-rate').value),heb=num($('hebesatz').value),haerte=$('haerte').checked;
+  const inc=Math.max(0,profit);
+  let taxable=inc;
+  if(haerte){taxable=inc<=410?0:inc<=820?2*inc-820:inc;}
+  const est=taxable*rate/100;
+  const ertrag=Math.floor(inc/100)*100;
+  const over=Math.max(0,ertrag-24500);
+  const mess=over*0.035;
+  const gewst=mess*heb/100;
+  const red=Math.min(mess*4,gewst,est);
+  const total=est+gewst-red;
+  const eff=inc>0?total/inc*100:0;
+  const reserve=Math.ceil(Math.max(eff,rate+(over>0?Math.max(0,(heb-400)/100*3.5):0)));
+  return {profit,inc,rate,heb,haerte,taxable,est,over,mess,gewst,red,total,drag:gewst-red,eff,reserve};
+}
+function yearData(y){
+  const list=state.journal.filter(e=>e.date.startsWith(y));
+  let inc=0,out=0;const cats={},monthly=Array(12).fill(0);
+  list.forEach(e=>{
+    const s=e.type==='in'?1:-1;
+    if(s>0)inc+=e.amount;else out+=e.amount;
+    cats[e.cat]=(cats[e.cat]||0)+e.amount*s;
+    monthly[+e.date.slice(5,7)-1]+=e.amount*s;
+  });
+  return {list,inc:r2(inc),out:r2(out),profit:r2(inc-out),cats,monthly};
+}
+
+/* ================= Rendering ================= */
+function renderYears(){
+  const sel=$('view-year'),cur=sel.value||String(new Date().getFullYear());
+  const ys=new Set([String(new Date().getFullYear())]);state.journal.forEach(e=>ys.add(e.date.slice(0,4)));
+  sel.innerHTML=[...ys].sort().reverse().map(y=>`<option${y===cur?' selected':''}>${y}</option>`).join('');
+}
+function renderCockpit(){
+  const y=$('view-year').value,d=yearData(y),t=taxFor(d.profit);
+  $('kpi-in').textContent=eur(d.inc);$('kpi-out').textContent=eur(d.out);
+  $('kpi-net').textContent=eur(d.profit);$('kpi-net').className=d.profit<0?'neg':'';
+  const max=Math.max(1,...d.monthly.map(Math.abs));
+  $('bars').innerHTML=d.monthly.map((v,i)=>`<div class="bar-col" title="${months[i]}: ${eur(v)}"><div class="bar ${v<0?'n':''}" style="height:${Math.abs(v)/max*100}%"></div><small>${months[i].charAt(0)}</small></div>`).join('');
+  $('prog-year').textContent=y;
+  $('prog-hint').textContent=t.haerte&&t.inc<=820&&t.inc>0?`Härteausgleich aktiv: bei ${eur(t.inc)} Gewinn ${t.inc<=410?'keine ESt':'nur gemilderte ESt'} (sofern keine weiteren Nebeneinkünfte).`:'Hochrechnung auf Basis des bisherigen Jahresgewinns.';
+  $('c-est-lbl').textContent=t.taxable!==t.inc?`${eur(t.taxable)} steuerpflichtig × ${fmt(t.rate,0)} %`:`Gewinn × ${fmt(t.rate,0)} %`;
+  $('c-est').textContent=eur(t.est);
+  $('c-gew-lbl').textContent=t.over>0?`Hebesatz ${fmt(t.heb,0)} %`:'unter Freibetrag 24.500 €';
+  $('c-gew').textContent='+ '+eur(t.gewst);
+  $('c-red').textContent='− '+eur(t.red);
+  $('c-total').textContent=eur(t.total);
+  $('c-res').textContent=`${t.reserve} %`;
+  // ELSTER
+  const inc=Object.entries(d.cats).filter(([,v])=>v>0),out=Object.entries(d.cats).filter(([,v])=>v<0);
+  $('elster-table').innerHTML=
+    `<tr><td><strong>Nicht steuerbare Betriebseinnahmen</strong></td><td>${eur(d.inc)}</td></tr>`+
+    inc.map(([k,v])=>`<tr><td style="padding-left:14px;color:var(--cp-muted)">davon ${esc(k)}</td><td style="font-weight:400">${eur(v)}</td></tr>`).join('')+
+    `<tr><td><strong>Übrige unbeschränkt abziehbare Betriebsausgaben</strong></td><td>${eur(d.out)}</td></tr>`+
+    out.map(([k,v])=>`<tr><td style="padding-left:14px;color:var(--cp-muted)">davon ${esc(k)}</td><td style="font-weight:400">${eur(-v)}</td></tr>`).join('')+
+    `<tr><td><strong>Gewinn → Anlage G</strong></td><td>${eur(d.profit)}</td></tr>`;
+  // Journal
+  // Nach Propfirma
+  const fs={};
+  d.list.forEach(e=>{
+    const k=e.firm||'__none';fs[k]=fs[k]||{pay:0,cnt:0,out:0,net:0};
+    if(e.cat==='Payout'){fs[k].pay+=e.amount;fs[k].cnt++;}
+    if(e.type==='out')fs[k].out+=e.amount;
+    fs[k].net+=e.type==='in'?e.amount:-e.amount;
+  });
+  const fk=Object.keys(fs).sort((a,b)=>a==='__none'?1:b==='__none'?-1:fs[b].pay-fs[a].pay);
+  $('firm-table').innerHTML=fk.length?`<tr><th>Firma</th><th>Payouts</th><th>Kosten</th><th>Netto</th></tr>`+fk.map(k=>{const f=fs[k];return `<tr>
+      <td>${k==='__none'?'<span style="color:var(--cp-muted)">ohne Firma</span>':'🏢 '+esc(k)}<small>${f.cnt} Payout${f.cnt===1?'':'s'}</small></td>
+      <td class="pos">${eur(f.pay)}</td><td class="neg">−${eur(f.out)}</td><td class="${f.net<0?'neg':''}"><strong>${eur(f.net)}</strong></td></tr>`;}).join('')
+    :`<tr><td class="empty" style="text-align:center">Noch keine Buchungen ${y}.</td></tr>`;
+  const flt=$('j-filter').value;
+  const list=[...d.list].filter(e=>!flt||(flt==='__none'?!e.firm:e.firm===flt)).sort((a,b)=>b.date.localeCompare(a.date));
+  $('j-count').textContent=`${list.length} Buchung${list.length===1?'':'en'}`;
+  $('journal').innerHTML=list.length?list.map(e=>`
+    <div class="j-item">
+      <div><div class="d">${deDate(e.date)}${e.ref?' · '+esc(e.ref):''}${e.acc?' · '+esc(e.acc):''}</div><div class="t">${esc(e.desc)}${e.firm?`<span class="tag firm">🏢 ${esc(e.firm)}</span>`:''}<span class="tag">${esc(e.cat)}</span></div></div>
+      <b class="${e.type==='in'?'pos':'neg'}">${e.type==='in'?'+':'−'}${eur(e.amount)}</b>
+      <button type="button" class="x" onclick="delEntry('${e.id}')" aria-label="Buchung löschen">🗑️ Löschen</button>
+    </div>`).join(''):`<div class="empty">Noch keine Buchungen ${y}.<br>Erfasse ein Payout oder eine Ausgabe.</div>`;
+}
+async function delEntry(id){
+  const e=state.journal.find(x=>x.id===id);if(!e)return;
+  const undo=snapshot();
+  if(e.g){
+    if(!await askConfirm(`Alle Buchungen zu ${e.ref} (Payout, Gebühren, Kursdifferenz) löschen?`))return;
+    state.journal=state.journal.filter(x=>x.g!==e.g);
+  }else{
+    if(!await askConfirm(`„${e.desc}“ (${eur(e.amount)}) löschen?`))return;
+    state.journal=state.journal.filter(x=>x.id!==id);
+  }
+  save();renderAll();$('inv-no').value=nextInvNo();updateInvoice();toast('🗑️ Buchung gelöscht',undo);
+}
+function planProfit(){const p=$('plan-profit').value.trim();return p?num(p):null;}
+function renderTax(){
+  const y=$('view-year').value,d=yearData(y),pp=planProfit();
+  const profit=pp!==null?pp:d.profit,t=taxFor(profit);
+  $('t-src').textContent=pp!==null?'(Planwert)':`(Journal ${y})`;
+  $('t-profit').textContent=eur(profit);
+  $('t-est-lbl').textContent=t.taxable!==t.inc?`Härteausgleich: ${eur(t.taxable)} × ${fmt(t.rate,1)} %`:`Gewinn × ${fmt(t.rate,1)} %`;
+  $('t-est').textContent=eur(t.est);
+  $('t-over').textContent=eur(t.over);
+  $('t-mess').textContent=eur(t.mess);
+  $('t-heb-lbl').textContent=`Messbetrag × ${fmt(t.heb,0)} %`;
+  $('t-gew').textContent='+ '+eur(t.gewst);
+  $('t-red').textContent='− '+eur(t.red);
+  $('t-total').textContent=eur(t.total);
+  $('t-drag').textContent=eur(t.drag);
+  $('t-eff').textContent=fmt(t.eff,1)+' %';
+}
+function renderAll(){renderYears();renderFirmList();renderCockpit();renderTax();}
+
+/* ================= Export / Backup ================= */
+async function saveBlob(blob,name){
+  const file=new File([blob],name,{type:blob.type});
+  if(isMobile()&&navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file],title:name});return;}catch(e){if(e.name==='AbortError')return;}
+  }
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);
+}
+function exportCSV(){
+  const y=$('view-year').value,d=yearData(y);
+  if(!d.list.length){toast('Keine Buchungen in '+y);return;}
+  const rows=[['Datum','Beleg','Propfirma','Konto','Typ','Kategorie','Beschreibung','Betrag EUR']];
+  [...d.list].sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>rows.push([deDate(e.date),e.ref||'',e.firm||'',e.acc||'',e.type==='in'?'Einnahme':'Ausgabe',e.cat,e.desc,(e.type==='in'?'':'-')+fmt(e.amount)]));
+  rows.push([],['','','','','','','Einnahmen',fmt(d.inc)],['','','','','','','Ausgaben','-'+fmt(d.out)],['','','','','','','Gewinn',fmt(d.profit)]);
+  const csv='\ufeff'+rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(';')).join('\r\n');
+  saveBlob(new Blob([csv],{type:'text/csv'}),`EUER_Journal_${y}.csv`);
+}
+function exportBackup(){saveBlob(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),`Steuer_Cockpit_Backup_${todayISO()}.json`);}
+/* ---------- Import mit Vorschau ---------- */
+function closeModal(id){$(id).classList.remove('open');}
+function openPaste(){$('imp-text').value='';$('paste-modal').classList.add('open');setTimeout(()=>$('imp-text').focus(),50);}
+function previewFromText(){
+  try{const d=JSON.parse($('imp-text').value);closeModal('paste-modal');showImportPreview(d);}
+  catch(err){toast('⚠️ Kein gültiges JSON: '+err.message);}
+}
+function importBackup(input){
+  const f=input.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{try{showImportPreview(JSON.parse(e.target.result));}catch(err){toast('⚠️ Kein gültiges JSON: '+err.message);}};
+  r.readAsText(f);input.value='';
+}
+/* Wandelt beide Formate (Cockpit-Backup und datum/typ/wert_eur) ins Cockpit-Format */
+function guessCat(desc,type){
+  const d=(desc||'').toLowerCase();
+  if(type==='in')return d.includes('kurs')?'Kursgewinn':'Payout';
+  if(d.includes('kurs'))return 'Kursverlust';
+  if(d.includes('sepa')||d.includes('bank'))return 'Bank- / Transfergebühr';
+  if(d.includes('gebühr')||d.includes('fee')||d.includes('transfer'))return 'Transfergebühr';
+  if(d.includes('challenge'))return 'Challenge-Gebühr';
+  if(d.includes('tradingview')||d.includes('software')||d.includes('abo'))return 'Software / TradingView';
+  return 'Sonstiges';
+}
+function normalizeEntry(e){
+  if(e.date&&e.type&&e.amount!=null)return Object.assign({id:uid()},e);   // Cockpit-Format
+  const val=typeof e.wert_eur==='number'?e.wert_eur:num(e.wert_eur);
+  const typ=(e.typ||'').toLowerCase();
+  const type=typ==='payout'||typ==='einnahme'||(!typ&&val>0)||(typ!=='ausgabe'&&val>0)?'in':'out';
+  const rawId=String(e.id||'');
+  const ref=rawId.replace(/-(INC|EXP\d*|FEE\d*|FX\d*)$/i,'');
+  let desc=e.beschreibung||e.desc||'Buchung';
+  if(e.waehrung_fremd&&e.waehrung_fremd!=='-')desc+=` (${String(e.waehrung_fremd).replace(/^-/,'')})`;
+  let firm=e.propfirma||e.firma||e.firm||'';
+  if(!firm){const known=allFirms().concat(Object.keys(DEFAULT_FIRMS));firm=known.find(n=>desc.toLowerCase().includes(n.toLowerCase()))||'';}
+  return {id:uid(),g:ref&&ref!==rawId?'imp-'+ref:undefined,ref:ref||'',date:String(e.datum||e.date||todayISO()).slice(0,10),
+          firm:firm||undefined,acc:e.konto||e.account||undefined,
+          type,cat:e.kategorie||guessCat(desc,type),desc,amount:r2(Math.abs(val))};
+}
+const sameEntry=(a,b)=>a.date===b.date&&a.type===b.type&&Math.abs(a.amount-b.amount)<0.005&&(a.ref||'')===(b.ref||'');
+function showImportPreview(d){
+  const arr=Array.isArray(d)?d:d.journal;
+  if(!Array.isArray(arr)||!arr.length){toast('⚠️ Keine Buchungen gefunden');return;}
+  const list=arr.map(normalizeEntry);
+  const gf={};list.forEach(x=>{if(x.g&&x.firm)gf[x.g]=x.firm;});list.forEach(x=>{if(!x.firm&&x.g&&gf[x.g])x.firm=gf[x.g];});
+  const dup=list.map(n=>state.journal.some(o=>sameEntry(o,n)));
+  const inc=list.filter(x=>x.type==='in').reduce((a,x)=>a+x.amount,0),out=list.filter(x=>x.type==='out').reduce((a,x)=>a+x.amount,0);
+  const curY=String(new Date().getFullYear()),cur=yearData(curY);
+  const newCount=dup.filter(x=>!x).length;
+  $('imp-sum').innerHTML=`
+    <div>Import<b class="pos">+${eur(inc)}</b><b class="neg">−${eur(out)}</b><b>= ${eur(inc-out)}</b></div>
+    <div>Aktuell im Cockpit<b>${state.journal.length} Buchungen</b><b>Gewinn ${curY}: ${eur(cur.profit)}</b><span class="hint">${newCount} neu · ${list.length-newCount} schon vorhanden</span></div>`;
+  // Plausibilitätscheck je Beleg
+  const warns=[];
+  const refs=[...new Set(list.filter(x=>x.ref).map(x=>x.ref))];
+  refs.forEach(ref=>{
+    const sum=list.filter(x=>x.ref===ref).reduce((a,x)=>a+(x.type==='in'?x.amount:-x.amount),0);
+    warns.push(`${esc(ref)}: Netto laut Import ${eur(sum)} – stimmt das mit dem Bankeingang überein? Sonst fehlt evtl. eine Kursdifferenz.`);
+  });
+  $('imp-warn').innerHTML=warns.map(w=>`<div class="imp-warn">ℹ️ ${w}</div>`).join('');
+  $('imp-list').innerHTML=list.map((x,i)=>`
+    <div class="j-item">
+      <div><div class="d">${deDate(x.date)}${x.ref?' · '+esc(x.ref):''}<span class="imp-tag ${dup[i]?'dup':'new'}">${dup[i]?'schon da':'neu'}</span></div>
+      <div class="t">${esc(x.desc)}${x.firm?`<span class="tag firm">🏢 ${esc(x.firm)}</span>`:''}<span class="tag">${esc(x.cat)}</span></div></div>
+      <b class="${x.type==='in'?'pos':'neg'}">${x.type==='in'?'+':'−'}${eur(x.amount)}</b>
+    </div>`).join('');
+  $('imp-merge').textContent=newCount?`➕ ${newCount} hinzufügen`:'➕ Nichts Neues';
+  $('imp-merge').disabled=!newCount;
+  $('imp-merge').onclick=()=>{
+    const undo=snapshot();
+    list.forEach((x,i)=>{if(!dup[i])state.journal.push(x);});
+    finishImport(d,false,undo,`➕ ${newCount} Buchungen hinzugefügt`);
+  };
+  $('imp-replace').onclick=async()=>{
+    closeModal('imp-modal');
+    if(!await askConfirm(`Alle ${state.journal.length} aktuellen Buchungen durch ${list.length} importierte ersetzen?`,'Ersetzen')){$('imp-modal').classList.add('open');return;}
+    const undo=snapshot();state.journal=list;
+    finishImport(d,true,undo,`♻️ Journal ersetzt (${list.length} Buchungen)`);
+  };
+  $('imp-modal').classList.add('open');
+}
+function finishImport(d,replace,undo,msg){
+  if(replace&&!Array.isArray(d)){ if(d.firms)state.firms=Object.assign(state.firms,d.firms); if(d.settings)state.settings=Object.assign(state.settings,d.settings); if(d.stamm)state.stamm=Object.assign(state.stamm,d.stamm); applyStored(); }
+  migrate();save();closeModal('imp-modal');renderAll();$('inv-no').value=nextInvNo();updateInvoice();toast(msg,undo);
+}
+
+/* ================= PDF ================= */
+function loadImg(src){return new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.src=src;});}
+function libsOk(needCanvas){if(!window.jspdf||(needCanvas&&!window.html2canvas)){toast('⚠️ PDF-Bibliothek nicht geladen – Internet prüfen, Seite neu laden');return false;}return true;}
+function busy(on){document.querySelectorAll('.pdf-btn').forEach(b=>{if(on){b.disabled=true;b.dataset.t=b.textContent;b.textContent='Erstelle…';}else{b.disabled=false;if(b.dataset.t)b.textContent=b.dataset.t;}});}
+async function addImagePage(doc,src,title){
+  const img=await loadImg(src);
+  doc.addPage();doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text(title,15,15);
+  const maxW=180,maxH=255,r=Math.min(maxW/img.width,maxH/img.height);
+  doc.addImage(src,'JPEG',15+(maxW-img.width*r)/2,25,img.width*r,img.height*r);
+}
+async function generateSammelPDF(){
+  if(!libsOk(true))return;busy(true);
+  const sc=$('preview-scale'),old=sc.style.transform;
+  try{
+    sc.style.transform='none';
+    const {jsPDF}=window.jspdf;const doc=new jsPDF('p','mm','a4');
+    const canvas=await html2canvas($('invoice-preview'),{scale:2,backgroundColor:'#ffffff',windowWidth:900});
+    const h=canvas.height*190/canvas.width;
+    doc.addImage(canvas.toDataURL('image/jpeg',0.92),'JPEG',10,10,190,Math.min(h,277));
+    const bank=$('bank-name').value||'Bankkonto';
+    const att=[['slot-firm','Anhang 1: Payout-Nachweis '+(firmName()||'Propfirma')],['slot-dep','Anhang 2: Binance USDT Eingang'],['slot-conv','Anhang 3: USDT -> EUR Tausch'],['slot-with','Anhang 4: Binance SEPA Auszahlung'],['slot-bank','Anhang 5: Geldeingang '+bank]];
+    for(const [s,t] of att)if(uploadedImages[s])await addImagePage(doc,uploadedImages[s],t);
+    await saveBlob(doc.output('blob'),`Steuerbeleg_${$('inv-no').value||'Payout'}.pdf`);
+  }catch(e){toast('⚠️ PDF-Fehler: '+e.message);}
+  sc.style.transform=old;fitPreview();busy(false);
+}
+async function expensePDF(){
+  if(!libsOk(false))return;
+  const amount=num($('exp-val').value);
+  if(amount<=0&&!uploadedImages['slot-chal']){toast('⚠️ Betrag oder Quittung fehlt');return;}
+  busy(true);
+  try{
+    const {jsPDF}=window.jspdf;const doc=new jsPDF('p','mm','a4');
+    const date=$('exp-date').value||todayISO();
+    doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text('AUSGABENBELEG / BETRIEBSAUSGABE',15,20);
+    doc.setDrawColor(220,38,38);doc.setLineWidth(.6);doc.line(15,24,195,24);
+    doc.setFontSize(10);doc.setFont('helvetica','normal');
+    const lines=[['Datum',deDate(date)],['Kategorie',$('exp-cat').value],['Propfirma',$('exp-firm').value||'–'],['Beschreibung',$('exp-desc').value],['Rechnungs-Nr.',$('exp-ref').value||'–'],['Betrag',eur(amount)],['EÜR-Zuordnung','Übrige unbeschränkt abziehbare Betriebsausgaben']];
+    let y=34;lines.forEach(([a,b])=>{doc.setFont('helvetica','bold');doc.text(a+':',15,y);doc.setFont('helvetica','normal');doc.text(doc.splitTextToSize(String(b),130),60,y);y+=8;});
+    doc.setFont('helvetica','bold');doc.text('Unternehmen:',15,y+6);doc.setFont('helvetica','normal');doc.text($('my-details').value.split('\n'),15,y+12);
+    if(uploadedImages['slot-chal']){
+      const img=await loadImg(uploadedImages['slot-chal']);
+      const top=y+40,maxW=180,maxH=285-top,r=Math.min(maxW/img.width,maxH/img.height);
+      if(maxH>80)doc.addImage(uploadedImages['slot-chal'],'JPEG',15,top,img.width*r,img.height*r);
+      else await addImagePage(doc,uploadedImages['slot-chal'],'Anhang: Kaufquittung');
+    }
+    await saveBlob(doc.output('blob'),`Ausgabe_${date}_${($('exp-cat').value.split(' ')[0])}.pdf`);
+  }catch(e){toast('⚠️ PDF-Fehler: '+e.message);}
+  busy(false);
+}
+async function exportHandbuchPDF(){
+  if(!libsOk(false))return;busy(true);
+  try{
+    const yr=$('view-year').value,d=yearData(yr),pp=planProfit(),t=taxFor(pp!==null?pp:d.profit);
+    const {jsPDF}=window.jspdf;const doc=new jsPDF('p','mm','a4');
+    let y=20;const L=15,W=180;
+    const need=h=>{if(y+h>282){doc.addPage();y=20;}};
+    const head=s=>{need(14);y+=4;doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(30,64,175);doc.text(s,L,y);y+=2;doc.setDrawColor(203,213,225);doc.setLineWidth(.3);doc.line(L,y,L+W,y);y+=6;doc.setTextColor(0);};
+    const para=s=>{doc.setFont('helvetica','normal');doc.setFontSize(10);const l=doc.splitTextToSize(s,W);need(l.length*5);doc.text(l,L,y);y+=l.length*5+1.5;};
+    const row=(a,b,bold=false)=>{need(6);doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(10);doc.text(a,L,y);doc.text(b,L+W,y,{align:'right'});y+=6;};
+
+    doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text(`Prop-Trading Jahresreport ${yr}`,L,y);y+=7;
+    doc.setFont('helvetica','normal');doc.setFontSize(10);
+    doc.text(`Grenzsteuersatz: ${fmt(t.rate,1)} %  |  Hebesatz: ${fmt(t.heb,0)} %  |  Stand: ${new Date().toLocaleDateString('de-DE')}`,L,y);y+=4;
+
+    head('1. EÜR-Übersicht');
+    row('Nicht steuerbare Betriebseinnahmen',eur(d.inc),true);
+    Object.entries(d.cats).filter(([,v])=>v>0).forEach(([k,v])=>row('   davon '+k,eur(v)));
+    row('Übrige unbeschränkt abziehbare Betriebsausgaben',eur(d.out),true);
+    Object.entries(d.cats).filter(([,v])=>v<0).forEach(([k,v])=>row('   davon '+k,eur(-v)));
+    row('= Gewinn (Anlage G)',eur(d.profit),true);
+
+    const fsum={};d.list.forEach(e=>{const k=e.firm||'ohne Firma';fsum[k]=fsum[k]||{pay:0,net:0};if(e.cat==='Payout')fsum[k].pay+=e.amount;fsum[k].net+=e.type==='in'?e.amount:-e.amount;});
+    if(Object.keys(fsum).length){
+      head('Nach Propfirma');
+      Object.entries(fsum).forEach(([k,v])=>row(`${k}  (Payouts ${eur(v.pay)})`,'Netto '+eur(v.net)));
+    }
+    head('2. Steuerberechnung'+(pp!==null?' (Planwert '+eur(pp)+')':''));
+    row('Einkommensteuer'+(t.taxable!==t.inc?' (nach Härteausgleich)':''),eur(t.est));
+    row('Gewerbeertrag über Freibetrag (24.500 €)',eur(t.over));
+    row('Steuermessbetrag (3,5 %)',eur(t.mess));
+    row('Gewerbesteuer','+ '+eur(t.gewst));
+    row('Ermäßigung § 35 EStG','- '+eur(t.red));
+    row('= Gesamtabgabe',eur(t.total),true);
+    row('Empfohlene Rücklage je Payout',t.reserve+' %',true);
+
+    head('3. Journal');
+    const list=[...d.list].sort((a,b)=>a.date.localeCompare(b.date));
+    if(!list.length)para('Keine Buchungen.');
+    list.forEach(e=>row(`${deDate(e.date)}  ${e.desc}${e.firm&&!e.desc.includes(e.firm)?' ['+e.firm+']':''}`.slice(0,95),(e.type==='in'?'+':'-')+eur(e.amount)));
+
+    head('4. ELSTER-Wegweiser');
+    para('Anlage EÜR: Payouts/Kursgewinne in die Zeile für umsatzsteuerfreie bzw. nicht steuerbare Betriebseinnahmen (als Kleinunternehmer: Betriebseinnahmen als umsatzsteuerlicher Kleinunternehmer). Gebühren, Challenges, Software, Kursverluste unter übrige unbeschränkt abziehbare Betriebsausgaben.');
+    para('Gewerbesteuer ist keine abziehbare Betriebsausgabe. Erklärung erst bei Gewerbeertrag über 24.500 €.');
+    para('Anlage G: Gewinn in "Gewinn als Einzelunternehmer", dazu den Hebesatz der Gemeinde.');
+
+    head('5. Alltags-Regeln');
+    para('1. Bruttoprinzip: Einnahmen und Gebühren getrennt buchen.');
+    para('2. Zuflussprinzip: Datum des Bankeingangs bzw. der Zahlung zählt.');
+    para('3. Härteausgleich: Nebeneinkünfte bis 410 € steuerfrei, bis 820 € gemildert (§ 46 Abs. 3, 5 EStG). EÜR trotzdem abgeben.');
+    para('4. Krankenkasse: Als Pflichtversicherter i. d. R. keine Beiträge auf den Gewerbegewinn, solange nebenberuflich. Nicht bei freiwilliger/privater Versicherung.');
+    para('5. Umsatzsteuer: Kleinunternehmerregelung prüfen.');
+    y+=3;doc.setTextColor(100);para('Vereinfachte Orientierung, keine Steuerberatung.');
+
+    await saveBlob(doc.output('blob'),`PropTrading_Jahresreport_${yr}.pdf`);
+  }catch(e){toast('⚠️ PDF-Fehler: '+e.message);}
+  busy(false);
+}
+
+/* ================= Payout-Steuer-Rechner (Tarif 2026) ================= */
+function estTarif(x){
+  x=Math.floor(Math.max(0,x));let t;
+  if(x<=12348)t=0;
+  else if(x<=17799){const y=(x-12348)/1e4;t=(914.51*y+1400)*y;}
+  else if(x<=69878){const z=(x-17799)/1e4;t=(173.10*z+2397)*z+1034.87;}
+  else if(x<=277825)t=0.42*x-11135.63;
+  else t=0.45*x-19470.38;
+  return Math.floor(t);
+}
+function taxesOn(zve,split,kist){
+  const est=split?2*estTarif(zve/2):estTarif(zve);
+  const fg=split?40700:20350;
+  const soli=est<=fg?0:Math.min(0.055*est,0.119*(est-fg));
+  const ks=est*kist/100;
+  return {est,soli,ks,sum:est+soli+ks};
+}
+function nebenTaxable(n,haerte){n=Math.max(0,n);if(!haerte)return n;return n<=410?0:n<=820?2*n-820:n;}
+function pcCalc(){
+  const amount=num($('pc-amount').value),zveRaw=$('pc-zve').value.trim(),zve=num(zveRaw),prior=num($('pc-prior').value);
+  const split=$('pc-split').checked,haerte=$('pc-haerte').checked,kist=num($('pc-kist').value);
+  const base=taxesOn(zve+nebenTaxable(prior,haerte),split,kist);
+  const withP=taxesOn(zve+nebenTaxable(prior+amount,haerte),split,kist);
+  const plus=taxesOn(zve+nebenTaxable(prior+amount,haerte)+100,split,kist);
+  const d={est:withP.est-base.est,soli:withP.soli-base.soli,ks:withP.ks-base.ks};
+  d.sum=d.est+d.soli+d.ks;
+  return {amount,zve,zveRaw,prior,split,haerte,kist,...d,net:amount-d.sum,eff:amount>0?d.sum/amount*100:0,marg:(plus.sum-withP.sum)};
+}
+function renderPC(){
+  const r=pcCalc();
+  state.settings.calc={amount:$('pc-amount').value,zve:$('pc-zve').value,prior:$('pc-prior').value,kist:$('pc-kist').value,split:r.split,haerte:r.haerte};save();
+  if(!r.zveRaw){
+    $('pc-tax').textContent='–';$('pc-eff').textContent='Trag dein zu versteuerndes Einkommen aus dem Hauptjob ein.';
+    ['pc-net','pc-marg','pc-est','pc-soli','pc-ks'].forEach(id=>$(id).textContent='–');$('pc-meter').style.width='0';$('pc-note').textContent='';return;
+  }
+  $('pc-tax').textContent=eur(r.sum);
+  $('pc-eff').textContent=`= ${fmt(r.eff,1)} % von ${eur(r.amount)}`;
+  $('pc-meter').style.width=Math.min(100,r.eff)+'%';
+  $('pc-net').textContent=eur(r.net);
+  $('pc-marg').textContent=fmt(r.marg,1)+' %';
+  $('pc-est').textContent=eur(r.est);$('pc-soli').textContent=eur(r.soli);$('pc-ks').textContent=eur(r.ks);
+  const tot=r.prior+r.amount;
+  let note='';
+  if(r.haerte&&tot<=410)note='Nebengewinne insgesamt bis 410 € → durch den Härteausgleich steuerfrei. ';
+  else if(r.haerte&&tot<=820)note='Nebengewinne zwischen 410 und 820 € → Härteausgleich mildert die Steuer. ';
+  note+='Gewerbesteuer fällt erst an, wenn der Jahresgewinn 24.500 € übersteigt, und wird größtenteils angerechnet.';
+  $('pc-note').textContent=note;
+}
+function takeFromBeleg(){const c=calc();$('pc-amount').value=fmt(c.grossEur-c.feeEur);renderPC();if(currentTab!=='rechner')showTab('rechner');toast('↙ Payout-Gewinn übernommen');}
+function priorFromJournal(){const d=yearData(String(new Date().getFullYear()));$('pc-prior').value=fmt(Math.max(0,d.profit));renderPC();toast('↙ Journal-Gewinn übernommen');}
+function useMarginal(){
+  const r=pcCalc();if(!r.zveRaw){toast('⚠️ Erst zvE eintragen');return;}
+  $('tax-rate').value=fmt(r.marg,1);state.settings.rate=$('tax-rate').value;save();renderCockpit();renderTax();
+  toast(`📌 Grenzsteuersatz ${fmt(r.marg,1)} % übernommen`);
+}
+
+/* ================= Chat ================= */
+function toggleChat(open){$('chat-card').classList.toggle('open',open);$('backdrop').classList.toggle('open',open);document.body.style.overflow=open?'hidden':'';}
+function addMsg(t,who){const b=$('chat-box');const m=document.createElement('div');m.className='chat-msg '+who;m.textContent=t;b.appendChild(m);b.scrollTop=b.scrollHeight;}
+function quick(q){$('chat-input').value=q;askAI();}
+function askAI(){
+  const inp=$('chat-input');const q=inp.value.trim();if(!q)return;addMsg(q,'user');inp.value='';
+  const c=calc(),yr=$('view-year').value,d=yearData(yr),t=taxFor(d.profit),l=q.toLowerCase();
+  const chal=-(d.cats['Challenge-Gebühr']||0);
+  let r=`${yr}: ${eur(d.inc)} Einnahmen, ${eur(d.out)} Ausgaben, ${eur(d.profit)} Gewinn. Frag mich zu ELSTER, Challenges, Gewerbesteuer, Rücklage, Freibetrag, USt oder KV.`;
+  if(l.includes('stand')||l.includes('gewinn')||l.includes('übersicht'))
+    r=`${yr}: ${eur(d.inc)} Einnahmen − ${eur(d.out)} Ausgaben = ${eur(d.profit)} Gewinn. Geschätzte Steuer darauf: ${eur(t.total)}.`;
+  if(l.includes('elster')||l.includes('eür')||l.includes('euer')||l.includes('buchen'))
+    r=`Anlage EÜR ${yr}: ${eur(d.inc)} in „nicht steuerbare Betriebseinnahmen“ (bzw. Kleinunternehmer-Zeile), ${eur(d.out)} in „übrige unbeschränkt abziehbare Betriebsausgaben“. Gewinn ${eur(d.profit)} in Anlage G.`;
+  if(l.includes('challenge')||l.includes('ausgabe'))
+    r=`Challenge-Gebühren sind Betriebsausgaben im Jahr der Zahlung – egal ob bestanden oder nicht. ${yr} gebucht: ${eur(chal)}. Quittung immer aufheben.`;
+  if(l.includes('gebühr')||l.includes('fee'))
+    r=`Die Transfergebühr von ${fmt(c.fee)} USD (${eur(c.feeEur)}) wird beim Buchen automatisch als eigene Ausgabe angelegt.`;
+  if(l.includes('reverse')||l.includes('umsatz')||l.includes('ust'))
+    r="Empfänger im Drittland → Leistungsort meist im Ausland (§ 3a Abs. 2 UStG), in DE nicht steuerbar. ‚Reverse Charge‘ passt dafür nicht ganz. Kleinunternehmer? Dann andere EÜR-Zeile.";
+  if(l.includes('kurs')||l.includes('differenz'))
+    r=`Kurs ${fmt(c.rate,7)} → Brutto ${eur(c.grossEur)}, Gebühr ${eur(c.feeEur)}, Differenz zum Bankeingang ${eur(c.diff)} – wird als Kursgewinn/-verlust gebucht.`;
+  if(l.includes('gewerbe')||l.includes('dresden')||l.includes('hebesatz'))
+    r=t.over>0?`Gewerbesteuer ${eur(t.gewst)}, davon ${eur(t.red)} über § 35 EStG angerechnet. Bei ${fmt(t.heb,0)} % bleibt eine kleine Restbelastung von ${eur(t.drag)}.`:`Gewinn ${eur(d.profit)} liegt unter dem Freibetrag von 24.500 € → keine Gewerbesteuer.`;
+  if(l.includes('rücklage')||l.includes('ruecklage')||l.includes('sparen')||l.includes('zurück'))
+    r=`Leg von jedem Payout ca. ${t.reserve} % zur Seite. Bei diesem Payout (${eur(c.eur)}): rund ${eur(c.eur*t.reserve/100)}.`;
+  if(l.includes('freibetrag')||l.includes('410')||l.includes('härte')||l.includes('freigrenze'))
+    r=`Härteausgleich: Nebeneinkünfte bis 410 € steuerfrei, bis 820 € gemildert (Summe aller Nebeneinkünfte). Aktuell ${eur(d.profit)}. Gewerbesteuer-Freibetrag: 24.500 €.`;
+  if(l.includes('payout')&&(l.includes('steuer')||l.includes('wie viel')||l.includes('wieviel'))){
+    const p=pcCalc();
+    r=p.zveRaw?`Auf ${eur(p.amount)} Payout zahlst du ca. ${eur(p.sum)} Steuern (${fmt(p.eff,1)} %), du behältst ${eur(p.net)}. Details im Tab Rechner.`:'Öffne den Tab 🧮 Rechner und trag dein zvE aus dem Hauptjob ein – dann siehst du die Steuer auf jedes Payout.';
+  }
+  if(l.includes('löschen')||l.includes('fehlbuchung')||l.includes('storn'))
+    r='Im Cockpit-Journal bei der Buchung auf „🗑️ Löschen“ tippen. Direkt nach Buchen oder Löschen kannst du auch „↶ Rückgängig“ im Hinweis oben antippen.';
+  if(l.includes('firma')||l.includes('propfirm')||l.includes('woher')){
+    const fs={};d.list.forEach(e=>{const k=e.firm||'ohne Firma';fs[k]=fs[k]||{pay:0,net:0};if(e.cat==='Payout')fs[k].pay+=e.amount;fs[k].net+=e.type==='in'?e.amount:-e.amount;});
+    const k=Object.keys(fs);
+    r=k.length?`${yr} nach Propfirma: `+k.map(n=>`${n}: Payouts ${eur(fs[n].pay)}, netto ${eur(fs[n].net)}`).join(' · '):`Noch keine Buchungen ${yr}.`;
+  }
+  if(l.includes('kranken')||l.includes('kv'))
+    r="Als gesetzlich Pflichtversicherter i. d. R. keine Beiträge auf den Gewerbegewinn, solange nebenberuflich (Zeit und Einkommen klar unter dem Hauptjob). Bei freiwilliger/privater Versicherung anders.";
+  setTimeout(()=>addMsg('🤖 '+r,'ai'),300);
+}
+
+/* ================= Init ================= */
+function applyStored(){
+  document.querySelectorAll('[data-stamm]').forEach(el=>{if(state.stamm[el.id]!=null)el.value=state.stamm[el.id];});
+  const s=state.settings||{};
+  if(s.rate!=null)$('tax-rate').value=s.rate;
+  if(s.heb!=null)$('hebesatz').value=s.heb;
+  if(s.haerte!=null)$('haerte').checked=s.haerte;
+}
+load();migrate();applyStored();
+if(state.lastFirm)$('pay-firm').value=state.lastFirm;
+loadFirmDetails();
+$('inv-date').value=todayISO();$('exp-date').value=todayISO();
+$('inv-no').value=nextInvNo();
+
+document.querySelectorAll('#tab-payout input:not([type=file]),#tab-payout textarea').forEach(el=>el.addEventListener('input',()=>{
+  if(el.hasAttribute('data-stamm')){state.stamm[el.id]=el.value;save();}
+  updateInvoice();
+}));
+$('inv-date').addEventListener('change',()=>{ if(!state.journal.some(e=>e.ref===$('inv-no').value))$('inv-no').value=nextInvNo();updateInvoice();});
+['tax-rate','hebesatz','haerte','plan-profit'].forEach(id=>$(id).addEventListener('input',()=>{
+  Object.assign(state.settings,{rate:$('tax-rate').value,heb:$('hebesatz').value,haerte:$('haerte').checked});save();renderCockpit();renderTax();
+}));
+$('haerte').addEventListener('change',()=>{state.settings.haerte=$('haerte').checked;save();renderCockpit();renderTax();});
+$('view-year').addEventListener('change',()=>{renderCockpit();renderTax();});
+window.addEventListener('resize',fitPreview);
+document.querySelectorAll('#tab-payout input').forEach(el=>el.addEventListener('input',()=>el.classList.remove('autofilled')));
+$('pay-firm').addEventListener('input',()=>{loadFirmDetails();updateInvoice();});
+$('pay-firm').addEventListener('change',()=>{state.lastFirm=firmName();save();});
+$('firm-details').addEventListener('input',()=>{const n=firmName();if(n){state.firms[n]=$('firm-details').value;save();}});
+$('j-filter').addEventListener('change',renderCockpit);
+
+$('toast-btn').addEventListener('click',()=>{if(undoFn){const f=undoFn;undoFn=null;f();}});
+const pcs=(state.settings&&state.settings.calc)||{};
+if(pcs.amount!=null)$('pc-amount').value=pcs.amount;
+if(pcs.zve!=null)$('pc-zve').value=pcs.zve;
+if(pcs.prior!=null)$('pc-prior').value=pcs.prior;
+if(pcs.kist!=null)$('pc-kist').value=pcs.kist;
+if(pcs.split!=null)$('pc-split').checked=pcs.split;
+if(pcs.haerte!=null)$('pc-haerte').checked=pcs.haerte;
+['pc-amount','pc-zve','pc-prior'].forEach(id=>$(id).addEventListener('input',renderPC));
+['pc-kist','pc-split','pc-haerte'].forEach(id=>$(id).addEventListener('change',renderPC));
+renderAll();updateInvoice();renderPC();showTab('cockpit');
+addMsg(`Hallo Andrew! Dein Cockpit läuft – ich kenne dein Journal und den aktuellen Payout. Tipp auf ein Thema oder frag einfach.`,'ai');
+
+</script>
+<script>
+document.getElementById('menu-toggle').addEventListener('click', () => { document.getElementById('menu-panel').classList.toggle('open'); });
+document.addEventListener('click', (ev) => {
+  const panel = document.getElementById('menu-panel'), toggle = document.getElementById('menu-toggle');
+  if (panel.classList.contains('open') && !panel.contains(ev.target) && !toggle.contains(ev.target)) panel.classList.remove('open');
+});
+const THEME_KEY = 'sparrechner_theme_v1';
+function applyTheme(theme){
+  if (!theme || theme === 'midnight') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', theme);
+  document.querySelectorAll('.theme-swatch').forEach(btn => btn.classList.toggle('active', (btn.dataset.swatch || 'midnight') === (theme || 'midnight')));
+}
+document.querySelectorAll('.theme-swatch').forEach(btn => btn.addEventListener('click', () => { const t = btn.dataset.swatch; try{ localStorage.setItem(THEME_KEY, t); }catch(e){} applyTheme(t); }));
+applyTheme((function(){ try{ return localStorage.getItem(THEME_KEY) || 'midnight'; }catch(e){ return 'midnight'; } })());
+if ('serviceWorker' in navigator) window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+</script>
+
+</body>
+</html>

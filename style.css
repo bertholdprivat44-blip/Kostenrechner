@@ -573,3 +573,7 @@ h2{
   color: var(--ink-soft);
   opacity: 0.55;
 }
+
+/* eingebettet in app.html */
+html.embed .topnav, html.embed .site-footer{ display:none; }
+html.embed body{ padding-bottom:12px; }
