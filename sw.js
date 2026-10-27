@@ -1,7 +1,9 @@
-const CACHE = "sparrechner-v75";
+const CACHE = "sparrechner-v79";
 const ASSETS = [
   "./start.html",
   "./app.html",
+  "./jspdf.umd.min.js",
+  "./html2canvas.min.js",
   "./index.html",
   "./trading-journal.html",
   "./anleitung.html",

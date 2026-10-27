@@ -23,8 +23,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="jspdf.umd.min.js"></script>
+<script src="html2canvas.min.js"></script>
 <style>
 #cp *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 #cp .wrap{max-width:1300px;margin:0 auto}
@@ -223,6 +223,7 @@
 #cp button.ok{color:#04120b}
 @media (max-width:820px){#cp .chat-card{background:var(--bg)}#cp{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}}
 
+#cp #invoice-preview h2{color:#0f172a;font-family:inherit;font-size:1.5em;font-weight:700;letter-spacing:0;margin:0 0 6px}
 </style>
 </head>
 <body>
@@ -1154,18 +1155,59 @@ async function addImagePage(doc,src,title){
   const maxW=180,maxH=255,r=Math.min(maxW/img.width,maxH/img.height);
   doc.addImage(src,'JPEG',15+(maxW-img.width*r)/2,25,img.width*r,img.height*r);
 }
+/* ---- Anhänge platzsparend in die PDF setzen ---- */
+function shrinkImg(src,maxSide=1100,q=0.72){
+  return new Promise(res=>{const i=new Image();i.onload=()=>{const s=Math.min(1,maxSide/Math.max(i.width,i.height));const c=document.createElement('canvas');c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(i,0,0,c.width,c.height);res({data:c.toDataURL('image/jpeg',q),w:c.width,h:c.height});};i.onerror=()=>res(null);i.src=src;});
+}
+const ATT_W=190,ATT_GAP=5,ATT_CAP=8,ATT_RGAP=4;
+function planRows(items,H){
+  const fit=a=>(ATT_W-ATT_GAP*(a.length-1))/a.reduce((s,it)=>s+it.w/it.h,0);
+  const rows=[];let cur=[];
+  items.forEach(it=>{ if(cur.length&&fit(cur.concat(it))<H){rows.push(cur);cur=[it];}else cur.push(it); });
+  if(cur.length)rows.push(cur);
+  return rows.map(r=>({items:r,h:Math.min(H,fit(r))}));
+}
+const rowsTotal=rows=>rows.reduce((s,r)=>s+r.h+ATT_CAP+ATT_RGAP,0);
+function drawRows(doc,rows,y){
+  rows.forEach(r=>{
+    const ws=r.items.map(it=>r.h*it.w/it.h), used=ws.reduce((a,b)=>a+b,0)+ATT_GAP*(r.items.length-1);
+    let x=10+(ATT_W-used)/2;
+    r.items.forEach((it,i)=>{
+      doc.addImage(it.data,'JPEG',x,y,ws[i],r.h);doc.setDrawColor(205);doc.setLineWidth(0.2);doc.rect(x,y,ws[i],r.h);
+      doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(70);
+      doc.text(doc.splitTextToSize(it.title,Math.max(ws[i],30)).slice(0,2),x,y+r.h+3.6);
+      x+=ws[i]+ATT_GAP;
+    });
+    y+=r.h+ATT_CAP+ATT_RGAP;
+  });
+  return y;
+}
+/* Anhänge: eine gemeinsame Seite nur für die Screenshots, nur im Notfall mehrere */
+function placeAttachments(doc,items,invBottom){
+  const Hs=[130,120,110,100,90,80,70,62];
+  const r1=287-(invBottom+9);
+  const head=(y,t)=>{doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(30);doc.text(t,10,y);};
+  // Der Eigenbeleg steht immer allein auf Seite 1, alle Screenshots kommen gemeinsam auf eine eigene Seite
+  for(const H of Hs){ const rows=planRows(items,H); if(rowsTotal(rows)<=265){ doc.addPage(); head(14,'Anhänge'); drawRows(doc,rows,18); return 2; } }
+  const rows=planRows(items,100); let y=18,pages=1; doc.addPage(); head(14,'Anhänge');
+  rows.forEach(r=>{ if(y+r.h+ATT_CAP>287){ doc.addPage(); y=14; pages++; } y=drawRows(doc,[r],y); });
+  return 1+pages;
+}
 async function generateSammelPDF(){
   if(!libsOk(true))return;busy(true);
   const sc=$('preview-scale'),old=sc.style.transform;
   try{
     sc.style.transform='none';
     const {jsPDF}=window.jspdf;const doc=new jsPDF('p','mm','a4');
-    const canvas=await html2canvas($('invoice-preview'),{scale:2,backgroundColor:'#ffffff',windowWidth:900});
+    const canvas=await html2canvas($('invoice-preview'),{scale:1.6,backgroundColor:'#ffffff',windowWidth:900});
     const h=canvas.height*190/canvas.width;
-    doc.addImage(canvas.toDataURL('image/jpeg',0.92),'JPEG',10,10,190,Math.min(h,277));
+    const hInv=Math.min(h,277);
+    doc.addImage(canvas.toDataURL('image/jpeg',0.86),'JPEG',10,10,190,hInv);
     const bank=$('bank-name').value||'Bankkonto';
     const att=[['slot-firm','Anhang 1: Payout-Nachweis '+(firmName()||'Propfirma')],['slot-dep','Anhang 2: Binance USDT Eingang'],['slot-conv','Anhang 3: USDT -> EUR Tausch'],['slot-with','Anhang 4: Binance SEPA Auszahlung'],['slot-bank','Anhang 5: Geldeingang '+bank]];
-    for(const [s,t] of att)if(uploadedImages[s])await addImagePage(doc,uploadedImages[s],t);
+    const items=[];
+    for(const [s,t] of att)if(uploadedImages[s]){const im=await shrinkImg(uploadedImages[s]);if(im)items.push({...im,title:t});}
+    if(items.length)placeAttachments(doc,items,10+hInv);
     await saveBlob(doc.output('blob'),`Steuerbeleg_${$('inv-no').value||'Payout'}.pdf`);
   }catch(e){toast('⚠️ PDF-Fehler: '+e.message);}
   sc.style.transform=old;fitPreview();busy(false);
@@ -1185,10 +1227,10 @@ async function expensePDF(){
     let y=34;lines.forEach(([a,b])=>{doc.setFont('helvetica','bold');doc.text(a+':',15,y);doc.setFont('helvetica','normal');doc.text(doc.splitTextToSize(String(b),130),60,y);y+=8;});
     doc.setFont('helvetica','bold');doc.text('Unternehmen:',15,y+6);doc.setFont('helvetica','normal');doc.text($('my-details').value.split('\n'),15,y+12);
     if(uploadedImages['slot-chal']){
-      const img=await loadImg(uploadedImages['slot-chal']);
-      const top=y+40,maxW=180,maxH=285-top,r=Math.min(maxW/img.width,maxH/img.height);
-      if(maxH>80)doc.addImage(uploadedImages['slot-chal'],'JPEG',15,top,img.width*r,img.height*r);
-      else await addImagePage(doc,uploadedImages['slot-chal'],'Anhang: Kaufquittung');
+      const sm=await shrinkImg(uploadedImages['slot-chal'],1400,0.78);
+      const top=y+40,maxW=180,maxH=285-top,r=sm?Math.min(maxW/sm.w,maxH/sm.h):1;
+      if(sm&&maxH>80)doc.addImage(sm.data,'JPEG',15,top,sm.w*r,sm.h*r);
+      else if(sm)await addImagePage(doc,sm.data,'Anhang: Kaufquittung');
     }
     await saveBlob(doc.output('blob'),`Ausgabe_${date}_${($('exp-cat').value.split(' ')[0])}.pdf`);
   }catch(e){toast('⚠️ PDF-Fehler: '+e.message);}

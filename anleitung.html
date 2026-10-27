@@ -118,7 +118,7 @@
         <li>Anderes Handy, anderer Browser oder anderer Rechner = andere, getrennte Daten.</li>
         <li>Löschst du die Website-Daten des Browsers, sind die Einträge weg.</li>
         <li><b>Sicherung des Journals:</b> <span class="ui">PDF exportieren</span> speichert die Trades samt Screenshots im PDF. Mit <span class="ui">PDF importieren</span> liest du sie wieder ein.</li>
-        <li>Nicht im PDF enthalten: Konten, Auszahlungen und Copy-Einstellungen. Die liegen nur im Browser.</li>
+        <li>Nicht im Journal-PDF enthalten: Konten, Auszahlungen und Copy-Einstellungen. Die sichert das <b>Gesamt-Backup</b> (siehe „Backup als PDF").</li>
         <li><b>Sicherung des Steuer-Cockpits:</b> <span class="ui">💾 Backup sichern</span> speichert alle Buchungen und Einstellungen als Datei, <span class="ui">📂 Datei laden</span> liest sie wieder ein.</li>
       </ul>
     </div></details>
@@ -130,11 +130,28 @@
       <p>Danach öffnet sie sich wie eine App ohne Browserleiste und lädt ihre Seiten aus dem Zwischenspeicher.</p>
     </div></details>
     <details class="g-item"><summary>Neue Oberfläche mit Tab-Leiste (app.html)</summary><div class="g-body">
-      <p>Öffne <code>app.html</code> statt <code>start.html</code>: Unten liegt eine feste Leiste mit <b>Heute</b>, <b>Trading</b>, <b>Steuer</b>, <b>Sparen</b> und <b>Mehr</b>. Die Seiten selbst sind dieselben wie sonst, nur ohne Menü darüber.</p>
+      <p>Öffne <code>app.html</code> statt <code>start.html</code>. Oben rechts stehen <span class="ui">PDF Download</span> und <span class="ui">Einfügen</span> (Backup), unten die Tab-Leiste mit <b>Heute</b>, <b>Trading</b>, dem großen <b>+</b>, <b>Steuer</b>, <b>Sparen</b> und <b>Mehr</b>. Die Seiten selbst sind dieselben wie sonst, nur ohne Menü darüber.</p>
       <ul>
-        <li><b>Heute</b> zeigt live deine Zahlen: Trading-Ergebnis des Monats, Payouts und Rücklage. Darunter Schnellknöpfe wie <span class="ui">Trade eintragen</span> und <span class="ui">Payout buchen</span>. Der <b>Sparrechner</b> bleibt ein eigener Reiter.</li>
+        <li><b>Heute</b> zeigt live deine Zahlen: Trading-Ergebnis des Monats, Payouts und Rücklage. Der <b>Sparrechner</b> bleibt ein eigener Reiter.</li>
         <li><b>Mehr</b> enthält Farbschema, diese Anleitung und den Link zur klassischen Ansicht mit Menü.</li>
         <li>Die Live-Zahlen funktionieren nur, wenn alles von derselben Internetadresse kommt (z. B. deine GitHub-Pages-Seite), nicht beim Öffnen per Doppelklick.</li>
+      </ul>
+    </div></details>
+    <details class="g-item"><summary>Schnell erfassen (das große +)</summary><div class="g-body">
+      <p>Das <b>+</b> in der Mitte der unteren Leiste öffnet ein Menü mit den häufigsten Eingaben:</p>
+      <ul>
+        <li><b>Trade</b> – öffnet das Formular im Journal.</li>
+        <li><b>Payout</b> und <b>Ausgabe</b> – springen in den passenden Bereich des Steuer-Cockpits.</li>
+        <li><b>Auszahlung</b> – öffnet das Konto-Fenster beim Bereich „Auszahlungen" (Auszahlung an deinem Prop-Konto erfassen).</li>
+        <li><span class="ui">Screenshot scannen</span> – öffnet das Trade-Formular und gleich die Bildauswahl. Die Werte werden automatisch ausgelesen.</li>
+      </ul>
+    </div></details>
+    <details class="g-item"><summary>Backup als PDF und Wiederherstellen (oben rechts)</summary><div class="g-body">
+      <ul>
+        <li><span class="ui">PDF Download</span> (Download) erstellt <b>eine</b> Backup-Datei mit allem: Trading Journal (Konten, Trades <b>mit Screenshots</b>, Auszahlungen), Steuer-Cockpit (Buchungen, Propfirmen, Stammdaten), Sparrechner (Monate, Entnahmen, Verteilung) und Einstellungen. Die Seiten sind nach Bereichen getrennt aufgelistet („1 · Trading Journal", „2 · Steuer-Cockpit", „3 · Sparrechner" …), vorne steht eine Inhaltsübersicht mit Zahlen. Am Handy öffnet sich das Teilen-Menü.</li>
+        <li><span class="ui">Einfügen</span> liest so ein Backup wieder ein. Du siehst vorher, was im Backup ist und wie viel davon auf dem Gerät noch fehlt („neu"). <b>Ergänzen (nur Fehlendes)</b> fügt nur Fehlendes hinzu, nichts geht verloren. <b>Alles ersetzen</b> überschreibt die Daten auf dem Gerät und verlangt eine zweite Bestätigung.</li>
+        <li>Die Wiederherstellungs-Daten stecken unsichtbar in der <b>Original-Datei</b>. Bitte nicht neu speichern, drucken oder in ein anderes PDF umwandeln – sonst gehen sie verloren.</li>
+        <li><b>Erinnerung:</b> Nach 7 Tagen ohne Backup erscheint oben ein Hinweis („Jetzt sichern" / „Später") und am PDF-Knopf ein roter Punkt. „Später" verschiebt den Hinweis um einen Tag. Hast du noch keine Daten, bleibt er weg.</li>
       </ul>
     </div></details>
     <details class="g-item"><summary>Menü und Farbschema</summary><div class="g-body">
@@ -220,7 +237,7 @@
       </ul>
     </div></details>
     <details class="g-item"><summary>Eigenbeleg und Beleg-PDF</summary><div class="g-body">
-      <p>Unter „3. Eigenbeleg" siehst du den Beleg live, so wie er ins PDF kommt. <span class="ui">📄 Beleg-PDF inkl. Anhänge</span> erstellt Seite 1 mit dem Eigenbeleg und danach je eine Seite pro hochgeladenem Screenshot (Anhang 1–5). Am Handy öffnet sich dafür das Teilen-Menü, sonst startet ein Download. Das PDF-Modul braucht beim ersten Mal Internet.</p>
+      <p>Unter „3. Eigenbeleg" siehst du den Beleg live, so wie er ins PDF kommt. <span class="ui">📄 Beleg-PDF inkl. Anhänge</span> erstellt Seite 1 mit dem Eigenbeleg, <b>immer allein</b>. Die hochgeladenen Screenshots (USDT-Eingang, Convert, SEPA, Kontoauszug …) kommen <b>zusammen auf Seite 2</b>, nicht je eine Seite pro Bild. Nur im Notfall (sehr viele oder sehr große Bilder) werden es mehr Anhangs-Seiten. Die Bilder werden dafür verkleinert, damit die Datei klein bleibt. Am Handy öffnet sich das Teilen-Menü, sonst startet ein Download.</p>
     </div></details>
     <details class="g-item"><summary>Ausgaben buchen (Challenges, Software …)</summary><div class="g-body">
       <ul>

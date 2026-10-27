@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="jspdf.umd.min.js"></script>
 <style>
 :root{
   --be:#8a95a8;--accent-ink:var(--ink);
@@ -125,10 +125,9 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
   .tablewrap th{font-size:.6rem;letter-spacing:0}
   .tablewrap tr.total td:nth-child(2),.tablewrap tr.total td:nth-child(3),.tablewrap tr.total td:nth-child(6){display:none}
 }
-html.embed body{padding-bottom:96px}
+html.embed body{padding-bottom:24px}
 html.embed .guide-link{display:none}
-html.embed .fab{left:auto;right:16px;transform:none;width:56px;height:56px;padding:0;border-radius:50%;font-size:0;display:flex;align-items:center;justify-content:center;bottom:calc(16px + env(safe-area-inset-bottom,0px))}
-html.embed .fab::before{content:"+";font-size:30px;font-weight:400;line-height:1}
+html.embed .fab{display:none}
 html.embed .trade,html.embed .sharebox,html.embed .tablewrap{border-radius:14px}
 html.embed .trade{border-left-width:1px}
 html.embed .btn{border-radius:12px}
