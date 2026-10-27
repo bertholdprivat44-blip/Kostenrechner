@@ -132,7 +132,10 @@ svg{flex:none}
       </div>
       <h2 class="sec">Weiteres</h2>
       <button class="row" type="button" data-act="anleitung"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5M12 16.5v.1"/></svg></span><span><b>Anleitung</b><small>Was jede Funktion macht, mit Suche</small></span><span class="go">›</span></button>
-      <a class="row" href="start.html"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span><span><b>Klassische Ansicht</b><small>Die bisherige Startseite mit Menü</small></span><span class="go">›</span></a>
+      <a class="row" href="start.html?klassisch=1"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span><span><b>Klassische Ansicht</b><small>Die bisherige Startseite mit Menü</small></span><span class="go">›</span></a>
+      <h2 class="sec">App</h2>
+      <button class="row" type="button" id="btnForce"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.5-5.8M20 4v5h-5"/></svg></span><span><b>Update erzwingen</b><small id="verTxt">Version</small></span><span class="go">›</span></button>
+
     </div></section>
     <iframe class="view" id="f-anleitung" title="Anleitung" data-src="anleitung.html?embed=1"></iframe>
   </main>
@@ -181,7 +184,7 @@ const fmt = n => n.toLocaleString('de-DE', { minimumFractionDigits:2, maximumFra
 const eur = n => '€' + fmt(n);
 const signed = n => (n >= 0 ? '+' : '−') + eur(Math.abs(n));
 
-function load(k){ const f = FR[k]; if (f && !f.getAttribute('src')) f.setAttribute('src', f.dataset.src); }
+function load(k){ const f = FR[k]; if (f && !f.getAttribute('src')){ const u = new URLSearchParams(location.search).get('u'); f.setAttribute('src', f.dataset.src + (u ? '&u=' + encodeURIComponent(u) : '')); } }
 function go(k){
   if (!VIEWS[k]) k = 'heute';
   cur = k; load(k);
@@ -418,7 +421,14 @@ async function applyRestore(mode){
       });
     }
     Object.entries(out).forEach(([k, v]) => localStorage.setItem(k, v));
-    ['trading', 'steuer', 'sparen'].forEach(k => { try{ W(k).location.reload(); }catch(e){} });
+    const jmem = (() => { try{ return jw.eval('Store.mode') === 'mem'; }catch(e){ return false; } })();
+    ['trading', 'steuer', 'sparen'].forEach(k => {
+      if (k === 'trading' && jmem){   // ohne dauerhaften Speicher würde ein Neuladen die Trades wieder löschen
+        try{ jw.eval('(function(){ try{ var a = JSON.parse(localStorage.getItem(ACCOUNTS_KEY)); if (Array.isArray(a) && a.length) S.accounts = a; }catch(e){} try{ S.activeAccountId = localStorage.getItem(ACTIVE_ACCOUNT_KEY) || S.accounts[0].id; }catch(e){} renderAccounts(); render(); })()'); }catch(e){}
+        return;
+      }
+      try{ W(k).location.reload(); }catch(e){}
+    });
     pending = null; setTimeout(refresh, 1500); note(rep ? 'Alles wiederhergestellt ✓' : 'Fehlendes ergänzt ✓');
   }catch(e){ note('Wiederherstellen nicht möglich: ' + (e && e.message ? e.message : e)); }
 }
@@ -446,7 +456,23 @@ $('bnNow').addEventListener('click', () => { $('banner').hidden = true; doBackup
 $('bnLater').addEventListener('click', () => { try{ localStorage.setItem('bl_backup_snooze', String(Date.now() + 24 * 3600 * 1000)); }catch(e){} $('banner').hidden = true; });
 setTimeout(checkReminder, 3000);
 
-if ('serviceWorker' in navigator) window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+const APP_VERSION = "v81";
+{ const vt = $('verTxt'); if (vt) vt.textContent = 'Version ' + APP_VERSION + ' · lädt die neuesten Dateien neu'; }
+async function forceUpdate(){
+  note('Aktualisiere …');
+  try{ const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r => r.unregister())); }catch(e){}
+  try{ const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); }catch(e){}
+  setTimeout(() => location.replace(location.pathname + '?u=' + Date.now() + location.hash), 400);
+}
+{ const bf = $('btnForce'); if (bf) bf.addEventListener('click', forceUpdate); }
+if ('serviceWorker' in navigator){
+  const hadCtl = !!navigator.serviceWorker.controller, t0 = Date.now(); let done = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {   // neue Version ist aktiv geworden
+    if (!hadCtl || done) return; done = true;
+    if (Date.now() - t0 < 25000) location.reload(); else note('Neue Version geladen – beim nächsten Öffnen aktiv.');
+  });
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').then(r => { try{ r.update(); }catch(e){} }).catch(() => {}); });
+}
 </script>
 </body>
 </html>

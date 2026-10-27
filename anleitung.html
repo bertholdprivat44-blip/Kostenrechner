@@ -500,8 +500,14 @@
     <details class="g-item"><summary>„PDF-Modul konnte nicht geladen werden"</summary><div class="g-body">
       <p>Beim ersten PDF braucht die App Internet, um das PDF-Modul zu laden. Danach merkt es sich der Browser meist.</p>
     </div></details>
-    <details class="g-item"><summary>Die Seite zeigt eine alte Version</summary><div class="g-body">
-      <p>Die App speichert Seiten zum Offline-Nutzen zwischen. Nach einem Update einmal die App komplett schließen und neu öffnen. Hilft das nicht, die Seite im Browser neu laden.</p>
+    <details class="g-item"><summary>Die Seite zeigt eine alte Version / Update kommt nicht an</summary><div class="g-body">
+      <p>Öffne <b>Mehr → Update erzwingen</b>. Das löscht den alten Zwischenspeicher und lädt alle Dateien frisch. Dort steht auch die aktuelle Versionsnummer, damit du siehst, ob das neue Update angekommen ist.</p>
+      <ul>
+        <li>Nach dem Hochladen auf GitHub dauert es oft 1 bis 2 Minuten, bis die Seite neu ausgeliefert wird.</li>
+        <li>Es müssen <b>alle</b> Dateien aus dem ZIP im Hauptordner des Repositorys liegen, nicht das ZIP selbst und nicht in einem Unterordner. Neu sind <code>app.html</code>, <code>jspdf.umd.min.js</code> und <code>html2canvas.min.js</code>.</li>
+        <li>Die Adresse ohne Dateinamen öffnet jetzt automatisch die neue Oberfläche.</li>
+        <li>Hilft das nicht: Website-Daten der Seite im Browser löschen (<b>vorher PDF Download</b> als Backup) oder die App vom Home-Bildschirm löschen und neu hinzufügen.</li>
+      </ul>
     </div></details>
   </section>
 
